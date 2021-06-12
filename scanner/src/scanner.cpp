@@ -3,7 +3,7 @@
 //
 
 #include "scanner.h"
-#include <opencv2/imgproc.hpp>
+//#include <opencv2/imgproc.hpp>
 
 void Scanner::myFlip(Mat src) {
     flip(src, src, 0);

@@ -31,10 +31,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         srcBitmap = BitmapFactory.decodeResource(this.getResources(),R.drawable.mountain);
+        dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
 
         // Example of a call to a native method
         ImageView iv = binding.imageView2;
-        iv.setImageBitmap(srcBitmap);
+        iv.setImageBitmap(dstBitmap);
 
         SeekBar sb = binding.seekBar;
         sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {

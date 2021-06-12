@@ -1,8 +1,9 @@
 #include <jni.h>
 #include <string>
 #include "android/bitmap.h"
-#include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
+//#include <opencv2/core.hpp>
+//#include <opencv2/imgproc.hpp>
+#include <opencv2/opencv.hpp>
 #include "scanner.h"
 
 
@@ -21,8 +22,12 @@ void bitmapToMat(JNIEnv *env, jobject bitmap, Mat& dst, jboolean needUnPremultip
         if( info.format == ANDROID_BITMAP_FORMAT_RGBA_8888 )
         {
             Mat tmp(info.height, info.width, CV_8UC4, pixels);
-            if(needUnPremultiplyAlpha) cvtColor(tmp, dst, COLOR_mRGBA2RGBA);
-            else tmp.copyTo(dst);
+            if(needUnPremultiplyAlpha) {
+                cvtColor(tmp, dst, COLOR_mRGBA2RGBA);
+            }
+            else{
+                tmp.copyTo(dst);
+            }
         } else {
             // info.format == ANDROID_BITMAP_FORMAT_RGB_565
             Mat tmp(info.height, info.width, CV_8UC2, pixels);
