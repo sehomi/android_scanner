@@ -2,15 +2,25 @@ package com.example.android_scanner;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.Environment;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.android_scanner.databinding.ActivityMainBinding;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,6 +42,9 @@ public class MainActivity extends AppCompatActivity {
 
         srcBitmap = BitmapFactory.decodeResource(this.getResources(),R.drawable.mountain);
         dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
+
+        String assetsDir = copyAssets();
+        createScanner(assetsDir);
 
         // Example of a call to a native method
         ImageView iv = binding.imageView2;
@@ -73,11 +86,48 @@ public class MainActivity extends AppCompatActivity {
         binding.imageView2.setImageBitmap(dstBitmap);
     }
 
+    private String copyAssets() {
+        AssetManager assetManager = getAssets();
+        String[] files = null;
+        try {
+            files = assetManager.list("");
+        } catch (IOException e) {
+            Log.e("tag", "Failed to get asset file list.", e);
+        }
+        for(String filename : files) {
+            InputStream in = null;
+            OutputStream out = null;
+            try {
+                in = assetManager.open(filename);
+                File outFile = new File(getExternalFilesDir(null), filename);
+                out = new FileOutputStream(outFile);
+                copyFile(in, out);
+                in.close();
+                in = null;
+                out.flush();
+                out.close();
+                out = null;
+            } catch(IOException e) {
+                Log.e("tag", "Failed to copy asset file: " + filename, e);
+            }
+        }
+
+        return getExternalFilesDir(null).getAbsolutePath();
+    }
+    private void copyFile(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[1024];
+        int read;
+        while((read = in.read(buffer)) != -1){
+            out.write(buffer, 0, read);
+        }
+    }
+
     /**
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
     public native String stringFromJNI();
+    public native void createScanner(String assets);
     public native void flip(Bitmap bitmapIn, Bitmap bitmapOut);
     public native void blur(Bitmap bitmapIn, Bitmap bitmapOut, float sigma);
 }

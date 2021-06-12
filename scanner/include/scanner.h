@@ -9,12 +9,15 @@
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
 
+#include "detector.h"
+
 using namespace cv;
 
 class Scanner{
 
 public:
     int x;
+    Scanner(std::string);
     void myFlip(Mat src);
     void myBlur(Mat src, float sigma);
 };

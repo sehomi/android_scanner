@@ -6,6 +6,7 @@
 #include <opencv2/opencv.hpp>
 #include "scanner.h"
 
+Scanner *sc;
 
 void bitmapToMat(JNIEnv *env, jobject bitmap, Mat& dst, jboolean needUnPremultiplyAlpha)
 {
@@ -109,13 +110,29 @@ Java_com_example_android_1scanner_MainActivity_stringFromJNI(
 }
 
 extern "C" JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets) {
+
+//    const char* str;
+//    str = env->GetStringUTFChars(prompt, false);
+//    if(str == NULL) {
+//        return NULL;
+//    }
+
+    jboolean isCopy;
+    const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
+    std::string assets_str = std::string(convertedValue);
+
+    sc = new Scanner(assets_str);
+    return;
+}
+
+extern "C" JNIEXPORT void JNICALL
 Java_com_example_android_1scanner_MainActivity_flip(JNIEnv* env, jobject p_this, jobject bitmapIn, jobject bitmapOut) {
     Mat src;
     bitmapToMat(env, bitmapIn, src, false);
     // NOTE bitmapToMat returns Mat in RGBA format, if needed convert to BGRA using cvtColor
 
-    Scanner sc;
-    sc.myFlip(src);
+    sc->myFlip(src);
 
     // NOTE matToBitmap expects Mat in GRAY/RGB(A) format, if needed convert using cvtColor
     matToBitmap(env, src, bitmapOut, false);
@@ -125,7 +142,6 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_example_android_1scanner_MainActivity_blur(JNIEnv* env, jobject p_this, jobject bitmapIn, jobject bitmapOut, jfloat sigma) {
     Mat src;
     bitmapToMat(env, bitmapIn, src, false);
-    Scanner sc;
-    sc.myBlur(src, sigma);
+    sc->myBlur(src, sigma);
     matToBitmap(env, src, bitmapOut, false);
 }

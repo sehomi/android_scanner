@@ -5,6 +5,10 @@
 #include "scanner.h"
 //#include <opencv2/imgproc.hpp>
 
+Scanner::Scanner(std::string assetsDir) {
+    Detector detector(assetsDir, DetectionMethod::MN_SSD, 0.4, 0.4);
+}
+
 void Scanner::myFlip(Mat src) {
     flip(src, src, 0);
 }
