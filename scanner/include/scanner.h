@@ -17,6 +17,8 @@ class Scanner{
 
 public:
     int x;
+    Detector* detector;
+
     Scanner(std::string);
     void myFlip(Mat src);
     void myBlur(Mat src, float sigma);

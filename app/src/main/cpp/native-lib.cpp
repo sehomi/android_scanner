@@ -145,3 +145,19 @@ Java_com_example_android_1scanner_MainActivity_blur(JNIEnv* env, jobject p_this,
     sc->myBlur(src, sigma);
     matToBitmap(env, src, bitmapOut, false);
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_MainActivity_detect(JNIEnv* env, jobject p_this, jobject bitmapIn, jobject bitmapOut) {
+    Mat src;
+    bitmapToMat(env, bitmapIn, src, false);
+    cvtColor(src, src, COLOR_RGBA2BGR);
+
+    std::vector<cv::Rect> bboxes;
+    Mat dst = src.clone();
+
+    sc->detector->detect(src, bboxes);
+    sc->detector->drawDetections(dst, bboxes);
+
+    cvtColor(dst, dst, COLOR_BGR2RGB);
+    matToBitmap(env, dst, bitmapOut, false);
+}

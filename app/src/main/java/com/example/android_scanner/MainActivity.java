@@ -71,8 +71,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void doFlip(View view){
-        flip(srcBitmap,srcBitmap);
-        doBlur();
+//        flip(srcBitmap,srcBitmap);
+//        doBlur();
+        detect(srcBitmap, dstBitmap);
+        binding.imageView2.setImageBitmap(dstBitmap);
     }
 
     public void doBlur(){
@@ -130,4 +132,5 @@ public class MainActivity extends AppCompatActivity {
     public native void createScanner(String assets);
     public native void flip(Bitmap bitmapIn, Bitmap bitmapOut);
     public native void blur(Bitmap bitmapIn, Bitmap bitmapOut, float sigma);
+    public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
 }

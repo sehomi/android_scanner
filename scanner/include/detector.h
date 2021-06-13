@@ -21,6 +21,7 @@ public:
 
     Detector(std::string, DetectionMethod, float, float);
 	void detect(cv::Mat &, std::vector<cv::Rect> &);
+	void drawDetections(cv::Mat &, std::vector<cv::Rect> &);
 
 private:
 	cv::dnn::Net net;
