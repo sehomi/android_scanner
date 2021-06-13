@@ -112,12 +112,6 @@ Java_com_example_android_1scanner_MainActivity_stringFromJNI(
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets) {
 
-//    const char* str;
-//    str = env->GetStringUTFChars(prompt, false);
-//    if(str == NULL) {
-//        return NULL;
-//    }
-
     jboolean isCopy;
     const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
     std::string assets_str = std::string(convertedValue);
