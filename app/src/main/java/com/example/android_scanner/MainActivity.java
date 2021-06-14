@@ -4,13 +4,20 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
+import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -22,13 +29,14 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, Camera.PreviewCallback, SurfaceHolder.Callback {
 
     // Used to load the 'native-lib' library on application startup.
     static {
@@ -38,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ActivityMainBinding binding;
     private Bitmap srcBitmap;
     private Bitmap dstBitmap;
+    private Camera mCamera;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +88,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             }
         });
+
+        Context context = this;
+        boolean camDetected = checkCameraHardware(context);
+
+        // Create an instance of Camera
+
+
+        // Create our Preview view and set it as the content of our activity.
+//        mPreview = new CameraPreview(this, mCamera);
+        SurfaceView preview = (SurfaceView) findViewById(R.id.camera_preview);
+        int type = SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS;
+        preview.getHolder().setType(type);//REQUIRED:API10
+        preview.getHolder().addCallback(this);
+//        preview.addView(mPreview);
+
+        mCamera = getCameraInstance();
+
     }
 
     public void doFlip(View view){
@@ -153,4 +179,94 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public native void flip(Bitmap bitmapIn, Bitmap bitmapOut);
     public native void blur(Bitmap bitmapIn, Bitmap bitmapOut, float sigma);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+//        getCameraInstance();
+
+    }
+
+    private boolean checkCameraHardware(Context context) {
+        if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)){
+            // this device has a camera
+            return true;
+        } else {
+            // no camera on this device
+            return false;
+        }
+    }
+
+    public static Camera getCameraInstance(){
+        Camera c = null;
+        try {
+            c = Camera.open(); // attempt to get a Camera instance
+        }
+        catch (Exception e){
+            // Camera is not available (in use or does not exist)
+            int x = 1;
+        }
+        return c; // returns null if camera is unavailable
+    }
+
+
+    @Override
+    public void onPreviewFrame(byte[] bytes, Camera camera) {
+        Camera.Parameters parameters = camera.getParameters();
+        int width = parameters.getPreviewSize().width;
+        int height = parameters.getPreviewSize().height;
+
+        YuvImage yuv = new YuvImage(bytes, parameters.getPreviewFormat(), width, height, null);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        yuv.compressToJpeg(new Rect(0, 0, width, height), 50, out);
+
+        byte[] bts = out.toByteArray();
+        final Bitmap bitmap = BitmapFactory.decodeByteArray(bts, 0, bts.length);
+        int x =0;
+
+
+//        detect(bitmap, dstBitmap);
+        binding.imageView2.setImageBitmap(bitmap);
+//        int y =0;
+    }
+
+    @Override
+    public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
+        try
+        {
+
+            mCamera.setPreviewDisplay(surfaceHolder);
+            mCamera.setPreviewCallback(this);
+            mCamera.startPreview();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+        try {
+            mCamera.stopPreview();
+//            Size s = mCamera.getParameters().getPreviewSize();
+//            LayoutParams params = surface.getLayoutParams();
+//            params.height = w*s.width/s.height; // portrait mode only
+//            surface.setLayoutParams(params);
+            mCamera.setPreviewDisplay(surfaceHolder);
+            mCamera.setPreviewCallback(this);
+            mCamera.startPreview();
+        } catch (Exception ex) {
+//            showException(ex);
+        }
+    }
+
+    @Override
+    public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
+
+    }
 }
+
+
