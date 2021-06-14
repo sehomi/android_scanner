@@ -11,6 +11,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -47,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Bitmap srcBitmap;
     private Bitmap dstBitmap;
     private Camera mCamera;
+    private SensorManager sensorManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +106,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //        preview.addView(mPreview);
 
         mCamera = getCameraInstance();
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
     }
 
