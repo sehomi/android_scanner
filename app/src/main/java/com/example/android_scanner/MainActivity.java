@@ -226,10 +226,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         final Bitmap bitmap = BitmapFactory.decodeByteArray(bts, 0, bts.length);
         int x =0;
 
-
-//        detect(bitmap, dstBitmap);
-        binding.imageView2.setImageBitmap(bitmap);
-//        int y =0;
+        Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
+        detect(bitmap, bitmap1);
+        binding.imageView2.setImageBitmap(bitmap1);
+        int y =0;
     }
 
     @Override
