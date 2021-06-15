@@ -12,7 +12,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
-import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -24,6 +23,7 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.codemonkeylabs.fpslibrary.TinyDancer;
 import com.example.android_scanner.databinding.ActivityMainBinding;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -49,7 +49,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Bitmap srcBitmap;
     private Bitmap dstBitmap;
     private Camera mCamera;
-    private SensorManager sensorManager;
+    private byte[] imgBytes;
+    private boolean isImgBytesReady = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +60,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(binding.getRoot());
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
+        TinyDancer.create()
+                .show(this);
 
         // Get the SupportMapFragment and request notification when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -110,7 +114,51 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mCamera = getCameraInstance();
 
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    while(true) {
+                        sleep(500);
+                        decodeBytesToImage();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        thread.start();
+    }
+
+
+    private void decodeBytesToImage(){
+        if(!isImgBytesReady) return;
+
+        Camera.Parameters parameters = mCamera.getParameters();
+        int width = parameters.getPreviewSize().width;
+        int height = parameters.getPreviewSize().height;
+
+        YuvImage yuv = new YuvImage(imgBytes, parameters.getPreviewFormat(), width, height, null);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        yuv.compressToJpeg(new Rect(0, 0, width, height), 50, out);
+
+        byte[] bts = out.toByteArray();
+        final Bitmap bitmap = BitmapFactory.decodeByteArray(bts, 0, bts.length);
+        int x =0;
+
+        Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
+//        detect(bitmap, bitmap1);
+        MainActivity.this.runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+//                ((ImageView) findViewById(R.id.loopback)).setImageBitmap(bitmap1);
+                binding.imageView2.setImageBitmap(bitmap1);
+            }
+        });
+//        binding.imageView2.setImageBitmap(bitmap1);
 
     }
 
@@ -220,23 +268,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onPreviewFrame(byte[] bytes, Camera camera) {
-        Camera.Parameters parameters = camera.getParameters();
-        int width = parameters.getPreviewSize().width;
-        int height = parameters.getPreviewSize().height;
-
-        YuvImage yuv = new YuvImage(bytes, parameters.getPreviewFormat(), width, height, null);
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        yuv.compressToJpeg(new Rect(0, 0, width, height), 50, out);
-
-        byte[] bts = out.toByteArray();
-        final Bitmap bitmap = BitmapFactory.decodeByteArray(bts, 0, bts.length);
-        int x =0;
-
-        Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
-        detect(bitmap, bitmap1);
-        binding.imageView2.setImageBitmap(bitmap1);
-        int y =0;
+        isImgBytesReady = false;
+        imgBytes = bytes;
+        isImgBytesReady = true;
     }
 
     @Override
