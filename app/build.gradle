@@ -40,6 +40,22 @@ android {
     buildFeatures {
         viewBinding true
     }
+
+    packagingOptions{
+        doNotStrip "*/*/libdjivideo.so"
+        doNotStrip "*/*/libSDKRelativeJNI.so"
+        doNotStrip "*/*/libFlyForbid.so"
+        doNotStrip "*/*/libduml_vision_bokeh.so"
+        doNotStrip "*/*/libyuv2.so"
+        doNotStrip "*/*/libGroudStation.so"
+        doNotStrip "*/*/libFRCorkscrew.so"
+        doNotStrip "*/*/libUpgradeVerify.so"
+        doNotStrip "*/*/libFR.so"
+        doNotStrip "*/*/libDJIFlySafeCore.so"
+        doNotStrip "*/*/libdjifs_jni.so"
+        doNotStrip "*/*/libsfjni.so"
+        exclude 'META-INF/rxjava.properties'
+    }
 }
 
 dependencies {
@@ -54,4 +70,10 @@ dependencies {
     debugCompile "com.github.brianPlummer:tinydancer:0.1.2"
     releaseCompile "com.github.brianPlummer:tinydancer-noop:0.1.2"
     testCompile "com.github.brianPlummer:tinydancer-noop:0.1.2"
+    compile ('com.dji:dji-sdk:4.12')
+    provided ('com.dji:dji-sdk-provided:4.12')
+}
+
+configurations {
+    all*.exclude group: 'com.android.support', module: 'support-compat'
 }
