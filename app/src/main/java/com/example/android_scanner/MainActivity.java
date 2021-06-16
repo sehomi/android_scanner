@@ -2,7 +2,9 @@ package com.example.android_scanner;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -12,16 +14,28 @@ import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.codemonkeylabs.fpslibrary.TinyDancer;
 import com.example.android_scanner.databinding.ActivityMainBinding;
@@ -37,6 +51,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, Camera.PreviewCallback, SurfaceHolder.Callback {
 
@@ -51,6 +67,31 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Camera mCamera;
     private byte[] imgBytes;
     private boolean isImgBytesReady = false;
+    private SensorManager sensorManager;
+    private SensorManager mSensorManager;
+    Sensor accelerometer;
+    Sensor magnetometer;
+
+    // Gravity rotational data
+    private float gravity[];
+    // Magnetic rotational data
+    private float magnetic[]; //for magnetic rotational data
+    private float accels[] = new float[3];
+    private float mags[] = new float[3];
+    private float[] values = new float[3];
+
+    // azimuth, pitch and roll
+    private float azimuth;
+    private float pitch;
+    private float roll;
+
+    private EditText editLocation = null;
+    private ProgressBar pb = null;
+
+    LocationManager locationManager;
+//    LocationListener locationListener;
+
+    private static final String TAG = MainActivity.class.getName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        srcBitmap = BitmapFactory.decodeResource(this.getResources(),R.drawable.mountain);
+        srcBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.mountain);
         dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
 
         String assetsDir = copyAssets();
@@ -118,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void run() {
                 try {
-                    while(true) {
+                    while (true) {
                         sleep(500);
                         decodeBytesToImage();
                     }
@@ -129,8 +170,94 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         };
 
         thread.start();
+//
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        if (sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null) {
+            // Success! There's a magnetometer.
+            int x = 0;
+        } else {
+            int x = 1;
+            // Failure! No magnetometer.
+        }
+
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+        LocationListener locationListener = new MyLocationListener();
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, locationListener);
     }
 
+    private class MyLocationListener implements LocationListener {
+
+        @Override
+        public void onLocationChanged(Location loc) {
+
+            String longitude = "Longitude: " + loc.getLongitude();
+            Log.v(TAG, longitude);
+            String latitude = "Latitude: " + loc.getLatitude();
+            Log.v(TAG, latitude);
+
+            String s = longitude + "\n" + latitude ;
+
+            binding.textView2.setText(s);
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {}
+
+        @Override
+        public void onProviderEnabled(String provider) {}
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {}
+    }
+
+    private SensorEventListener mySensorEventListener = new SensorEventListener() {
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        }
+
+        public void onSensorChanged(SensorEvent event) {
+            switch (event.sensor.getType()) {
+                case Sensor.TYPE_MAGNETIC_FIELD:
+                    mags = event.values.clone();
+                    break;
+                case Sensor.TYPE_ACCELEROMETER:
+                    accels = event.values.clone();
+                    break;
+            }
+
+            if (mags != null && accels != null) {
+                gravity = new float[9];
+                magnetic = new float[9];
+                SensorManager.getRotationMatrix(gravity, magnetic, accels, mags);
+                float[] outGravity = new float[9];
+                SensorManager.remapCoordinateSystem(gravity, SensorManager.AXIS_X,SensorManager.AXIS_Z, outGravity);
+                SensorManager.getOrientation(outGravity, values);
+
+                azimuth = values[0] * 57.2957795f;
+                pitch =values[1] * 57.2957795f;
+                roll = values[2] * 57.2957795f;
+                mags = null;
+                accels = null;
+                binding.textView.setText("\nroll: "+String.valueOf(roll)+"\npitch: "+String.valueOf(pitch)+"\nazimuth: "+String.valueOf(azimuth));
+                int x = 0;
+
+            }
+        }
+    };
 
     private void decodeBytesToImage(){
         if(!isImgBytesReady) return;
@@ -149,7 +276,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         int x =0;
 
         Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
-//        detect(bitmap, bitmap1);
+        detect(bitmap, bitmap1);
         MainActivity.this.runOnUiThread(new Runnable() {
 
             @Override
@@ -238,7 +365,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onResume() {
         super.onResume();
-
+        mSensorManager.registerListener(mySensorEventListener, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(mySensorEventListener, magnetometer, SensorManager.SENSOR_DELAY_NORMAL);
 //        getCameraInstance();
 
     }
