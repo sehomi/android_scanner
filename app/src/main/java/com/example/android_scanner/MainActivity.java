@@ -1,10 +1,12 @@
 package com.example.android_scanner;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -23,6 +25,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -51,8 +54,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, Camera.PreviewCallback, SurfaceHolder.Callback {
 
@@ -65,7 +75,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Bitmap srcBitmap;
     private Bitmap dstBitmap;
     private Camera mCamera;
-    private byte[] imgBytes;
+//    private byte[] imgBytes;
     private boolean isImgBytesReady = false;
     private SensorManager sensorManager;
     private SensorManager mSensorManager;
@@ -93,6 +103,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private static final String TAG = MainActivity.class.getName();
 
+    private class imageSet
+    {
+        public byte[] imgBytes;
+        public Instant image_time;      // = Instant.now() ;
+    };
+
+    private imageSet imgSet = new imageSet();
+
+    Instant orn_time;
+    Instant loc_time;
+
+//    DateTimeFormatter formatter =
+//            DateTimeFormatter.ofLocalizedDateTime( FormatStyle.SHORT )
+//                    .withLocale( Locale.UK )
+//                    .withZone( ZoneId.systemDefault() );
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -205,12 +230,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         @Override
         public void onLocationChanged(Location loc) {
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                loc_time = Instant.now() ;
+            }
             String longitude = "Longitude: " + loc.getLongitude();
             Log.v(TAG, longitude);
             String latitude = "Latitude: " + loc.getLatitude();
             Log.v(TAG, latitude);
 
             String s = longitude + "\n" + latitude ;
+
+            setLocation(Double.valueOf(latitude), Double.valueOf(longitude), 1);
 
             binding.textView2.setText(s);
         }
@@ -230,6 +260,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         public void onSensorChanged(SensorEvent event) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                ornSet.orn_time = Instant.now() ;
+                orn_time = Instant.now() ;
+            }
             switch (event.sensor.getType()) {
                 case Sensor.TYPE_MAGNETIC_FIELD:
                     mags = event.values.clone();
@@ -253,6 +287,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mags = null;
                 accels = null;
                 binding.textView.setText("\nroll: "+String.valueOf(roll)+"\npitch: "+String.valueOf(pitch)+"\nazimuth: "+String.valueOf(azimuth));
+                setOrientation(roll, pitch, azimuth, 1);
                 int x = 0;
 
             }
@@ -266,13 +301,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         int width = parameters.getPreviewSize().width;
         int height = parameters.getPreviewSize().height;
 
-        YuvImage yuv = new YuvImage(imgBytes, parameters.getPreviewFormat(), width, height, null);
+        YuvImage yuv = new YuvImage(imgSet.imgBytes, parameters.getPreviewFormat(), width, height, null);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         yuv.compressToJpeg(new Rect(0, 0, width, height), 50, out);
 
         byte[] bts = out.toByteArray();
         final Bitmap bitmap = BitmapFactory.decodeByteArray(bts, 0, bts.length);
+//        setImage(bitmap, imgSet.image_time);
         int x =0;
 
         Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
@@ -335,6 +371,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         return getExternalFilesDir(null).getAbsolutePath();
     }
+
     private void copyFile(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = new byte[1024];
         int read;
@@ -361,6 +398,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public native void flip(Bitmap bitmapIn, Bitmap bitmapOut);
     public native void blur(Bitmap bitmapIn, Bitmap bitmapOut, float sigma);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
+    public native void setImage(Bitmap bitmap, float time);
+    public native void setLocation(double lat, double lng, float time);
+    public native void setOrientation(float roll, float pitch, float azimuth, float time);
 
     @Override
     public void onResume() {
@@ -393,11 +433,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return c; // returns null if camera is unavailable
     }
 
-
+//    @RequiresApi(api = Build.VERSION_CODES.O)
+//    @SuppressLint("NewApi")
     @Override
     public void onPreviewFrame(byte[] bytes, Camera camera) {
+//        imgSet.image_time = Calendar.getInstance().getTime();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            imgSet.image_time = Instant.now() ;
+        }
         isImgBytesReady = false;
-        imgBytes = bytes;
+        imgSet.imgBytes = bytes;
         isImgBytesReady = true;
     }
 

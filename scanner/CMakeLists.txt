@@ -21,7 +21,8 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         ${CMAKE_CURRENT_LIST_DIR}/src/scanner.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/detector.cpp )
+        ${CMAKE_CURRENT_LIST_DIR}/src/detector.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/Logger.cpp)
 
 find_library(jnigraphics-lib jnigraphics)
 

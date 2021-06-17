@@ -5,8 +5,10 @@
 //#include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include "scanner.h"
+#include "Logger.h"
 
 Scanner *sc;
+Logger *lg;
 
 void bitmapToMat(JNIEnv *env, jobject bitmap, Mat& dst, jboolean needUnPremultiplyAlpha)
 {
@@ -155,3 +157,25 @@ Java_com_example_android_1scanner_MainActivity_detect(JNIEnv* env, jobject p_thi
     cvtColor(dst, dst, COLOR_BGR2RGB);
     matToBitmap(env, dst, bitmapOut, false);
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_MainActivity_setImage(JNIEnv* env, jobject p_this, jobject bitmap, jfloat time)
+{
+    Mat img;
+    bitmapToMat(env, bitmap, img, false);
+
+    lg->setImage(img, time);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_MainActivity_setLocation(JNIEnv* env, jobject p_this, jdouble lat, jdouble lng, jfloat time)
+{
+    lg->setLocation(lat, lng, time);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobject p_this, jfloat roll, jfloat pitch, jfloat azimuth, jfloat time)
+{
+    lg->setOrientation(roll, pitch, azimuth, time);
+}
+
