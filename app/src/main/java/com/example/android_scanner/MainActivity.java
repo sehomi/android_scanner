@@ -16,6 +16,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
+import android.hardware.usb.UsbManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -199,7 +200,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         int x =0;
 
         Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
-//        detect(bitmap, bitmap1);
+        detect(bitmap, bitmap1);
         MainActivity.this.runOnUiThread(new Runnable() {
 
             @Override
@@ -252,7 +253,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 out.close();
                 out = null;
             } catch(IOException e) {
-                Log.e("tag", "Failed to copy asset file: " + filename, e);
+//                Log.e(TAG, "Failed to copy asset file: " + filename, e);
             }
         }
 
@@ -411,11 +412,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             AsyncTask.execute(new Runnable() {
                 @Override
                 public void run() {
+                    Log.d(TAG, "onRegisterRun");
                     showToast("registering, pls wait...");
                     DJISDKManager.getInstance().registerApp(MainActivity.this.getApplicationContext(), new DJISDKManager.SDKManagerCallback() {
                         @Override
                         public void onRegister(DJIError djiError) {
                             if (djiError == DJISDKError.REGISTRATION_SUCCESS) {
+                                Log.d(TAG, "onRegister");
                                 showToast("Register Success");
                                 DJISDKManager.getInstance().startConnectionToProduct();
                             } else {
@@ -498,6 +501,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
+    }
+
+    @Override
+    protected void onNewIntent(@NonNull Intent intent) {
+        Log.d(TAG, "onNewIntent");
+        String action = intent.getAction();
+        if (UsbManager.ACTION_USB_ACCESSORY_ATTACHED.equals(action)) {
+            Log.d(TAG, "onNewIntent1");
+            Intent attachedIntent = new Intent();
+            attachedIntent.setAction(DJISDKManager.USB_ACCESSORY_ATTACHED);
+            sendBroadcast(attachedIntent);
+        }
+        super.onNewIntent(intent);
+    }
+
+    public void connect(View view){
+        DJISDKManager.getInstance().startConnectionToProduct();
     }
 }
 
