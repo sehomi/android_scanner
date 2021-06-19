@@ -63,7 +63,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, Camera.PreviewCallback, SurfaceHolder.Callback {
 
     // Used to load the 'native-lib' library on application startup.
@@ -75,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Bitmap srcBitmap;
     private Bitmap dstBitmap;
     private Camera mCamera;
-//    private byte[] imgBytes;
+    private byte[] imgBytes;
     private boolean isImgBytesReady = false;
     private SensorManager sensorManager;
     private SensorManager mSensorManager;
@@ -106,13 +105,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private class imageSet
     {
         public byte[] imgBytes;
-        public Instant image_time;      // = Instant.now() ;
+        public double image_time;      // = Instant.now() ;
+        public Instant ins;
+//        public double nano;
     };
 
     private imageSet imgSet = new imageSet();
 
-    Instant orn_time;
-    Instant loc_time;
+    double orn_time;
+    double loc_time;
 
 //    DateTimeFormatter formatter =
 //            DateTimeFormatter.ofLocalizedDateTime( FormatStyle.SHORT )
@@ -168,8 +169,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         boolean camDetected = checkCameraHardware(context);
 
         // Create an instance of Camera
-
-
         // Create our Preview view and set it as the content of our activity.
 //        mPreview = new CameraPreview(this, mCamera);
         SurfaceView preview = (SurfaceView) findViewById(R.id.camera_preview);
@@ -187,6 +186,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     while (true) {
                         sleep(500);
                         decodeBytesToImage();
+                        int x = 0;
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -195,7 +195,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         };
 
         thread.start();
-//
+
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null) {
@@ -231,7 +231,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         public void onLocationChanged(Location loc) {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                loc_time = Instant.now() ;
+                Instant ins = Instant.now() ;
+                loc_time = ins.getEpochSecond() + (ins.getNano()/1e9);
             }
             String longitude = "Longitude: " + loc.getLongitude();
             Log.v(TAG, longitude);
@@ -240,7 +241,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             String s = longitude + "\n" + latitude ;
 
-            setLocation(Double.valueOf(latitude), Double.valueOf(longitude), 1);
+            double lat = loc.getLatitude();
+            double lng = loc.getLongitude();
+            setLocation(lat, lng, loc_time);
 
             binding.textView2.setText(s);
         }
@@ -261,8 +264,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         public void onSensorChanged(SensorEvent event) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                ornSet.orn_time = Instant.now() ;
-                orn_time = Instant.now() ;
+//                ornSet.orn_time = Instant.now();
+                Instant ins = Instant.now() ;
+                orn_time = ins.getEpochSecond() + (ins.getNano()/1e9);
             }
             switch (event.sensor.getType()) {
                 case Sensor.TYPE_MAGNETIC_FIELD:
@@ -282,26 +286,27 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 SensorManager.getOrientation(outGravity, values);
 
                 azimuth = values[0] * 57.2957795f;
-                pitch =values[1] * 57.2957795f;
+                pitch = values[1] * 57.2957795f;
                 roll = values[2] * 57.2957795f;
                 mags = null;
                 accels = null;
                 binding.textView.setText("\nroll: "+String.valueOf(roll)+"\npitch: "+String.valueOf(pitch)+"\nazimuth: "+String.valueOf(azimuth));
-                setOrientation(roll, pitch, azimuth, 1);
+                setOrientation(roll, pitch, azimuth, orn_time);
                 int x = 0;
-
             }
         }
     };
 
     private void decodeBytesToImage(){
-        if(!isImgBytesReady) return;
+        if(!isImgBytesReady)
+            return;
 
         Camera.Parameters parameters = mCamera.getParameters();
         int width = parameters.getPreviewSize().width;
         int height = parameters.getPreviewSize().height;
 
         YuvImage yuv = new YuvImage(imgSet.imgBytes, parameters.getPreviewFormat(), width, height, null);
+//        YuvImage yuv = new YuvImage(imgBytes, parameters.getPreviewFormat(), width, height, null);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         yuv.compressToJpeg(new Rect(0, 0, width, height), 50, out);
@@ -398,9 +403,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public native void flip(Bitmap bitmapIn, Bitmap bitmapOut);
     public native void blur(Bitmap bitmapIn, Bitmap bitmapOut, float sigma);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
-    public native void setImage(Bitmap bitmap, float time);
-    public native void setLocation(double lat, double lng, float time);
-    public native void setOrientation(float roll, float pitch, float azimuth, float time);
+    public native void setImage(Bitmap bitmap, double time);
+    public native void setLocation(double lat, double lng, double time);
+    public native void setOrientation(double roll, double pitch, double azimuth, double time);
 
     @Override
     public void onResume() {
@@ -438,11 +443,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onPreviewFrame(byte[] bytes, Camera camera) {
 //        imgSet.image_time = Calendar.getInstance().getTime();
+        long inst;
+        int x;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            imgSet.image_time = Instant.now() ;
+//            inst = Instant.now() ;
+            imgSet.ins = Instant.now();
+            imgSet.image_time = imgSet.ins.getEpochSecond() + (imgSet.ins.getNano()/1e9);
         }
         isImgBytesReady = false;
         imgSet.imgBytes = bytes;
+//        imgBytes = bytes;
         isImgBytesReady = true;
     }
 
@@ -450,7 +460,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
         try
         {
-
             mCamera.setPreviewDisplay(surfaceHolder);
             mCamera.setPreviewCallback(this);
             mCamera.startPreview();

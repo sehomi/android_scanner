@@ -119,6 +119,7 @@ Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobjec
     std::string assets_str = std::string(convertedValue);
 
     sc = new Scanner(assets_str);
+    lg = new Logger();
     return;
 }
 
@@ -159,7 +160,7 @@ Java_com_example_android_1scanner_MainActivity_detect(JNIEnv* env, jobject p_thi
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_setImage(JNIEnv* env, jobject p_this, jobject bitmap, jfloat time)
+Java_com_example_android_1scanner_MainActivity_setImage(JNIEnv* env, jobject p_this, jobject bitmap, jdouble time)
 {
     Mat img;
     bitmapToMat(env, bitmap, img, false);
@@ -168,13 +169,13 @@ Java_com_example_android_1scanner_MainActivity_setImage(JNIEnv* env, jobject p_t
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_setLocation(JNIEnv* env, jobject p_this, jdouble lat, jdouble lng, jfloat time)
+Java_com_example_android_1scanner_MainActivity_setLocation(JNIEnv* env, jobject p_this, jdouble lat, jdouble lng, jdouble time)
 {
     lg->setLocation(lat, lng, time);
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobject p_this, jfloat roll, jfloat pitch, jfloat azimuth, jfloat time)
+Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time)
 {
     lg->setOrientation(roll, pitch, azimuth, time);
 }

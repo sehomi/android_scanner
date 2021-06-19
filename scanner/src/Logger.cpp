@@ -9,7 +9,7 @@ void Logger::setImage(Mat image, float time)
     setImageSet(img);
 }
 
-void Logger::setLocation(float lat, float lng, float time)
+void Logger::setLocation(double lat, double lng, float time)
 {
     loc.lat = lat;
     loc.lng = lng;
@@ -18,7 +18,7 @@ void Logger::setLocation(float lat, float lng, float time)
     bufferLocation(loc);
 }
 
-void Logger::setOrientation(float roll, float pitch, float azimuth, float time)
+void Logger::setOrientation(double roll, double pitch, double azimuth, float time)
 {
     orn.roll = roll;
     orn.pitch = pitch;

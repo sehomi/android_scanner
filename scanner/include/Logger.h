@@ -14,27 +14,30 @@
 using namespace cv;
 using namespace std;
 
+struct image
+{
+    Mat image = Mat::zeros(Size(480, 640),CV_8UC1);
+    float time = 0;
+} ;
+struct location
+{
+    double lat = 0.0;
+    double lng = 0.0;
+    double time = 0;
+} ;
+struct orientation
+{
+    double roll = 0.0;
+    double pitch = 0.0;
+    double azimuth = 0.0;
+    double time = 0;
+} ;
 
 class Logger {
 
-    struct image
-    {
-        Mat image;
-        float time;
-    } img;
-    struct location
-    {
-        double lat;
-        double lng;
-        float time;
-    } loc;
-    struct orientation
-    {
-        float roll;
-        float pitch;
-        float azimuth;
-        float time;
-    } orn;
+    image img;
+    location loc;
+    orientation orn;
 
     vector<location> locationBuffer;
     vector<orientation> orientationBuffer;
@@ -47,8 +50,8 @@ class Logger {
 public:
 
     void setImage(Mat, float);
-    void setLocation(float, float, float );
-    void setOrientation(float, float, float, float);
+    void setLocation(double, double, float );
+    void setOrientation(double, double, double, float);
     struct imageSet
     {
         Mat image;
@@ -59,5 +62,5 @@ public:
         float azimuth;
         float time;
     } imgSet;
-    
+
 };
