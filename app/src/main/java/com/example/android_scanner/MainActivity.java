@@ -119,8 +119,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     LocationManager locationManager;
 //    LocationListener locationListener;
 
-    private static final String TAG = MainActivity.class.getName();
-
     private class imageSet
     {
         public byte[] imgBytes;
