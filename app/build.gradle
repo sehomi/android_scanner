@@ -27,6 +27,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -40,11 +41,27 @@ android {
     buildFeatures {
         viewBinding true
     }
+
+    packagingOptions{
+        doNotStrip "*/*/libdjivideo.so"
+        doNotStrip "*/*/libSDKRelativeJNI.so"
+        doNotStrip "*/*/libFlyForbid.so"
+        doNotStrip "*/*/libduml_vision_bokeh.so"
+        doNotStrip "*/*/libyuv2.so"
+        doNotStrip "*/*/libGroudStation.so"
+        doNotStrip "*/*/libFRCorkscrew.so"
+        doNotStrip "*/*/libUpgradeVerify.so"
+        doNotStrip "*/*/libFR.so"
+        doNotStrip "*/*/libDJIFlySafeCore.so"
+        doNotStrip "*/*/libdjifs_jni.so"
+        doNotStrip "*/*/libsfjni.so"
+        exclude 'META-INF/rxjava.properties'
+    }
 }
 
 dependencies {
 
-    implementation 'androidx.appcompat:appcompat:1.3.0'
+    implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.material:material:1.3.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'com.google.android.gms:play-services-maps:17.0.1'
@@ -54,4 +71,11 @@ dependencies {
     debugCompile "com.github.brianPlummer:tinydancer:0.1.2"
     releaseCompile "com.github.brianPlummer:tinydancer-noop:0.1.2"
     testCompile "com.github.brianPlummer:tinydancer-noop:0.1.2"
+    compile ('com.dji:dji-sdk:4.12')
+    provided ('com.dji:dji-sdk-provided:4.12')
+    implementation 'androidx.lifecycle:lifecycle-process:2.2.0'
+}
+
+configurations {
+    all*.exclude group: 'com.android.support', module: 'support-compat'
 }
