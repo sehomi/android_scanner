@@ -2,11 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.android_scanner">
-
-<!--    <uses-permission android:name="android.permission.INTERNET" />-->
-
-    <uses-permission android:name="android.permission.CAMERA" />
-<!--    <uses-feature android:name="android.hardware.camera" />-->
+    <!-- <uses-permission android:name="android.permission.INTERNET" /> -->
+    <uses-permission android:name="android.permission.CAMERA" /> <!-- <uses-feature android:name="android.hardware.camera" /> -->
 
     <!-- Permissions and features -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
@@ -33,12 +30,10 @@
     <uses-feature
         android:name="android.hardware.usb.accessory"
         android:required="true" />
-
     <!-- Permissions and features -->
 
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:name=".MApplication"
@@ -49,37 +44,42 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Android_scanner">
 
-        <!-- DJI SDK -->
         <uses-library android:name="com.android.future.usb.accessory" />
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false" />
         <meta-data
             android:name="com.dji.sdk.API_KEY"
             android:value="34c182bd586319f137bc304d" />
-        <!-- DJI SDK -->
+        <service android:name="dji.sdk.sdkmanager.DJIGlobalService" >
+        </service>
 
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyB13RGdbVH3glH4xA6PUBvD41Wq7PGwXcU" />
+        <activity android:name=".ConnectionActivity"
+            android:configChanges="orientation"
+            android:screenOrientation="portrait">
 
-        <activity android:name=".MainActivity" android:configChanges="orientation" android:screenOrientation="landscape" android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" />
             </intent-filter>
+
             <meta-data
                 android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"
                 android:resource="@xml/accessory_filter" />
         </activity>
-<!--        <service android:name="dji.sdk.sdkmanager.DJIGlobalService">-->
-<!--        </service>-->
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyB13RGdbVH3glH4xA6PUBvD41Wq7PGwXcU" />
+
+        <activity
+            android:name=".MainActivity"
+            android:screenOrientation="landscape">
+        </activity>
     </application>
-
-
-    <!--    <uses-feature android:name="android.hardware.camera"-->
-    <!--        android:required="true" />-->
 
 </manifest>
