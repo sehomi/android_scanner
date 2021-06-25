@@ -117,15 +117,24 @@ public class CameraApplication extends Application{
             }
             @Override
             public void onProductConnect(BaseProduct baseProduct) {
+
+//                Handler handler = new Handler(Looper.getMainLooper());
+//                handler.post(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        Toast.makeText(getApplicationContext(), "Product Connected.", Toast.LENGTH_LONG).show();
+//                    }
+//                });
+
                 Log.d("TAG", String.format("onProductConnect newProduct:%s", baseProduct));
                 notifyStatusChange();
 
             }
 
-//            @Override
-//            public void onProductChanged(BaseProduct baseProduct) {
-//                notifyStatusChange();
-//            }
+            @Override
+            public void onProductChanged(BaseProduct baseProduct) {
+                notifyStatusChange();
+            }
 
             @Override
             public void onComponentChange(BaseProduct.ComponentKey componentKey, BaseComponent oldComponent,
