@@ -33,7 +33,7 @@ import dji.sdk.products.Aircraft;
 import dji.sdk.sdkmanager.DJISDKInitEvent;
 import dji.sdk.sdkmanager.DJISDKManager;
 
-public class ConnectionActivity extends Activity implements View.OnClickListener {
+public class ConnectionActivity extends Activity {
 
     private static final String TAG = ConnectionActivity.class.getName();
 
@@ -41,6 +41,7 @@ public class ConnectionActivity extends Activity implements View.OnClickListener
     private TextView mTextProduct;
     private TextView mVersionTv;
     private Button mBtnOpen;
+    private Button mBtnOpenPhone;
 
     private static final String[] REQUIRED_PERMISSION_LIST = new String[]{
             Manifest.permission.VIBRATE,
@@ -56,6 +57,7 @@ public class ConnectionActivity extends Activity implements View.OnClickListener
             Manifest.permission.BLUETOOTH_ADMIN,
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.CAMERA,
     };
     private List<String> missingPermission = new ArrayList<>();
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
@@ -222,8 +224,9 @@ public class ConnectionActivity extends Activity implements View.OnClickListener
         mVersionTv.setText(getResources().getString(R.string.sdk_version, DJISDKManager.getInstance().getSDKVersion()));
 
         mBtnOpen = (Button) findViewById(R.id.btn_open);
-        mBtnOpen.setOnClickListener(this);
         mBtnOpen.setEnabled(false);
+
+        mBtnOpenPhone = (Button) findViewById(R.id.btn_open_phone);
     }
 
     protected BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -266,12 +269,23 @@ public class ConnectionActivity extends Activity implements View.OnClickListener
         }
     }
 
-
-    @Override
     public void onClick(View v) {
         switch (v.getId()) {
 
             case R.id.btn_open: {
+                Intent intent = new Intent(this, AircraftActivity.class);
+                startActivity(intent);
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    public void onClickPhone(View v) {
+        switch (v.getId()) {
+
+            case R.id.btn_open_phone: {
                 Intent intent = new Intent(this, MainActivity.class);
                 startActivity(intent);
                 break;
