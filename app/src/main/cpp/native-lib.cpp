@@ -7,6 +7,8 @@
 #include "scanner.h"
 #include "Logger.h"
 
+// TODO: declare JNI function in a base class like CameraApplication
+
 Scanner *sc;
 Logger *lg;
 
@@ -180,3 +182,31 @@ Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobje
     lg->setOrientation(roll, pitch, azimuth, time);
 }
 
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jobject thiz,
+                                                                 jstring assets) {
+    jboolean isCopy;
+    const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
+    std::string assets_str = std::string(convertedValue);
+
+    sc = new Scanner(assets_str);
+    lg = new Logger();
+    return;
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_AircraftActivity_detect(JNIEnv *env, jobject thiz,
+                                                          jobject bitmapIn, jobject bitmapOut) {
+    Mat src;
+    bitmapToMat(env, bitmapIn, src, false);
+    cvtColor(src, src, COLOR_RGBA2BGR);
+
+    std::vector<cv::Rect> bboxes;
+    Mat dst = src.clone();
+
+    sc->detector->detect(src, bboxes);
+    sc->detector->drawDetections(dst, bboxes);
+
+    cvtColor(dst, dst, COLOR_BGR2RGB);
+    matToBitmap(env, dst, bitmapOut, false);
+}

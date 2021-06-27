@@ -2,6 +2,7 @@ package com.example.android_scanner;
 
 // TODO: adding descriptions and comments
 // TODO: manage string.xml
+// TODO: add navigation marker for activities
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,13 +15,16 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.SurfaceTexture;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.TextureView;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.codemonkeylabs.fpslibrary.TinyDancer;
 import com.example.android_scanner.databinding.ActivityAircraftBinding;
@@ -37,7 +41,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Instant;
 
-public class AircraftActivity extends AppCompatActivity implements OnMapReadyCallback {
+import dji.common.product.Model;
+import dji.sdk.base.BaseProduct;
+import dji.sdk.camera.Camera;
+import dji.sdk.camera.VideoFeeder;
+import dji.sdk.codec.DJICodecManager;
+
+public class AircraftActivity extends AppCompatActivity implements OnMapReadyCallback, TextureView.SurfaceTextureListener {
 
 
     // Used to load the 'native-lib' library on application startup.
@@ -52,6 +62,9 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     LocationManager locationManager;
 
     private static final String TAG = AircraftActivity.class.getName();
+    protected VideoFeeder.VideoDataListener mReceivedVideoDataListener = null;
+    protected DJICodecManager mCodecManager = null;
+    protected DJICodecManager.OnGetBitmapListener bitmapListener = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +94,21 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         ImageView iv = binding.imageView2;
         iv.setImageBitmap(dstBitmap);
 
+        // The callback for receiving the raw H264 video data for camera live view
+        mReceivedVideoDataListener = new VideoFeeder.VideoDataListener() {
+
+            @Override
+            public void onReceive(byte[] videoBuffer, int size) {
+                if (mCodecManager != null) {
+                    mCodecManager.sendDataToDecoder(videoBuffer, size);
+                }
+            }
+        };
+
+        if (binding.cameraPreview != null) {
+            binding.cameraPreview.setSurfaceTextureListener(this);
+        }
+
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         LocationListener locationListener = new MyLocationListener();
 
@@ -96,6 +124,35 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         }
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, locationListener);
 
+    }
+
+    @Override
+    public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int i, int i1) {
+        Log.e(TAG, "onSurfaceTextureAvailable");
+        if (mCodecManager == null) {
+            mCodecManager = new DJICodecManager(this, surfaceTexture, i, i1);
+        }
+    }
+
+    @Override
+    public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surfaceTexture, int i, int i1) {
+        Log.e(TAG, "onSurfaceTextureSizeChanged");
+    }
+
+    @Override
+    public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surfaceTexture) {
+        Log.e(TAG,"onSurfaceTextureDestroyed");
+        if (mCodecManager != null) {
+            mCodecManager.cleanSurface();
+            mCodecManager = null;
+        }
+
+        return false;
+    }
+
+    @Override
+    public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surfaceTexture) {
+        processBitmap(binding.cameraPreview.getBitmap());
     }
 
     private class MyLocationListener implements LocationListener {
@@ -135,37 +192,20 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         }
     }
 
-//    private void decodeBytesToImage(){
-//        if(!isImgBytesReady)
-//            return;
-//
-//        Camera.Parameters parameters = mCamera.getParameters();
-//        int width = parameters.getPreviewSize().width;
-//        int height = parameters.getPreviewSize().height;
-//
-//        YuvImage yuv = new YuvImage(imgSet.imgBytes, parameters.getPreviewFormat(), width, height, null);
-////        YuvImage yuv = new YuvImage(imgBytes, parameters.getPreviewFormat(), width, height, null);
-//
-//        ByteArrayOutputStream out = new ByteArrayOutputStream();
-//        yuv.compressToJpeg(new Rect(0, 0, width, height), 50, out);
-//
-//        byte[] bts = out.toByteArray();
-//        final Bitmap bitmap = BitmapFactory.decodeByteArray(bts, 0, bts.length);
-//        int x =0;
-//
+    private void processBitmap(Bitmap bitmap){
+
 //        Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
 //        detect(bitmap, bitmap1);
-//        MainActivity.this.runOnUiThread(new Runnable() {
-//
-//            @Override
-//            public void run() {
-////                ((ImageView) findViewById(R.id.loopback)).setImageBitmap(bitmap1);
-//                binding.imageView2.setImageBitmap(bitmap1);
-//            }
-//        });
-////        binding.imageView2.setImageBitmap(bitmap1);
-//
-//    }
+
+        this.runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                binding.imageView2.setImageBitmap(bitmap);
+            }
+        });
+
+    }
 
 
     private String copyAssets() {
@@ -214,19 +254,65 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
     }
 
+    protected void onProductChange() {
+        initPreviewer();
+    }
+
+    @Override
+    public void onResume() {
+        Log.e(TAG, "onResume");
+        super.onResume();
+        initPreviewer();
+        onProductChange();
+
+        if(binding.cameraPreview == null) {
+            Log.e(TAG, "mVideoSurface is null");
+        }
+    }
+
+    private void initPreviewer() {
+
+        BaseProduct product = CameraApplication.getProductInstance();
+
+        if (product == null || !product.isConnected()) {
+            showToast(getString(R.string.disconnected));
+        } else {
+            if (binding.cameraPreview != null) {
+                binding.cameraPreview.setSurfaceTextureListener(this);
+            }
+            if (!product.getModel().equals(Model.UNKNOWN_AIRCRAFT)) {
+                VideoFeeder.getInstance().getPrimaryVideoFeed().addVideoDataListener(mReceivedVideoDataListener);
+            }
+        }
+    }
+
+    private void uninitPreviewer() {
+        Camera camera = CameraApplication.getCameraInstance();
+        if (camera != null){
+            // Reset the callback
+            VideoFeeder.getInstance().getPrimaryVideoFeed().addVideoDataListener(null);
+        }
+    }
+
+    private void showToast(final String toastMsg) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(), toastMsg, Toast.LENGTH_LONG).show();
+
+            }
+        });
+    }
+
     /**
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
     public native void createScanner(String assets);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
-    public native void setImage(Bitmap bitmap, double time);
-    public native void setLocation(double lat, double lng, double time);
-    public native void setOrientation(double roll, double pitch, double azimuth, double time);
+//    public native void setImage(Bitmap bitmap, double time);
+//    public native void setLocation(double lat, double lng, double time);
+//    public native void setOrientation(double roll, double pitch, double azimuth, double time);
 
-    @Override
-    public void onResume() {
-        super.onResume();
-    }
 
 }
