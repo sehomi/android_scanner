@@ -16,6 +16,8 @@ import dji.common.error.DJISDKError;
 import dji.sdk.base.BaseComponent;
 import dji.sdk.base.BaseProduct;
 import dji.sdk.camera.Camera;
+import dji.sdk.flightcontroller.FlightController;
+import dji.sdk.gimbal.Gimbal;
 import dji.sdk.products.Aircraft;
 import dji.sdk.products.HandHeld;
 import dji.sdk.sdkmanager.DJISDKInitEvent;
@@ -69,6 +71,33 @@ public class CameraApplication extends Application{
         }
 
         return camera;
+    }
+
+    public static synchronized FlightController getFlightControllerInstance() {
+
+        if (getProductInstance() == null) return null;
+
+        FlightController flightController = null;
+
+        if (getProductInstance() instanceof Aircraft){
+            flightController = ((Aircraft) getProductInstance()).getFlightController();
+
+        }
+
+        return flightController;
+    }
+
+    public static synchronized Gimbal getGimbalInstance() {
+
+        if (getProductInstance() == null) return null;
+
+        Gimbal gimbal = null;
+
+        if (getProductInstance() instanceof Aircraft){
+            gimbal = ((Aircraft) getProductInstance()).getGimbal();
+        }
+
+        return gimbal;
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.example.android_scanner;
 // TODO: adding descriptions and comments
 // TODO: manage string.xml
 // TODO: add navigation marker for activities
+// TODO: attitude frequency increase
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,6 +24,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.TextureView;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -41,11 +43,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Instant;
 
+import dji.common.flightcontroller.Attitude;
+import dji.common.flightcontroller.FlightControllerState;
+import dji.common.flightcontroller.LocationCoordinate3D;
+import dji.common.gimbal.GimbalState;
 import dji.common.product.Model;
 import dji.sdk.base.BaseProduct;
 import dji.sdk.camera.Camera;
 import dji.sdk.camera.VideoFeeder;
 import dji.sdk.codec.DJICodecManager;
+import dji.sdk.flightcontroller.FlightController;
+import dji.sdk.gimbal.Gimbal;
 
 public class AircraftActivity extends AppCompatActivity implements OnMapReadyCallback, TextureView.SurfaceTextureListener {
 
@@ -256,6 +264,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
     protected void onProductChange() {
         initPreviewer();
+        initState();
     }
 
     @Override
@@ -267,6 +276,101 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
         if(binding.cameraPreview == null) {
             Log.e(TAG, "mVideoSurface is null");
+        }
+    }
+
+    @Override
+    public void onPause() {
+        Log.e(TAG, "onPause");
+        uninitPreviewer();
+        super.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        Log.e(TAG, "onStop");
+        super.onStop();
+    }
+
+    public void onReturn(View view){
+        Log.e(TAG, "onReturn");
+        this.finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.e(TAG, "onDestroy");
+        uninitPreviewer();
+        super.onDestroy();
+    }
+
+    private void initState() {
+        FlightController flightController = CameraApplication.getFlightControllerInstance();
+        Gimbal gimbal = CameraApplication.getGimbalInstance();
+
+        if (flightController != null){
+
+            FlightControllerState.Callback fcallback = new FlightControllerState.Callback() {
+                @Override
+                public void onUpdate(@NonNull FlightControllerState flightControllerState) {
+//                    Log.i(TAG, "FlightController state is updated.");
+
+                    Attitude attitude = flightControllerState.getAttitude();
+
+                    double roll = attitude.roll;
+                    double pitch = attitude.pitch;
+                    double yaw = attitude.yaw;
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            binding.textView.setText("\nroll: "+String.valueOf(roll)+"\npitch: "+String.valueOf(pitch)+"\nyaw: "+String.valueOf(yaw));
+                        }
+                    });
+
+                    LocationCoordinate3D location = flightControllerState.getAircraftLocation();
+                    double lat = location.getLatitude();
+                    double lon = location.getLongitude();
+                    float alt = location.getAltitude();
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            binding.textView2.setText("Longitude: " + String.valueOf(lon) + "\nLatitude: " + String.valueOf(lat) + "\nAltitude: " + String.valueOf(alt));
+                        }
+                    });
+                }
+            };
+
+            flightController.setStateCallback(fcallback);
+        }
+        else {
+            Log.e(TAG, "FlightController is null.");
+        }
+
+        if (gimbal != null){
+            GimbalState.Callback gcallback = new GimbalState.Callback() {
+                @Override
+                public void onUpdate(@NonNull GimbalState gimbalState) {
+                    Log.i(TAG, "GimbalState is updated.");
+
+                    double groll = gimbalState.getAttitudeInDegrees().getRoll();
+                    double gpitch = gimbalState.getAttitudeInDegrees().getPitch();
+                    double gyaw = gimbalState.getAttitudeInDegrees().getYaw();
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            binding.textView3.setText("\ngimbal roll: "+String.valueOf(groll)+"\ngimbal pitch: "+String.valueOf(gpitch)+"\ngimbal yaw: "+String.valueOf(gyaw));
+                        }
+                    });
+                }
+            };
+
+            gimbal.setStateCallback(gcallback);
+        }
+        else{
+            Log.e(TAG, "Gimbal is null.");
         }
     }
 
