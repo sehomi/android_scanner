@@ -46,6 +46,7 @@
         android:layout_width="166dp"
         android:layout_height="111dp"
         android:text="TextView"
+        android:textColor="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -55,6 +56,7 @@
         android:layout_width="114dp"
         android:layout_height="61dp"
         android:text="TextView"
+        android:textColor="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@+id/map"
         app:layout_constraintTop_toTopOf="parent" />
@@ -64,6 +66,7 @@
         android:layout_width="275dp"
         android:layout_height="76dp"
         android:text="TextView"
+        android:textColor="#FFFFFF"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/map" />

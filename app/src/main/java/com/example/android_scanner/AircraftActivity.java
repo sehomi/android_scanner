@@ -66,6 +66,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     private ActivityAircraftBinding binding;
     private Bitmap srcBitmap;
     private Bitmap dstBitmap;
+    private Boolean isProcessing = false;
 
     LocationManager locationManager;
 
@@ -73,6 +74,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     protected VideoFeeder.VideoDataListener mReceivedVideoDataListener = null;
     protected DJICodecManager mCodecManager = null;
     protected DJICodecManager.OnGetBitmapListener bitmapListener = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,7 +162,20 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
     @Override
     public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surfaceTexture) {
-        processBitmap(binding.cameraPreview.getBitmap());
+
+        if (!isProcessing) {
+            Thread thread = new Thread() {
+                @Override
+                public void run() {
+                    isProcessing = true;
+                    processBitmap(binding.cameraPreview.getBitmap());
+                    isProcessing = false;
+                }
+            };
+
+            thread.start();
+        }
+
     }
 
     private class MyLocationListener implements LocationListener {
@@ -181,7 +196,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
             double lat = loc.getLatitude();
             double lng = loc.getLongitude();
 
-            binding.textView2.setText(s);
+//            binding.textView2.setText(s);
         }
 
         @Override
@@ -202,14 +217,14 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
     private void processBitmap(Bitmap bitmap){
 
-//        Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
-//        detect(bitmap, bitmap1);
+        Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
+        detect(bitmap, bitmap1);
 
         this.runOnUiThread(new Runnable() {
 
             @Override
             public void run() {
-                binding.imageView2.setImageBitmap(bitmap);
+                binding.imageView2.setImageBitmap(bitmap1);
             }
         });
 
@@ -255,11 +270,11 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
-        LatLng sydney = new LatLng(-33.852, 151.211);
-        googleMap.addMarker(new MarkerOptions()
-                .position(sydney)
-                .title("Marker in Sydney"));
-
+//        LatLng sydney = new LatLng(-33.852, 151.211);
+//        googleMap.addMarker(new MarkerOptions()
+//                .position(sydney)
+//                .title("Marker in Sydney"));
+        googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
     }
 
     protected void onProductChange() {
