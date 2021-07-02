@@ -158,8 +158,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         srcBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.mountain);
         dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
 
-        String assetsDir = copyAssets();
-        createScanner(assetsDir);
+        createScanner(getIntent().getStringExtra("Assets"));
 
         // Example of a call to a native method
         ImageView iv = binding.imageView2;
@@ -205,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void run() {
                 try {
                     while (true) {
-                        sleep(500);
+                        sleep(33);
                         decodeBytesToImage();
                     }
                 } catch (InterruptedException e) {
@@ -338,6 +337,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         int x =0;
 
         Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
+        Log.v(TAG, " before before detect");
         detect(bitmap, bitmap1);
         MainActivity.this.runOnUiThread(new Runnable() {
 
@@ -367,43 +367,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         blur(srcBitmap, dstBitmap, sigma);
         binding.imageView2.setImageBitmap(dstBitmap);
-    }
-
-    private String copyAssets() {
-        AssetManager assetManager = getAssets();
-        String[] files = null;
-        try {
-            files = assetManager.list("");
-        } catch (IOException e) {
-            Log.e("tag", "Failed to get asset file list.", e);
-        }
-        for(String filename : files) {
-            InputStream in = null;
-            OutputStream out = null;
-            try {
-                in = assetManager.open(filename);
-                File outFile = new File(getExternalFilesDir(null), filename);
-                out = new FileOutputStream(outFile);
-                copyFile(in, out);
-                in.close();
-                in = null;
-                out.flush();
-                out.close();
-                out = null;
-            } catch(IOException e) {
-                Log.e("tag", "Failed to copy asset file: " + filename, e);
-            }
-        }
-
-        return getExternalFilesDir(null).getAbsolutePath();
-    }
-
-    private void copyFile(InputStream in, OutputStream out) throws IOException {
-        byte[] buffer = new byte[1024];
-        int read;
-        while((read = in.read(buffer)) != -1){
-            out.write(buffer, 0, read);
-        }
     }
 
     @Override

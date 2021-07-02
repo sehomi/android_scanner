@@ -6,7 +6,9 @@
 //#include <opencv2/imgproc.hpp>
 
 Scanner::Scanner(std::string assetsDir) {
-    detector = new Detector(assetsDir, DetectionMethod::MN_SSD, 0.4, 0.4);
+//    detector = new Detector(assetsDir, DetectionMethod::MN_SSD, 0.4, 0.4);
+//    detector = new Detector(assetsDir, DetectionMethod::YOLO_V3, 0.1, 0.1);
+    detector = new Detector(assetsDir, DetectionMethod::YOLO_TINY, 0.4, 0.4);
     return;
 }
 

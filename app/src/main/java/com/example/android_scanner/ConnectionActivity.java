@@ -7,12 +7,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,6 +22,11 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -42,6 +49,8 @@ public class ConnectionActivity extends Activity {
     private TextView mVersionTv;
     private Button mBtnOpen;
     private Button mBtnOpenPhone;
+    private ProgressBar pbar;
+    private TextView fileTextView;
 
     private static final String[] REQUIRED_PERMISSION_LIST = new String[]{
             Manifest.permission.VIBRATE,
@@ -62,6 +71,7 @@ public class ConnectionActivity extends Activity {
     private List<String> missingPermission = new ArrayList<>();
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
     private static final int REQUEST_PERMISSION_CODE = 12345;
+    private String assetsDir;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +79,54 @@ public class ConnectionActivity extends Activity {
         checkAndRequestPermissions();
         setContentView(R.layout.activity_connection);
         initUI();
+
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        pbar.setProgress(0);
+                        pbar.setVisibility(View.VISIBLE);
+                        fileTextView.setText("Starting to copy files ...");
+                        fileTextView.setVisibility(View.VISIBLE);
+                    }
+                });
+
+                try {
+                    sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                assetsDir = copyAssets();
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        pbar.setProgress(100);
+                        fileTextView.setText("Finished Copying Files.");
+                    }
+                });
+
+                try {
+                    sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        pbar.setVisibility(View.INVISIBLE);
+                        fileTextView.setVisibility(View.INVISIBLE);
+                        mBtnOpenPhone.setEnabled(true);
+                    }
+                });
+            }
+        };
+        thread.start();
 
         // Register the broadcast receiver for receiving the device connection's changes.
         IntentFilter filter = new IntentFilter();
@@ -227,6 +285,13 @@ public class ConnectionActivity extends Activity {
         mBtnOpen.setEnabled(false);
 
         mBtnOpenPhone = (Button) findViewById(R.id.btn_open_phone);
+        mBtnOpenPhone.setEnabled(false);
+
+        pbar = (ProgressBar) findViewById(R.id.progressBar2);
+        fileTextView = (TextView) findViewById(R.id.textView4);
+
+        pbar.setVisibility(View.INVISIBLE);
+        fileTextView.setVisibility(View.INVISIBLE);
     }
 
     protected BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -274,6 +339,7 @@ public class ConnectionActivity extends Activity {
 
             case R.id.btn_open: {
                 Intent intent = new Intent(this, AircraftActivity.class);
+                intent.putExtra("Assets", assetsDir);
                 startActivity(intent);
                 break;
             }
@@ -287,6 +353,7 @@ public class ConnectionActivity extends Activity {
 
             case R.id.btn_open_phone: {
                 Intent intent = new Intent(this, MainActivity.class);
+                intent.putExtra("Assets", assetsDir);
                 startActivity(intent);
                 break;
             }
@@ -305,4 +372,65 @@ public class ConnectionActivity extends Activity {
         });
     }
 
+    private String copyAssets() {
+        AssetManager assetManager = getAssets();
+        String[] files = null;
+        try {
+            files = assetManager.list("");
+        } catch (IOException e) {
+            // TODO: handle assets copying failure
+            Log.e("tag", "Failed to get asset file list.", e);
+        }
+
+        int count = 0;
+        for(String filename : files) {
+            InputStream in = null;
+            OutputStream out = null;
+            try {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        fileTextView.setText("Copying file: " + filename);
+                    }
+                });
+
+                File outFile = new File(getExternalFilesDir(null), filename);
+
+                if (!outFile.exists()) {
+                    in = assetManager.open(filename);
+                    out = new FileOutputStream(outFile);
+                    copyFile(in, out);
+                    in.close();
+                    in = null;
+                    out.flush();
+                    out.close();
+                    out = null;
+                }
+
+                int percentage = (int)( ((float)count)/ files.length ) * 100;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        pbar.setProgress(percentage);
+                    }
+                });
+
+            } catch(IOException e) {
+                // TODO: handle assets copying failure
+                Log.e("tag", "Failed to copy asset file: " + filename, e);
+            }
+
+            count += 1;
+        }
+
+        return getExternalFilesDir(null).getAbsolutePath();
+    }
+
+    private void copyFile(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[1024];
+        int read;
+        while((read = in.read(buffer)) != -1){
+            out.write(buffer, 0, read);
+        }
+    }
 }

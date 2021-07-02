@@ -1,5 +1,6 @@
 
 #include "detector.h"
+#include <android/log.h>
 
 Detector::Detector(std::string assetsDir, DetectionMethod dm, float conf, float nms)
 {
@@ -8,21 +9,21 @@ Detector::Detector(std::string assetsDir, DetectionMethod dm, float conf, float 
 
     if (dm == DetectionMethod::YOLO_V3)
     {
-        std::string model = "../../YOLOV3/cfg/yolo_v3.cfg";
-        std::string config = "../../YOLOV3/weight/yolov3.weights";
+        std::string model = assetsDir + "/yolo_v3.cfg";
+        std::string config = assetsDir + "/yolov3.weights";
 
         this->net = cv::dnn::readNetFromDarknet(model, config);
         this->net.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
-        this->net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+//        this->net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
     }
     else if (dm == DetectionMethod::YOLO_TINY)
     {
-        std::string model = "../../YOLOV3/cfg/yolov3-tiny.cfg";
-        std::string config = "../../YOLOV3/weight/yolov3-tiny.weights";
+        std::string model = assetsDir + "/yolov3-tiny.cfg";
+        std::string config = assetsDir + "/yolov3-tiny.weights";
 
         this->net = cv::dnn::readNetFromDarknet(model, config);
         this->net.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
-        this->net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+//        this->net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
     }
     else if (dm == DetectionMethod::MN_SSD)
     {
@@ -46,7 +47,7 @@ void Detector::detect(cv::Mat &frame, std::vector<cv::Rect> &bboxes)
         cv::dnn::blobFromImage(frame, blob, 1/255.0, cv::Size(416, 416), cv::Scalar(0,0,0), true, false);
         this->net.setInput(blob);
         std::vector<cv::Mat> outs;
-        this->net.forward(outs);
+        this->net.forward(outs, getOutputsNames(net));
         yolov3PostProcess(frame, outs, bboxes);
     }
     else if (this->detectionMethod == MN_SSD)
@@ -74,6 +75,7 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
             double cnf;
 
             cv::minMaxLoc(scores, 0, &cnf, 0, &classIdPoint);
+            __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", "  The Detections Number: %f, id: %d", cnf, classIdPoint.x);
             if (cnf > this->confidence && classIdPoint.x == 0)
             {
                 int centerX = (int)(data[0] * frame.cols);
@@ -84,19 +86,19 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
                 int top = centerY - height / 2;
 
                 confidences.push_back((float)confidence);
-                bboxes.push_back(cv::Rect(left, top, width, height));
+                boxes.push_back(cv::Rect(left, top, width, height));
             }
         }
     }
 
-    // std::vector<int> indices;
-    // cv::dnn::NMSBoxes(boxes, confidences, this->confidence, this->nmsThreshold, indices);
-    // for (size_t i = 0; i < indices.size(); ++i)
-    // {
-    // 	int idx = indices[i];
-    // 	cv::Rect box = boxes[idx];
-    // 	bboxes.push_back(box);
-    // }
+     std::vector<int> indices;
+     cv::dnn::NMSBoxes(boxes, confidences, this->confidence, this->nmsThreshold, indices);
+     for (size_t i = 0; i < indices.size(); ++i)
+     {
+     	int idx = indices[i];
+     	cv::Rect box = boxes[idx];
+     	bboxes.push_back(box);
+     }
 }
 
 void Detector::ssdPostProcess(cv::Mat& frame, cv::Mat &outs, std::vector<cv::Rect> &bboxes)
@@ -124,11 +126,30 @@ void Detector::ssdPostProcess(cv::Mat& frame, cv::Mat &outs, std::vector<cv::Rec
     }
 }
 
+std::vector<cv::String> Detector::getOutputsNames(const cv::dnn::Net& net)
+{
+    static std::vector<cv::String> names;
+    if (names.empty())
+    {
+        //Get the indices of the output layers, i.e. the layers with unconnected outputs
+        std::vector<int> outLayers = net.getUnconnectedOutLayers();
+
+        //get the names of all the layers in the network
+        std::vector<cv::String> layersNames = net.getLayerNames();
+
+        // Get the names of the output layers in names
+        names.resize(outLayers.size());
+        for (size_t i = 0; i < outLayers.size(); ++i)
+            names[i] = layersNames[outLayers[i] - 1];
+    }
+    return names;
+}
+
 void Detector::drawDetections(cv::Mat &dst, std::vector<cv::Rect> &bboxs){
 
     for(unsigned i=0; i<bboxs.size(); i++)
     {
-        rectangle(dst, bboxs[i], cv::Scalar(0,0,255), 2, 1);
+        rectangle(dst, bboxs[i], cv::Scalar(0,0,255), 3, 1);
     }
 
 }
