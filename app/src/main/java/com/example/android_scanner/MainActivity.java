@@ -231,7 +231,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void run() {
                 try {
                     while (true) {
-                        sleep(500);
+                        sleep(50);
                         decodeBytesToImage();
                     }
                 } catch (InterruptedException e) {
@@ -241,6 +241,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         };
 
         thread.start();
+
+        Thread scan_thread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    while (true) {
+                        sleep(500);
+                        doScan();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+//        scan_thread.start();
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -274,6 +290,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mHandler = new Handler(Looper.getMainLooper());
     }
 
+    private void doScan()
+    {
+        scan();
+    }
+
     private class MyLocationListener implements LocationListener {
 
         @Override
@@ -292,8 +313,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             double lat = loc.getLatitude();
             double lng = loc.getLongitude();
-            setLocation(lat, lng, loc_time);
-
+            double alt = loc.getAltitude();
+            setLocation(lat, lng, alt, loc_time);
+            // TODO: Check if altitude in measured ASL or AGL
             binding.textView2.setText(s);
         }
 
@@ -362,10 +384,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         byte[] bts = out.toByteArray();
         final Bitmap bitmap = BitmapFactory.decodeByteArray(bts, 0, bts.length);
-        int x =0;
-
+//        int x =0;
+        setImage(bitmap, imgSet.image_time);
         Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
         detect(bitmap, bitmap1);
+//        double
+//        scan(bitmap, imgSet.image_time)
+
         MainActivity.this.runOnUiThread(new Runnable() {
 
             @Override
@@ -447,12 +472,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      * which is packaged with this application.
      */
     public native String stringFromJNI();
-    public native void createScanner(String assets);
+    public native void createScanner(String assets);//, float f, float cx, float cy, float res);
     public native void flip(Bitmap bitmapIn, Bitmap bitmapOut);
     public native void blur(Bitmap bitmapIn, Bitmap bitmapOut, float sigma);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
+    public native void scan();
     public native void setImage(Bitmap bitmap, double time);
-    public native void setLocation(double lat, double lng, double time);
+    public native void setLocation(double lat, double lng, double alt, double time);
     public native void setOrientation(double roll, double pitch, double azimuth, double time);
 
     @Override
@@ -581,7 +607,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // If there is enough permission, we will start the registration
         if (missingPermission.isEmpty()) {
             startSDKRegistration();
-        } else {
+//        } else {
             showToast("Missing permissions!!!");
         }
     }

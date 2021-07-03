@@ -1,3 +1,6 @@
+#ifndef ANDROID_SCANNER_LOGGER_H
+#define ANDROID_SCANNER_LOGGER_H
+
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -10,22 +13,28 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include <vector>
 #include "time.h"
+#include <android/log.h>
 
 using namespace cv;
 using namespace std;
 
-struct image
+#define PI 3.14159265
+
+struct Image
 {
     Mat image = Mat::zeros(Size(480, 640),CV_8UC1);
     float time = 0;
 } ;
-struct location
+
+struct Location
 {
     double lat = 0.0;
     double lng = 0.0;
+    double alt = 0.0;
     double time = 0;
 } ;
-struct orientation
+
+struct Orientation
 {
     double roll = 0.0;
     double pitch = 0.0;
@@ -33,34 +42,53 @@ struct orientation
     double time = 0;
 } ;
 
+struct ImageSet
+{
+    Mat image;
+    double lat;
+    double lng;
+    double alt;
+    double roll;
+    double pitch;
+    double azimuth;
+    double time;
+};
+
+struct ImuSet
+{
+    double lat;
+    double lng;
+    double alt;
+    double roll;
+    double pitch;
+    double azimuth;
+    double time;
+};
+
 class Logger {
 
-    image img;
-    location loc;
-    orientation orn;
+    Location loc, refLoc;
+    Orientation orn;
+    ImageSet imgSet;
+    ImuSet imuSet;
 
-    vector<location> locationBuffer;
-    vector<orientation> orientationBuffer;
+    vector<Location> locationBuffer;
+    vector<Orientation> orientationBuffer;
     int locBufLen = 5, ornBufLen = 40;
 
-    void bufferLocation(location);
-    void bufferOrientation(orientation);
-    void setImageSet(image);
+    void bufferLocation(Location);
+    void bufferOrientation(Orientation);
+//    void setImageSet(image);
 
 public:
 
-    void setImage(Mat, float);
-    void setLocation(double, double, float );
-    void setOrientation(double, double, double, float);
-    struct imageSet
-    {
-        Mat image;
-        double lat;
-        double lng;
-        float roll;
-        float pitch;
-        float azimuth;
-        float time;
-    } imgSet;
+    Image img;
 
+    void setImage(Mat, float);
+    void setLocation(double, double, double, float);
+    void setOrientation(double, double, double, float);
+    ImageSet getImageSet();
+    ImuSet getImuSet();
 };
+
+#endif //ANDROID_SCANNER_SCANNER_H

@@ -6,9 +6,11 @@
 #include <opencv2/opencv.hpp>
 #include "scanner.h"
 #include "Logger.h"
+#include "Eigen/Core"
+#include <Eigen/Geometry>
 
 Scanner *sc;
-Logger *lg;
+//Logger *lg;
 
 void bitmapToMat(JNIEnv *env, jobject bitmap, Mat& dst, jboolean needUnPremultiplyAlpha)
 {
@@ -118,8 +120,9 @@ Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobjec
     const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
     std::string assets_str = std::string(convertedValue);
 
-    sc = new Scanner(assets_str);
-    lg = new Logger();
+    sc = new Scanner(assets_str, 1.0, 1.0, 1.0, 1.0, 300);
+//    sc = new Scanner(assets_str);
+//    lg = new Logger();
     return;
 }
 
@@ -157,6 +160,30 @@ Java_com_example_android_1scanner_MainActivity_detect(JNIEnv* env, jobject p_thi
 
     cvtColor(dst, dst, COLOR_BGR2RGB);
     matToBitmap(env, dst, bitmapOut, false);
+
+//    return bboxes;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_MainActivity_scan(JNIEnv* env, jobject p_this) {
+//    Mat src;
+//    bitmapToMat(env, bitmapIn, src, false);
+//    cvtColor(src, src, COLOR_RGBA2BGR);
+
+    sc->scan();
+
+//    std::vector<cv::Rect> bboxes;
+//    Mat dst = src.clone();
+
+//    sc->detector->detect(src, bboxes);
+//    sc->scan(bboxes)
+
+//    sc->detector->drawDetections(dst, bboxes);
+
+//    cvtColor(dst, dst, COLOR_BGR2RGB);
+//    matToBitmap(env, dst, bitmapOut, false);
+
+//    return bboxes;
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -165,18 +192,20 @@ Java_com_example_android_1scanner_MainActivity_setImage(JNIEnv* env, jobject p_t
     Mat img;
     bitmapToMat(env, bitmap, img, false);
 
-    lg->setImage(img, time);
+    sc->logger->setImage(img, time);
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_setLocation(JNIEnv* env, jobject p_this, jdouble lat, jdouble lng, jdouble time)
+Java_com_example_android_1scanner_MainActivity_setLocation(JNIEnv* env, jobject p_this, jdouble lat, jdouble alt, jdouble lng, jdouble time)
 {
-    lg->setLocation(lat, lng, time);
+    sc->logger->setLocation(lat, lng, alt, time);
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time)
 {
-    lg->setOrientation(roll, pitch, azimuth, time);
+    std::vector<Eigen::VectorXd> poses;
+    sc->logger->setOrientation(roll, pitch, azimuth, time);
+    sc->calcFov(poses);
 }
 
