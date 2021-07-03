@@ -9,12 +9,12 @@ Detector::Detector(std::string assetsDir, DetectionMethod dm, float conf, float 
 
     if (dm == DetectionMethod::YOLO_V3)
     {
-        std::string model = assetsDir + "/yolo_v3.cfg";
+        std::string model = assetsDir + "/yolov3.cfg";
         std::string config = assetsDir + "/yolov3.weights";
 
         this->net = cv::dnn::readNetFromDarknet(model, config);
         this->net.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
-//        this->net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+        this->net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
     }
     else if (dm == DetectionMethod::YOLO_TINY)
     {
@@ -23,7 +23,7 @@ Detector::Detector(std::string assetsDir, DetectionMethod dm, float conf, float 
 
         this->net = cv::dnn::readNetFromDarknet(model, config);
         this->net.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
-//        this->net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+        this->net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
     }
     else if (dm == DetectionMethod::MN_SSD)
     {
@@ -75,7 +75,7 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
             double cnf;
 
             cv::minMaxLoc(scores, 0, &cnf, 0, &classIdPoint);
-            __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", "  The Detections Number: %f, id: %d", cnf, classIdPoint.x);
+//            __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", "  Confidence: %f, id: %d", cnf, classIdPoint.x);
             if (cnf > this->confidence && classIdPoint.x == 0)
             {
                 int centerX = (int)(data[0] * frame.cols);
@@ -86,19 +86,26 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
                 int top = centerY - height / 2;
 
                 confidences.push_back((float)confidence);
-                boxes.push_back(cv::Rect(left, top, width, height));
+//                boxes.push_back(cv::Rect(left, top, width, height));
+                bboxes.push_back(cv::Rect(left, top, width, height));
             }
         }
     }
 
-     std::vector<int> indices;
-     cv::dnn::NMSBoxes(boxes, confidences, this->confidence, this->nmsThreshold, indices);
-     for (size_t i = 0; i < indices.size(); ++i)
-     {
-     	int idx = indices[i];
-     	cv::Rect box = boxes[idx];
-     	bboxes.push_back(box);
-     }
+    // TODO: Fixing NMS
+//    std::vector<int> indices;
+//     cv::dnn::NMSBoxes(boxes, confidences, this->confidence, this->nmsThreshold, indices);
+//     for (size_t i = 0; i < indices.size(); ++i)
+//     {
+//     	int idx = indices[i];
+//     	cv::Rect box = boxes[idx];
+//     	bboxes.push_back(box);
+////         __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", "  Adding NMS boxes");
+//
+//     }
+
+//    __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", "  Detector Boxes: %d, NMS Boxes: %d", boxes.size(), bboxes.size());
+
 }
 
 void Detector::ssdPostProcess(cv::Mat& frame, cv::Mat &outs, std::vector<cv::Rect> &bboxes)

@@ -19,7 +19,7 @@ public:
     int x;
     Detector* detector;
 
-    Scanner(std::string);
+    Scanner(std::string, DetectionMethod);
     void myFlip(Mat src);
     void myBlur(Mat src, float sigma);
 };

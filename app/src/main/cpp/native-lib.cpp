@@ -115,13 +115,13 @@ Java_com_example_android_1scanner_MainActivity_stringFromJNI(
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets) {
+Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets, jint method) {
 
     jboolean isCopy;
     const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
     std::string assets_str = std::string(convertedValue);
 
-    sc = new Scanner(assets_str);
+    sc = new Scanner(assets_str, (DetectionMethod)method);
     lg = new Logger();
     return;
 }
@@ -155,9 +155,7 @@ Java_com_example_android_1scanner_MainActivity_detect(JNIEnv* env, jobject p_thi
     std::vector<cv::Rect> bboxes;
     Mat dst = src.clone();
 
-    __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", " Before detection.");
     sc->detector->detect(src, bboxes);
-    __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", " The Detections Number: %d", bboxes.size());
     sc->detector->drawDetections(dst, bboxes);
 
     cvtColor(dst, dst, COLOR_BGR2RGB);
@@ -187,13 +185,12 @@ Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobje
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jobject thiz,
-                                                                 jstring assets) {
+Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jobject thiz, jstring assets, jint method) {
     jboolean isCopy;
     const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
     std::string assets_str = std::string(convertedValue);
 
-    sc = new Scanner(assets_str);
+    sc = new Scanner(assets_str, (DetectionMethod)method);
     lg = new Logger();
     return;
 }extern "C"
@@ -207,9 +204,7 @@ Java_com_example_android_1scanner_AircraftActivity_detect(JNIEnv *env, jobject t
     std::vector<cv::Rect> bboxes;
     Mat dst = src.clone();
 
-    __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", " Before detection.");
     sc->detector->detect(src, bboxes);
-    __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", " The Detections Number: %d", bboxes.size());
     sc->detector->drawDetections(dst, bboxes);
 
     cvtColor(dst, dst, COLOR_BGR2RGB);

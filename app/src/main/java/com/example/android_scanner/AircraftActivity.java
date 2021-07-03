@@ -30,10 +30,14 @@ import android.widget.Toast;
 
 import com.codemonkeylabs.fpslibrary.TinyDancer;
 import com.example.android_scanner.databinding.ActivityAircraftBinding;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.File;
@@ -45,6 +49,7 @@ import java.time.Instant;
 
 import dji.common.flightcontroller.Attitude;
 import dji.common.flightcontroller.FlightControllerState;
+import dji.common.flightcontroller.GPSSignalLevel;
 import dji.common.flightcontroller.LocationCoordinate3D;
 import dji.common.gimbal.GimbalState;
 import dji.common.product.Model;
@@ -64,8 +69,11 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     private ActivityAircraftBinding binding;
+    private GoogleMap googleMap = null;
     private Bitmap srcBitmap;
     private Bitmap dstBitmap;
+    private Marker aircraft = null;
+    private Marker user = null;
     private Boolean isProcessing = false;
 
     LocationManager locationManager;
@@ -96,7 +104,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         srcBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.mountain);
         dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
 
-        createScanner(getIntent().getStringExtra("Assets"));
+        createScanner(getIntent().getStringExtra("Assets"), getIntent().getIntExtra("Algorithm", 0));
 
         // Example of a call to a native method
         ImageView iv = binding.imageView2;
@@ -194,7 +202,22 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
             double lat = loc.getLatitude();
             double lng = loc.getLongitude();
 
-//            binding.textView2.setText(s);
+            if (googleMap != null) {
+                if (user == null) {
+                    LatLng user_pos = new LatLng(lat, lng);
+                    user = googleMap.addMarker(new MarkerOptions()
+                            .position(user_pos)
+                            .title("User Position"));
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(user_pos, 18));
+                }
+                else
+                {
+                    LatLng user_pos = new LatLng(lat, lng);
+                    user.setPosition(user_pos);
+                }
+            }
+
+            binding.textView6.setText(s);
         }
 
         @Override
@@ -230,11 +253,8 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
 
     @Override
-    public void onMapReady(@NonNull GoogleMap googleMap) {
-//        LatLng sydney = new LatLng(-33.852, 151.211);
-//        googleMap.addMarker(new MarkerOptions()
-//                .position(sydney)
-//                .title("Marker in Sydney"));
+    public void onMapReady(@NonNull GoogleMap gMap) {
+        googleMap = gMap;
         googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
     }
 
@@ -309,12 +329,45 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     double lon = location.getLongitude();
                     float alt = location.getAltitude();
 
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            binding.textView2.setText("Longitude: " + String.valueOf(lon) + "\nLatitude: " + String.valueOf(lat) + "\nAltitude: " + String.valueOf(alt));
+                    GPSSignalLevel gpsLevel = flightControllerState.getGPSSignalLevel();
+
+                    if (gpsLevel == GPSSignalLevel.LEVEL_3 || gpsLevel == GPSSignalLevel.LEVEL_4 || gpsLevel == GPSSignalLevel.LEVEL_5){
+                        if (googleMap != null) {
+                            if (aircraft == null) {
+                                LatLng ac_pos = new LatLng(lat, lon);
+                                aircraft = googleMap.addMarker(new MarkerOptions()
+                                                .position(ac_pos)
+                                                .anchor(0.5f,0.5f)
+                                                .title("Aircraft Position")
+                                                .rotation((float) yaw)
+                                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.aircraft)));
+                                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(ac_pos, 18));
+                            }
+                            else
+                            {
+                                LatLng ac_pos = new LatLng(lat, lon);
+                                aircraft.setPosition(ac_pos);
+                                aircraft.setRotation((float) yaw);
+                            }
                         }
-                    });
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                binding.textView2.setText("Longitude: " + String.valueOf(lon) + "\nLatitude: " + String.valueOf(lat) + "\nAltitude: " + String.valueOf(alt));
+                            }
+                        });
+                    }
+                    else
+                    {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                binding.textView2.setText("GPS Weak or Unavailabe.");
+                            }
+                        });
+                    }
+
                 }
             };
 
@@ -388,7 +441,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    public native void createScanner(String assets);
+    public native void createScanner(String assets, int method);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
 //    public native void setImage(Bitmap bitmap, double time);
 //    public native void setLocation(double lat, double lng, double time);

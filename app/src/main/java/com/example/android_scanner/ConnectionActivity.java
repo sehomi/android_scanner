@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,6 +52,7 @@ public class ConnectionActivity extends Activity {
     private Button mBtnOpenPhone;
     private ProgressBar pbar;
     private TextView fileTextView;
+    private RadioGroup rgroup;
 
     private static final String[] REQUIRED_PERMISSION_LIST = new String[]{
             Manifest.permission.VIBRATE,
@@ -292,6 +294,8 @@ public class ConnectionActivity extends Activity {
 
         pbar.setVisibility(View.INVISIBLE);
         fileTextView.setVisibility(View.INVISIBLE);
+
+        rgroup = (RadioGroup) findViewById(R.id.radioGroup2);
     }
 
     protected BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -340,6 +344,19 @@ public class ConnectionActivity extends Activity {
             case R.id.btn_open: {
                 Intent intent = new Intent(this, AircraftActivity.class);
                 intent.putExtra("Assets", assetsDir);
+
+                int algorithm = 0;
+                if (rgroup.getCheckedRadioButtonId() == R.id.yolov3Button){
+                    algorithm = 0;
+                }
+                else if (rgroup.getCheckedRadioButtonId() == R.id.yolov3TinyButton){
+                    algorithm = 1;
+                }
+                else if (rgroup.getCheckedRadioButtonId() == R.id.mnSsdButton){
+                    algorithm = 2;
+                }
+                intent.putExtra("Algorithm", algorithm);
+
                 startActivity(intent);
                 break;
             }
@@ -354,6 +371,19 @@ public class ConnectionActivity extends Activity {
             case R.id.btn_open_phone: {
                 Intent intent = new Intent(this, MainActivity.class);
                 intent.putExtra("Assets", assetsDir);
+
+                int algorithm = 0;
+                if (rgroup.getCheckedRadioButtonId() == R.id.yolov3Button){
+                    algorithm = 0;
+                }
+                else if (rgroup.getCheckedRadioButtonId() == R.id.yolov3TinyButton){
+                    algorithm = 1;
+                }
+                else if (rgroup.getCheckedRadioButtonId() == R.id.mnSsdButton){
+                    algorithm = 2;
+                }
+                intent.putExtra("Algorithm", algorithm);
+
                 startActivity(intent);
                 break;
             }

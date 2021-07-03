@@ -158,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         srcBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.mountain);
         dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
 
-        createScanner(getIntent().getStringExtra("Assets"));
+        createScanner(getIntent().getStringExtra("Assets"), getIntent().getIntExtra("Algorithm", 0));
 
         // Example of a call to a native method
         ImageView iv = binding.imageView2;
@@ -383,7 +383,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      * which is packaged with this application.
      */
     public native String stringFromJNI();
-    public native void createScanner(String assets);
+    public native void createScanner(String assets, int method);
     public native void flip(Bitmap bitmapIn, Bitmap bitmapOut);
     public native void blur(Bitmap bitmapIn, Bitmap bitmapOut, float sigma);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
