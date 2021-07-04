@@ -4,7 +4,8 @@
 
 #include "scanner.h"
 //#include <opencv2/imgproc.hpp>
-//
+
+
 Scanner::Scanner(std::string assetsDir, DetectionMethod dm, float f_, float cx_, float cy_, float res_, int maxdist)
 {
     f = f_;
@@ -98,7 +99,7 @@ void Scanner::camToMap(std::vector<Rect> &objects, const ImageSet& is, std::vect
     }
 
     double x, y;
-    std::vector<double> loc = gpsToUtm(is.lat, is.lng, x, y);
+    gpsToUtm(is.lat, is.lng, x, y);
 
     for(int kk=0; kk<objects_vs.size(); kk++)
     {
@@ -135,11 +136,14 @@ void Scanner::camToInertiaMat(double phi, double theta, double psi, double roll,
     output = dcm_body_to_inertia * dcm_cam_to_body;
 }
 
-std::vector<double> Scanner::gpsToUtm(double lat, double lng, double &x, double &y)
+void Scanner::gpsToUtm(double lat, double lng, double &x, double &y)
 {
     int zone;
     bool northp;
-    GeographicLib::UTMUPS::Forward(lat, lng, zone, northp, x, y);
+//    GeographicLib::UTMUPS::Forward(lat, lng, zone, northp, x, y);
+//GeographicLib::UTMUPS::Forward((GeographicLib::UTMUPS::real) lat, (GeographicLib::UTMUPS::real) lng, zone, northp, x, y);
+    LatLonToUTMXY(lat, lng, zone, x, y);
+
 }
 
 Eigen::Quaternion<double> Scanner::eulerToQuat(double roll, double pitch, double azimuth)
@@ -261,7 +265,7 @@ void Scanner::calcFov(std::vector<Eigen::VectorXd> &poses)
     w = logger->img.image.size().width;
     h = logger->img.image.size().height;
     q = eulerToQuat(imuSt.roll, imuSt.pitch, imuSt.azimuth);
-    std::vector<double> loc = gpsToUtm(imuSt.lat, imuSt.lng, x, y);
+    gpsToUtm(imuSt.lat, imuSt.lng, x, y);
     pos << y, -x, imuSt.alt;
 
     camToInertiaMat(90+beta, 0, 90, imuSt.roll, imuSt.pitch, imuSt.azimuth, camToInertia);

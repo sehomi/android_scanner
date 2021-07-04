@@ -8,6 +8,10 @@ cmake_minimum_required(VERSION 3.10.2)
 set(OpenCV_STATIC ON)
 set(OpenCV_DIR ${CMAKE_CURRENT_LIST_DIR}/../OpenCV-android-sdk/sdk/native/jni)
 
+#set(GeographicLib_STATIC ON)
+#set(OpenCV_DIR ${CMAKE_CURRENT_LIST_DIR}/../GeographicLib/cmake)
+
+
 find_package(OpenCV REQUIRED)
 #find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 #find_package (GeographicLib REQUIRED)
@@ -18,7 +22,7 @@ project("scanner")
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../eigen-master)
-include_directories(D:/android_scanner/GeographicLib/include)
+#include_directories(D:/android_scanner/GeographicLib/include)
 
 add_library( # Sets the name of the library.
         scanner-lib
@@ -29,7 +33,8 @@ add_library( # Sets the name of the library.
         # Provides a relative path to your source file(s).
         ${CMAKE_CURRENT_LIST_DIR}/src/scanner.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/detector.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/Logger.cpp)
+        ${CMAKE_CURRENT_LIST_DIR}/src/Logger.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/UTM.cpp)
 
 find_library(jnigraphics-lib jnigraphics)
 

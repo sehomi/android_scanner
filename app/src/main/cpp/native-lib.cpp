@@ -198,7 +198,7 @@ Java_com_example_android_1scanner_MainActivity_setImage(JNIEnv* env, jobject p_t
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_setLocation(JNIEnv* env, jobject p_this, jdouble lat, jdouble alt, jdouble lng, jdouble time)
+Java_com_example_android_1scanner_MainActivity_setLocation(JNIEnv* env, jobject p_this, jdouble lat, jdouble lng, jdouble alt, jdouble time)
 {
     sc->logger->setLocation(lat, lng, alt, time);
 }
@@ -218,8 +218,8 @@ Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jo
     const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
     std::string assets_str = std::string(convertedValue);
 
-    sc = new Scanner(assets_str, (DetectionMethod)method);
-    lg = new Logger();
+    sc = new Scanner(assets_str, (DetectionMethod)method, 1.0, 1.0, 1.0, 1.0, 300);
+
     return;
 }extern "C"
 JNIEXPORT void JNICALL

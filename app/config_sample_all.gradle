@@ -1,0 +1,2 @@
+apply from : 'config_sample_packagingOptions.gradle'
+apply from : 'config_sample_dependencies.gradle'

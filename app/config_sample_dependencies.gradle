@@ -1,0 +1,21 @@
+// def config = new ConfigSlurper()
+//         .parse("https://terra-1-g.djicdn.com/71a7d383e71a4fb8887a310eb746b47f/msdk/Android-CommonConfig/constants.properties".toURL())
+def version = "4.14.1"
+def min_version = 21
+def target_version = 29
+
+println("dji_version: ${version}")
+println("min_version: ${min_version}")
+println("target_version: ${target_version}")
+
+dependencies {
+    compile ("com.dji:dji-sdk:$version")
+    provided ("com.dji:dji-sdk-provided:$version")
+}
+
+android {
+    defaultConfig {
+        minSdkVersion min_version
+        targetSdkVersion target_version
+    }
+}

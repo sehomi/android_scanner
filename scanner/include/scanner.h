@@ -11,11 +11,12 @@
 #include "Eigen/Core"
 #include <Eigen/Geometry>
 #include <android/log.h>
-#include "GeographicLib/UTMUPS.hpp"
+//#include "GeographicLib/UTMUPS.hpp"
 #include <math.h>
 
 #include "detector.h"
-#include "logger.h"
+#include "Logger.h"
+#include "UTM.h"
 
 
 #define PI 3.141592
@@ -43,7 +44,7 @@ class Scanner{
     bool scaleVector2(Eigen::VectorXd, Eigen::VectorXd&, double);
     void associate(std::vector<Eigen::VectorXd>&);
     Eigen::Quaternion<double> eulerToQuat(double, double, double);
-    std::vector<double> gpsToUtm(double, double, double&, double&);
+    void gpsToUtm(double, double, double&, double&);
     void camToInertiaMat(double, double, double, double, double, double, Eigen::Matrix3d&);
     void calcDirVec(float, float, Eigen::VectorXd&);
 
