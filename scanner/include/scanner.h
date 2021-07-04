@@ -54,11 +54,12 @@ public:
 
 //    Scanner(std::string);
 //    Scanner(std::string, float&, float&, float&, float&, int maxdist);
-    Scanner(std::string , float , float , float , float , int);
+    Scanner(std::string, DetectionMethod, float , float , float , float , int);
     void myFlip(Mat src);
     void myBlur(Mat src, float sigma);
     void scan();
     void calcFov(std::vector<Eigen::VectorXd>&);
 };
+
 
 #endif //ANDROID_SCANNER_SCANNER_H

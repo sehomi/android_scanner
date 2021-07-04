@@ -32,6 +32,7 @@ private:
 
 	void yolov3PostProcess(cv::Mat&, const std::vector<cv::Mat> &, std::vector<cv::Rect> &);
 	void ssdPostProcess(cv::Mat&, cv::Mat &, std::vector<cv::Rect> &);
+	std::vector<cv::String> getOutputsNames(const cv::dnn::Net& net);
 };
 
 #endif //ANDROID_SCANNER_DETECTOR_H

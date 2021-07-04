@@ -6,6 +6,9 @@
 #include <opencv2/opencv.hpp>
 #include "scanner.h"
 #include "Logger.h"
+#include <android/log.h>
+
+// TODO: declare JNI function in a base class like CameraApplication
 #include "Eigen/Core"
 #include <Eigen/Geometry>
 
@@ -114,14 +117,13 @@ Java_com_example_android_1scanner_MainActivity_stringFromJNI(
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets) {
+Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets, jint method) {
 
     jboolean isCopy;
     const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
     std::string assets_str = std::string(convertedValue);
 
-    sc = new Scanner(assets_str, 1.0, 1.0, 1.0, 1.0, 300);
-//    sc = new Scanner(assets_str);
+    sc = new Scanner(assets_str, (DetectionMethod)method, 1.0, 1.0, 1.0, 1.0, 300);
 //    lg = new Logger();
     return;
 }
@@ -209,3 +211,30 @@ Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobje
     sc->calcFov(poses);
 }
 
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jobject thiz, jstring assets, jint method) {
+    jboolean isCopy;
+    const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
+    std::string assets_str = std::string(convertedValue);
+
+    sc = new Scanner(assets_str, (DetectionMethod)method);
+    lg = new Logger();
+    return;
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_AircraftActivity_detect(JNIEnv *env, jobject thiz,
+                                                          jobject bitmapIn, jobject bitmapOut) {
+    Mat src;
+    bitmapToMat(env, bitmapIn, src, false);
+    cvtColor(src, src, COLOR_RGBA2BGR);
+
+    std::vector<cv::Rect> bboxes;
+    Mat dst = src.clone();
+
+    sc->detector->detect(src, bboxes);
+    sc->detector->drawDetections(dst, bboxes);
+
+    cvtColor(dst, dst, COLOR_BGR2RGB);
+    matToBitmap(env, dst, bitmapOut, false);
+}

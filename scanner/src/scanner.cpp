@@ -5,7 +5,7 @@
 #include "scanner.h"
 //#include <opencv2/imgproc.hpp>
 //
-Scanner::Scanner(std::string assetsDir, float f_, float cx_, float cy_, float res_, int maxdist)
+Scanner::Scanner(std::string assetsDir, DetectionMethod dm, float f_, float cx_, float cy_, float res_, int maxdist)
 {
     f = f_;
     cx = cx_;
@@ -13,22 +13,20 @@ Scanner::Scanner(std::string assetsDir, float f_, float cx_, float cy_, float re
     max_dist = maxdist;
     RAD = PI/180.0;
 
-//    image_shape
+
+    if (dm == MN_SSD)
+        detector = new Detector(assetsDir, DetectionMethod::MN_SSD, 0.4, 0.4);
+    else if (dm == YOLO_V3)
+        detector = new Detector(assetsDir, DetectionMethod::YOLO_V3, 0.4, 0.4);
+    else if (dm == YOLO_TINY)
+        detector = new Detector(assetsDir, DetectionMethod::YOLO_TINY, 0.4, 0.4);
 
     beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
-    detector = new Detector(assetsDir, DetectionMethod::MN_SSD, 0.4, 0.4);
     logger = new Logger();
 
-//    Eigen::AngleAxisd rollAngle(108, Eigen::Vector3d::UnitZ());
-//    Eigen::AngleAxisd yawAngle(90, Eigen::Vector3d::UnitY());
-//    Eigen::AngleAxisd pitchAngle(0, Eigen::Vector3d::UnitX());
-//
-//    Eigen::Quaternion<double> q = rollAngle * yawAngle * pitchAngle;
-//
-//    Eigen::Matrix3d rotationMatrix = q.matrix();
-//    int d = 0;
-//    __android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "%s", "Str--------------------------------------------------------------");
+
+    return;
 }
 
 void Scanner::scan()
