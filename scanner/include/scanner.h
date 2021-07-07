@@ -59,8 +59,8 @@ public:
 
 //    Scanner(std::string);
 //    Scanner(std::string, float&, float&, float&, float&, int maxdist);
-    Scanner(std::string, DetectionMethod, float , float , float , float , int);
-    Scanner(std::string, DetectionMethod, float, int);
+    Scanner(std::string, std::string, DetectionMethod, float, float, float, float, int);
+    Scanner(std::string, std::string, DetectionMethod, float, int);
     void myFlip(Mat src);
     void myBlur(Mat src, float sigma);
     void scan();

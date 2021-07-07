@@ -14,9 +14,10 @@
 #include <vector>
 #include "time.h"
 #include <android/log.h>
+#include <fstream>
 
 using namespace cv;
-using namespace std;
+//using namespace std;
 
 #define PI 3.14159265
 
@@ -67,28 +68,39 @@ struct ImuSet
 
 class Logger {
 
+    std::string logsDir;
+
     Location refLoc;
 //    Orientation orn;
     ImageSet imgSet;
 //    ImuSet imuSet;
 
-    vector<Location> locationBuffer;
-    vector<Orientation> orientationBuffer;
-    int locBufLen = 5, ornBufLen = 40;
+    std::vector<Location> locationBuffer;
+    std::vector<Orientation> orientationBuffer;
+    int locBufLen = 5, ornBufLen = 40, counter;
+
+    bool logMode = true;
+
+    std::ofstream logFile;
 
     void bufferLocation(Location);
     void bufferOrientation(Orientation);
+    void writeImageSet(const ImageSet&);
+
 //    void setImageSet(image);
 
 public:
 
     Image img;
 
-    void setImage(Mat, float);
+    Logger(std::string);
+    void setImage(Mat&, float);
     void setLocation(double, double, double, float);
     void setOrientation(double, double, double, float);
-    ImageSet getImageSet();
+    bool getImageSet(ImageSet&);
     bool getImuSet(ImuSet&);
+    void disableLogMode();
+    void enableLogMode();
 };
 
 #endif //ANDROID_SCANNER_SCANNER_H

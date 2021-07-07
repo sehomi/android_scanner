@@ -5,7 +5,7 @@
 #include "scanner.h"
 //#include <opencv2/imgproc.hpp>
 
-Scanner::Scanner(std::string assetsDir, DetectionMethod dm, float hva_, int maxdist)
+Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, float hva_, int maxdist)
 {
 
     hva = hva_;
@@ -21,11 +21,11 @@ Scanner::Scanner(std::string assetsDir, DetectionMethod dm, float hva_, int maxd
 
     beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
-    logger = new Logger();
+    logger = new Logger(logsDir);
 
 }
 
-Scanner::Scanner(std::string assetsDir, DetectionMethod dm, float f_, float cx_, float cy_, float res_, int maxdist)
+Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, float f_, float cx_, float cy_, float res_, int maxdist)
 {
     f = f_;
     cx = cx_;
@@ -43,7 +43,7 @@ Scanner::Scanner(std::string assetsDir, DetectionMethod dm, float f_, float cx_,
 
     beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
-    logger = new Logger();
+    logger = new Logger(logsDir);
 
 
 //    return;
@@ -64,7 +64,7 @@ void Scanner::scan()
     std::vector<cv::Rect> bboxes;
     std::vector<Eigen::VectorXd> object_pos;
 
-    imgSt = logger->getImageSet();
+    bool check = logger->getImageSet(imgSt);
 
     if (!camInfoSet)
     {

@@ -11,6 +11,7 @@ import android.content.res.AssetManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -20,6 +21,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -28,6 +30,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,7 +78,9 @@ public class ConnectionActivity extends Activity {
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
     private static final int REQUEST_PERMISSION_CODE = 12345;
     private String assetsDir;
+    private String logDir;
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -134,6 +140,34 @@ public class ConnectionActivity extends Activity {
         IntentFilter filter = new IntentFilter();
         filter.addAction(CameraApplication.FLAG_CONNECTION_CHANGE);
         registerReceiver(mReceiver, filter);
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
+        LocalDateTime now = LocalDateTime.now();
+        String folderName = "log_" + dtf.format(now);
+        logDir = getStorageDir(folderName);
+        Log.v(TAG, "logDir: ........................ "+logDir);
+
+    }
+
+    public String getStorageDir(String fn)
+    {
+        //create folder
+        File file = new File(Environment.getExternalStorageDirectory() + "/LogFolder");
+        if (!file.exists()) {
+            if (!file.mkdirs()) {
+                Log.v(TAG, "Unable to create the folder! ...");
+                return null;
+            }
+        }
+
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/LogFolder" + fn);
+        if (!file1.exists()) {
+            if (!file1.mkdirs()) {
+                Log.v(TAG, "Unable to create the folder! ...");
+                return null;
+            }
+        }
+        return file1.getAbsolutePath() + File.separator;
     }
 
     /**
@@ -344,6 +378,7 @@ public class ConnectionActivity extends Activity {
             case R.id.btn_open: {
                 Intent intent = new Intent(this, AircraftActivity.class);
                 intent.putExtra("Assets", assetsDir);
+                intent.putExtra("Log", logDir);
 
                 int algorithm = 0;
                 if (rgroup.getCheckedRadioButtonId() == R.id.yolov3Button){
@@ -371,6 +406,7 @@ public class ConnectionActivity extends Activity {
             case R.id.btn_open_phone: {
                 Intent intent = new Intent(this, MainActivity.class);
                 intent.putExtra("Assets", assetsDir);
+                intent.putExtra("Log", logDir);
 
                 int algorithm = 0;
                 if (rgroup.getCheckedRadioButtonId() == R.id.yolov3Button){

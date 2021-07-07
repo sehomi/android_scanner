@@ -1,13 +1,60 @@
 
 #include "Logger.h"
 
-void Logger::setImage(Mat image, float time)
+Logger::Logger(std::string logs_dir)
+{
+    logsDir = logs_dir;
+    counter = 0;
+}
+
+void Logger::enableLogMode()
+{
+    logMode = true;
+}
+
+void Logger::disableLogMode()
+{
+    logMode = false;
+}
+
+void Logger::setImage(Mat &image, float time)
 {
     img.image = image;
     img.time = time;
 
-//    setImageSet(img);
+    if (logMode)
+    {
+        ImageSet imgSet;
+//        getImageSet(imgSet);
+        if (getImageSet(imgSet)) {
+//        if (!image.empty()) {
+            writeImageSet(imgSet);
+//            __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner...", "%s", address.c_str());
+        }
+    }
 }
+
+void Logger::writeImageSet(const ImageSet &imgSet)
+{
+    counter++;
+    std::string imgName = "image" + std::to_string(counter) + ".jpg";
+    std::string address = logsDir + imgName;
+    imwrite(address, imgSet.image);
+    logFile.open(logsDir + "log.txt", std::ios::out | std::ios::in | std::ios::app);
+    logFile << imgName << ',' << std::to_string(imgSet.time) << ',' << std::to_string(imgSet.lat) << ',' << std::to_string(imgSet.lng) \
+            << ',' << std::to_string(imgSet.alt) << ',' << std::to_string(imgSet.roll) << ',' << std::to_string(imgSet.pitch) \
+            << ',' << std::to_string(imgSet.azimuth) << std::endl;
+    logFile.close();
+}
+
+//void Logger::writeImageSet(ImageSet imgSet, std::string imgName)
+//{
+//    logFile.open(logsDir + "log.txt", std::ios::out | std::ios::in | std::ios::app);
+//    logFile << imgName << ',' << std::to_string(imgSet.time) << ',' << std::to_string(imgSet.lat) << ',' << std::to_string(imgSet.lng) \
+//            << ',' << std::to_string(imgSet.alt) << ',' << std::to_string(imgSet.roll) << ',' << std::to_string(imgSet.pitch) \
+//            << ',' << std::to_string(imgSet.azimuth) << std::endl;
+//    logFile.close();
+//}
 
 void Logger::setLocation(double lat, double lng, double alt, float time)
 {
@@ -68,13 +115,18 @@ void Logger::bufferOrientation(Orientation orn)
     }
 }
 
-ImageSet Logger::getImageSet()
+bool Logger::getImageSet(ImageSet &imgSet)
 {
     Location location;
     Orientation orientation;
     float dist = 0, minDist = 1e7;
 
-    for(int k=0; k<locBufLen; k++)
+    if (locationBuffer.size() == 0 || orientationBuffer.size() == 0 || img.image.empty())
+    {
+        return false;
+    }
+
+    for(int k=0; k<locationBuffer.size(); k++)
     {
         dist = fabs(locationBuffer[k].time - img.time);
         if (dist < minDist)
@@ -86,7 +138,7 @@ ImageSet Logger::getImageSet()
 
     dist = 0;
     minDist = 1e7;
-    for(int k=0; k<ornBufLen; k++)
+    for(int k=0; k<orientationBuffer.size(); k++)
     {
         dist = fabs(orientationBuffer[k].time - img.time);
         if (dist < minDist)
@@ -95,8 +147,6 @@ ImageSet Logger::getImageSet()
             minDist = dist;
         }
     }
-
-    ImageSet imgSet;
 
     imgSet.image = img.image;
     imgSet.lat = location.lat;
@@ -107,7 +157,7 @@ ImageSet Logger::getImageSet()
     imgSet.azimuth = orientation.azimuth;
     imgSet.time = img.time;
 
-    return imgSet;
+    return true;
 }
 
 bool Logger::getImuSet(ImuSet &imuSet)
