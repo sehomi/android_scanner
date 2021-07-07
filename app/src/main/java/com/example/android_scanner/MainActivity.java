@@ -1,5 +1,6 @@
 package com.example.android_scanner;
 
+// TODO: ask for location to be enabled
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -142,6 +143,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Log.v(TAG, "---------1");
+
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -157,8 +160,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         srcBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.mountain);
         dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
-
-        createScanner(getIntent().getStringExtra("Assets"), getIntent().getIntExtra("Algorithm", 0));
 
         // Example of a call to a native method
         ImageView iv = binding.imageView2;
@@ -182,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             }
         });
-
+        Log.v(TAG, "---------4");
         Context context = this;
         boolean camDetected = checkCameraHardware(context);
 
@@ -198,6 +199,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //        preview.addView(mPreview);
 
         mCamera = getCameraInstance();
+        float hva = mCamera.getParameters().getHorizontalViewAngle();
+        createScanner(getIntent().getStringExtra("Assets"), getIntent().getIntExtra("Algorithm", 0), hva);
 
         Thread thread = new Thread() {
             @Override
@@ -215,6 +218,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         thread.start();
 
+        Log.v(TAG, "---------5");
         Thread scan_thread = new Thread() {
             @Override
             public void run() {
@@ -259,7 +263,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, locationListener);
 
-
+        Log.v(TAG, "---------6");
     }
 
     private void doScan()
@@ -271,7 +275,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         @Override
         public void onLocationChanged(Location loc) {
-
+            Log.v(TAG, "---------7");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Instant ins = Instant.now() ;
                 loc_time = ins.getEpochSecond() + (ins.getNano()/1e9);
@@ -289,6 +293,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             setLocation(lat, lng, alt, loc_time);
             // TODO: Check if altitude in measured ASL or AGL
             binding.textView2.setText(s);
+            Log.v(TAG, "---------8");
         }
 
         @Override
@@ -306,11 +311,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         public void onSensorChanged(SensorEvent event) {
+            Log.v(TAG, "---------9");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 //                ornSet.orn_time = Instant.now();
                 Instant ins = Instant.now() ;
                 orn_time = ins.getEpochSecond() + (ins.getNano()/1e9);
             }
+
             switch (event.sensor.getType()) {
                 case Sensor.TYPE_MAGNETIC_FIELD:
                     mags = event.values.clone();
@@ -334,19 +341,44 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mags = null;
                 accels = null;
                 binding.textView.setText("\nroll: "+String.valueOf(roll)+"\npitch: "+String.valueOf(pitch)+"\nazimuth: "+String.valueOf(azimuth));
-                setOrientation(roll, pitch, azimuth, orn_time);
+//                Double[][] fov = {{}};
+//                boolean success = setOrientation(roll, pitch, azimuth, orn_time, fov);
+                double[][] fov = setOrientation(roll, pitch, azimuth, orn_time);
+                if (fov != null)
+                {
+
+                    Log.v(TAG, "********** fov:");
+
+                    Log.v(TAG, String.valueOf(fov[0][0]) + " " + String.valueOf(fov[0][1]) + " " + String.valueOf(fov[0][2]));
+                    Log.v(TAG, String.valueOf(fov[1][0]) + " " + String.valueOf(fov[1][1]) + " " + String.valueOf(fov[1][2]));
+                    Log.v(TAG, String.valueOf(fov[2][0]) + " " + String.valueOf(fov[2][1]) + " " + String.valueOf(fov[2][2]));
+                    Log.v(TAG, String.valueOf(fov[3][0]) + " " + String.valueOf(fov[3][1]) + " " + String.valueOf(fov[3][2]));
+
+
+                }
+                else
+                {
+                    Log.v(TAG, "\n********** fov failed: \n");
+                }
                 int x = 0;
             }
+            Log.v(TAG, "---------10");
         }
     };
 
     private void decodeBytesToImage(){
+        Log.v(TAG, "---------11");
         if(!isImgBytesReady)
             return;
 
         Camera.Parameters parameters = mCamera.getParameters();
+//        float fl = parameters.getFocalLength();
+//        Log.v(TAG, "focal length:   "+String.valueOf(fl));
         int width = parameters.getPreviewSize().width;
         int height = parameters.getPreviewSize().height;
+
+//        double fl = (0.5 * width * (1.0 / Math.tan(Math.toRadians(hva/2))));
+//        Log.v(TAG, "focal length:   "+String.valueOf(fl));
 
         YuvImage yuv = new YuvImage(imgSet.imgBytes, parameters.getPreviewFormat(), width, height, null);
 //        YuvImage yuv = new YuvImage(imgBytes, parameters.getPreviewFormat(), width, height, null);
@@ -369,7 +401,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 //        binding.imageView2.setImageBitmap(bitmap1);
-
+        Log.v(TAG, "---------12");
     }
 
     public void doFlip(View view){
@@ -404,14 +436,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      * which is packaged with this application.
      */
     public native String stringFromJNI();
-    public native void createScanner(String assets, int method);
+    public native void createScanner(String assets, int method, float hva);
     public native void flip(Bitmap bitmapIn, Bitmap bitmapOut);
     public native void blur(Bitmap bitmapIn, Bitmap bitmapOut, float sigma);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
     public native void scan();
     public native void setImage(Bitmap bitmap, double time);
     public native void setLocation(double lat, double lng, double alt, double time);
-    public native void setOrientation(double roll, double pitch, double azimuth, double time);
+//    public native boolean setOrientation(double roll, double pitch, double azimuth, double time, Double[][] oa);
+    public native double[][] setOrientation(double roll, double pitch, double azimuth, double time);
 
     @Override
     public void onResume() {

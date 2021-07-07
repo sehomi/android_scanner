@@ -117,13 +117,15 @@ Java_com_example_android_1scanner_MainActivity_stringFromJNI(
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets, jint method) {
+Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets, jint method, jfloat hva) {
 
     jboolean isCopy;
     const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
     std::string assets_str = std::string(convertedValue);
 
-    sc = new Scanner(assets_str, (DetectionMethod)method, 1.0, 1.0, 1.0, 1.0, 300);
+//    sc = new Scanner(assets_str, (DetectionMethod)method, 1.0, 1.0, 1.0, 1.0, 300);
+    sc = new Scanner(assets_str, (DetectionMethod)method, hva, 300);
+
 //    lg = new Logger();
     return;
 }
@@ -203,12 +205,44 @@ Java_com_example_android_1scanner_MainActivity_setLocation(JNIEnv* env, jobject 
     sc->logger->setLocation(lat, lng, alt, time);
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time)
 {
-    std::vector<Eigen::VectorXd> poses;
+    std::vector<Location> fov_poses;
     sc->logger->setOrientation(roll, pitch, azimuth, time);
-    sc->calcFov(poses);
+
+    bool success = sc->calcFov(fov_poses);
+    if (success)
+    {
+        jclass cls = env->FindClass("[D");
+        jdoubleArray iniVal = env->NewDoubleArray(3);
+        // Create the returnable jobjectArray with an initial value
+        jobjectArray outer = env->NewObjectArray(fov_poses.size(),cls, iniVal);
+
+        for (int i = 0; i < fov_poses.size(); i++)
+        {
+            jdoubleArray inner = env->NewDoubleArray(3);
+
+            Location pos = fov_poses[i];
+            double posa[3] = {pos.lat, pos.lng, pos.alt};
+            env->SetDoubleArrayRegion(inner, 0, 3, posa);
+//             set inner's values
+            env->SetObjectArrayElement(outer, i, inner);
+            env->DeleteLocalRef(inner);
+        }
+
+        return outer;
+    }
+    else
+        {
+        return  NULL;
+    }
+//    if (outer == NULL) {
+//
+//        __android_log_print(ANDROID_LOG_VERBOSE, "outerrrrrrrr", "outer[0][0]");
+//        return NULL;
+//    }
+
 }
 
 extern "C"
@@ -221,7 +255,9 @@ Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jo
     sc = new Scanner(assets_str, (DetectionMethod)method, 1.0, 1.0, 1.0, 1.0, 300);
 
     return;
-}extern "C"
+}
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_android_1scanner_AircraftActivity_detect(JNIEnv *env, jobject thiz,
                                                           jobject bitmapIn, jobject bitmapOut) {

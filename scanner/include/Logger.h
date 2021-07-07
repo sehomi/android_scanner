@@ -67,10 +67,10 @@ struct ImuSet
 
 class Logger {
 
-    Location loc, refLoc;
-    Orientation orn;
+    Location refLoc;
+//    Orientation orn;
     ImageSet imgSet;
-    ImuSet imuSet;
+//    ImuSet imuSet;
 
     vector<Location> locationBuffer;
     vector<Orientation> orientationBuffer;
@@ -88,7 +88,7 @@ public:
     void setLocation(double, double, double, float);
     void setOrientation(double, double, double, float);
     ImageSet getImageSet();
-    ImuSet getImuSet();
+    bool getImuSet(ImuSet&);
 };
 
 #endif //ANDROID_SCANNER_SCANNER_H

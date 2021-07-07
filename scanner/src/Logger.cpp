@@ -11,6 +11,8 @@ void Logger::setImage(Mat image, float time)
 
 void Logger::setLocation(double lat, double lng, double alt, float time)
 {
+    Location loc;
+
     loc.lat = lat;
     loc.lng = lng;
     loc.alt = alt;
@@ -18,7 +20,7 @@ void Logger::setLocation(double lat, double lng, double alt, float time)
 
     bufferLocation(loc);
 
-    if (refLoc.time == 0)
+    if (locationBuffer.size() == 0)
     {
         refLoc.lat = lat;
         refLoc.lng = lng;
@@ -29,6 +31,8 @@ void Logger::setLocation(double lat, double lng, double alt, float time)
 
 void Logger::setOrientation(double roll, double pitch, double azimuth, float time)
 {
+    Orientation orn;
+
     orn.roll = roll*PI/180;
     orn.pitch = pitch*PI/180;
     orn.azimuth = azimuth*PI/180;
@@ -106,14 +110,19 @@ ImageSet Logger::getImageSet()
     return imgSet;
 }
 
-ImuSet Logger::getImuSet()
+bool Logger::getImuSet(ImuSet &imuSet)
 {
     Location location;
     float dist = 0, minDist = 1e7;
 
-    for(int k=0; k<locBufLen; k++)
+    if (orientationBuffer.size() == 0 || locationBuffer.size() == 0)
     {
-        dist = fabs(locationBuffer[k].time - orn.time);
+        return false;
+    }
+
+    for(int k=0; k<locationBuffer.size(); k++)
+    {
+        dist = fabs(locationBuffer[k].time - orientationBuffer.back().time);
         if (dist < minDist)
         {
             location = locationBuffer[k];
@@ -121,13 +130,14 @@ ImuSet Logger::getImuSet()
         }
     }
 
-    imuSet.roll = orn.roll;
-    imuSet.pitch = orn.pitch;
-    imuSet.azimuth = orn.azimuth;
+
+    imuSet.roll = orientationBuffer.back().roll;
+    imuSet.pitch = orientationBuffer.back().pitch;
+    imuSet.azimuth = orientationBuffer.back().azimuth;
     imuSet.lat = location.lat;
     imuSet.lng = location.lng;
     imuSet.alt = location.alt;
-    imuSet.time = orn.time;
+    imuSet.time = orientationBuffer.back().time;
 
-    return imuSet;
+    return true;
 }
