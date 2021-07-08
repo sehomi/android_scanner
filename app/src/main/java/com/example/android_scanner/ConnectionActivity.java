@@ -160,7 +160,8 @@ public class ConnectionActivity extends Activity {
             }
         }
 
-        File file1 = new File(Environment.getExternalStorageDirectory() + "/LogFolder" + fn);
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/LogFolder/" + fn);
+
         if (!file1.exists()) {
             if (!file1.mkdirs()) {
                 Log.v(TAG, "Unable to create the folder! ...");

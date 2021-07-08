@@ -39,6 +39,7 @@ void Logger::writeImageSet(const ImageSet &imgSet)
     counter++;
     std::string imgName = "image" + std::to_string(counter) + ".jpg";
     std::string address = logsDir + imgName;
+    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner...", "%s", address.c_str());
     imwrite(address, imgSet.image);
     logFile.open(logsDir + "log.txt", std::ios::out | std::ios::in | std::ios::app);
     logFile << imgName << ',' << std::to_string(imgSet.time) << ',' << std::to_string(imgSet.lat) << ',' << std::to_string(imgSet.lng) \
