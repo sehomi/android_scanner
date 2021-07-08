@@ -30,6 +30,8 @@ private:
 	float confidence;
 	float nmsThreshold;
 
+	std::string assets_dir;
+
 	void yolov3PostProcess(cv::Mat&, const std::vector<cv::Mat> &, std::vector<cv::Rect> &);
 	void ssdPostProcess(cv::Mat&, cv::Mat &, std::vector<cv::Rect> &);
 	std::vector<cv::String> getOutputsNames(const cv::dnn::Net& net);

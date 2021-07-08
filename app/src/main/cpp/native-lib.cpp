@@ -283,3 +283,58 @@ Java_com_example_android_1scanner_AircraftActivity_detect(JNIEnv *env, jobject t
     cvtColor(dst, dst, COLOR_BGR2RGB);
     matToBitmap(env, dst, bitmapOut, false);
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_AircraftActivity_setImage(JNIEnv* env, jobject p_this, jobject bitmap, jdouble time)
+{
+    Mat img;
+    bitmapToMat(env, bitmap, img, false);
+
+    sc->logger->setImage(img, time);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_AircraftActivity_setLocation(JNIEnv* env, jobject p_this, jdouble lat, jdouble lng, jdouble alt, jdouble time)
+{
+    sc->logger->setLocation(lat, lng, alt, time);
+}
+
+extern "C" JNIEXPORT jobjectArray JNICALL
+Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time)
+{
+    std::vector<Location> fov_poses;
+    sc->logger->setOrientation(roll, pitch, azimuth, time);
+
+    bool success = sc->calcFov(fov_poses);
+    if (success)
+    {
+        jclass cls = env->FindClass("[D");
+        jdoubleArray iniVal = env->NewDoubleArray(3);
+        // Create the returnable jobjectArray with an initial value
+        jobjectArray outer = env->NewObjectArray(fov_poses.size(),cls, iniVal);
+
+        for (int i = 0; i < fov_poses.size(); i++)
+        {
+            jdoubleArray inner = env->NewDoubleArray(3);
+
+            Location pos = fov_poses[i];
+            double posa[3] = {pos.lat, pos.lng, pos.alt};
+            env->SetDoubleArrayRegion(inner, 0, 3, posa);
+//             set inner's values
+            env->SetObjectArrayElement(outer, i, inner);
+            env->DeleteLocalRef(inner);
+        }
+
+        return outer;
+    }
+    else
+    {
+        return  NULL;
+    }
+//    if (outer == NULL) {
+//
+//        __android_log_print(ANDROID_LOG_VERBOSE, "outerrrrrrrr", "outer[0][0]");
+//        return NULL;
+//    }
+
+}

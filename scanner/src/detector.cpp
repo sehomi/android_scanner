@@ -1,6 +1,7 @@
 
 #include "detector.h"
 #include <android/log.h>
+#include <cstdlib>
 
 Detector::Detector(std::string assetsDir, DetectionMethod dm, float conf, float nms)
 {
@@ -36,6 +37,7 @@ Detector::Detector(std::string assetsDir, DetectionMethod dm, float conf, float 
     this->confidence = conf;
     this->nmsThreshold = nms;
 
+    this->assets_dir = assetsDir;
 }
 
 void Detector::detect(cv::Mat &frame, std::vector<cv::Rect> &bboxes)
@@ -57,7 +59,6 @@ void Detector::detect(cv::Mat &frame, std::vector<cv::Rect> &bboxes)
         cv::Mat prob = this->net.forward();
         ssdPostProcess(frame, prob, bboxes);
     }
-
 }
 
 void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& outs, std::vector<cv::Rect> &bboxes)

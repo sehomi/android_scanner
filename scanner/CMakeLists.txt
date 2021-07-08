@@ -7,18 +7,9 @@ cmake_minimum_required(VERSION 3.10.2)
 
 set(OpenCV_STATIC ON)
 set(OpenCV_DIR ${CMAKE_CURRENT_LIST_DIR}/../OpenCV-android-sdk/sdk/native/jni)
-
-#set(GeographicLib_STATIC ON)
-#set(OpenCV_DIR ${CMAKE_CURRENT_LIST_DIR}/../GeographicLib/cmake)
-
-
 find_package(OpenCV REQUIRED)
-#find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-#find_package (GeographicLib REQUIRED)
 
 project("scanner")
-
-#add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../eigen-master)
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../eigen-master)
