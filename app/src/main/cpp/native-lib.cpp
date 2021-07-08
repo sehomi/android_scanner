@@ -117,7 +117,7 @@ Java_com_example_android_1scanner_MainActivity_stringFromJNI(
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets, jstring logs, jint method, jfloat hva) {
+Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets, jstring logs, jboolean log_mode, jint method, jfloat hva) {
 
     jboolean isCopy;
     const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
@@ -128,7 +128,7 @@ Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobjec
     std::string logs_str = std::string(convertedValuel);
 
 //    sc = new Scanner(assets_str, (DetectionMethod)method, 1.0, 1.0, 1.0, 1.0, 300);
-    sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, hva, 300);
+    sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, (bool) log_mode, hva, 300);
 
 //    lg = new Logger();
     return;
@@ -251,7 +251,7 @@ Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobje
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jobject thiz, jstring assets, jstring logs, jfloat hva, jint method) {
+Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jobject thiz, jstring assets, jstring logs, jboolean log_mode, jfloat hva, jint method) {
     jboolean isCopy;
     const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
     std::string assets_str = std::string(convertedValue);
@@ -261,7 +261,7 @@ Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jo
     std::string logs_str = std::string(convertedValuel);
 
 //    sc = new Scanner(assets_str, (DetectionMethod)method, 1.0, 1.0, 1.0, 1.0, 300);
-    sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, hva, 300);
+    sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, (bool) log_mode, hva, 300);
 
     return;
 }
@@ -289,6 +289,7 @@ Java_com_example_android_1scanner_AircraftActivity_setImage(JNIEnv* env, jobject
 {
     Mat img;
     bitmapToMat(env, bitmap, img, false);
+    cvtColor(img, img, COLOR_RGB2BGR);
 
     sc->logger->setImage(img, time);
 }

@@ -5,7 +5,7 @@
 #include "scanner.h"
 //#include <opencv2/imgproc.hpp>
 
-Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, float hva_, int maxdist)
+Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, bool log_mode, float hva_, int maxdist)
 {
 
     hva = hva_;
@@ -21,7 +21,7 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 
     beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
-    logger = new Logger(logsDir);
+    logger = new Logger(logsDir, log_mode);
 
 }
 
@@ -43,10 +43,9 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 
     beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
-    logger = new Logger(logsDir);
-
-
-//    return;
+    // TODO: log_mode must be input
+    bool log_mode = false;
+    logger = new Logger(logsDir, log_mode);
 }
 
 void Scanner::setCamInfo(Mat img)

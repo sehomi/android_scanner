@@ -17,6 +17,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.RadioGroup;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -57,6 +58,7 @@ public class ConnectionActivity extends Activity {
     private ProgressBar pbar;
     private TextView fileTextView;
     private RadioGroup rgroup;
+    private Switch sw;
 
     private static final String[] REQUIRED_PERMISSION_LIST = new String[]{
             Manifest.permission.VIBRATE,
@@ -330,6 +332,8 @@ public class ConnectionActivity extends Activity {
         pbar.setVisibility(View.INVISIBLE);
         fileTextView.setVisibility(View.INVISIBLE);
 
+        sw = (Switch) findViewById(R.id.switch1);
+
         rgroup = (RadioGroup) findViewById(R.id.radioGroup2);
     }
 
@@ -380,6 +384,7 @@ public class ConnectionActivity extends Activity {
                 Intent intent = new Intent(this, AircraftActivity.class);
                 intent.putExtra("Assets", assetsDir);
                 intent.putExtra("Log", logDir);
+                intent.putExtra("Log Mode", sw.isChecked());
 
                 int algorithm = 0;
                 if (rgroup.getCheckedRadioButtonId() == R.id.yolov3Button){
@@ -408,6 +413,7 @@ public class ConnectionActivity extends Activity {
                 Intent intent = new Intent(this, MainActivity.class);
                 intent.putExtra("Assets", assetsDir);
                 intent.putExtra("Log", logDir);
+                intent.putExtra("Log Mode", sw.isChecked());
 
                 int algorithm = 0;
                 if (rgroup.getCheckedRadioButtonId() == R.id.yolov3Button){

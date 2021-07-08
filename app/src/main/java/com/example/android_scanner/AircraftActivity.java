@@ -104,7 +104,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         srcBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.mountain);
         dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
 
-        createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), 0, getIntent().getIntExtra("Algorithm", 0));
+        createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getBooleanExtra("Log Mode", false), 0, getIntent().getIntExtra("Algorithm", 0));
 
         // Example of a call to a native method
         ImageView iv = binding.imageView2;
@@ -332,7 +332,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     double roll = attitude.roll;
                     double pitch = attitude.pitch;
                     double yaw = attitude.yaw;
-                    double[][] fov = setOrientation(roll, pitch, yaw, curr_time);
+//                    double[][] fov = setOrientation(roll, pitch, yaw, curr_time);
 
                     runOnUiThread(new Runnable() {
                         @Override
@@ -402,9 +402,17 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                 public void onUpdate(@NonNull GimbalState gimbalState) {
                     Log.i(TAG, "GimbalState is updated.");
 
+                    double curr_time = -1;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        Instant ins = Instant.now() ;
+                        curr_time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                    }
+
                     double groll = gimbalState.getAttitudeInDegrees().getRoll();
                     double gpitch = gimbalState.getAttitudeInDegrees().getPitch();
                     double gyaw = gimbalState.getAttitudeInDegrees().getYaw();
+
+                    double[][] fov = setOrientation(groll, gpitch, gyaw, curr_time);
 
                     runOnUiThread(new Runnable() {
                         @Override
@@ -460,7 +468,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    public native void createScanner(String assets, String logs, float hva, int method);
+    public native void createScanner(String assets, String logs, boolean log_mode, float hva, int method);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
     public native void setImage(Bitmap bitmap, double time);
     public native void setLocation(double lat, double lng, double alt, double time);

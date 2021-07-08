@@ -24,7 +24,7 @@ using namespace cv;
 struct Image
 {
     Mat image = Mat::zeros(Size(480, 640),CV_8UC1);
-    float time = 0;
+    double time = 0;
 } ;
 
 struct Location
@@ -79,7 +79,7 @@ class Logger {
     std::vector<Orientation> orientationBuffer;
     int locBufLen = 5, ornBufLen = 40, counter;
 
-    bool logMode = true;
+    bool logMode;
 
     std::ofstream logFile;
 
@@ -93,10 +93,10 @@ public:
 
     Image img;
 
-    Logger(std::string);
-    void setImage(Mat&, float);
-    void setLocation(double, double, double, float);
-    void setOrientation(double, double, double, float);
+    Logger(std::string, bool);
+    void setImage(Mat&, double);
+    void setLocation(double, double, double, double);
+    void setOrientation(double, double, double, double);
     bool getImageSet(ImageSet&);
     bool getImuSet(ImuSet&);
     void disableLogMode();

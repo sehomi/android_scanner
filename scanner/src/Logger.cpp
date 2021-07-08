@@ -1,10 +1,11 @@
 
 #include "Logger.h"
 
-Logger::Logger(std::string logs_dir)
+Logger::Logger(std::string logs_dir, bool log_mode)
 {
     logsDir = logs_dir;
     counter = 0;
+    logMode = log_mode;
 }
 
 void Logger::enableLogMode()
@@ -17,10 +18,11 @@ void Logger::disableLogMode()
     logMode = false;
 }
 
-void Logger::setImage(Mat &image, float time)
+void Logger::setImage(Mat &image, double time)
 {
     img.image = image;
     img.time = time;
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner/setImage", "%f  %f", img.time, time);
 
     if (logMode)
     {
@@ -39,8 +41,9 @@ void Logger::writeImageSet(const ImageSet &imgSet)
     counter++;
     std::string imgName = "image" + std::to_string(counter) + ".jpg";
     std::string address = logsDir + imgName;
-    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner...", "%s", address.c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner...", "%s", address.c_str());
     imwrite(address, imgSet.image);
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner.../write", "%f", imgSet.time);
     logFile.open(logsDir + "log.txt", std::ios::out | std::ios::in | std::ios::app);
     logFile << imgName << ',' << std::to_string(imgSet.time) << ',' << std::to_string(imgSet.lat) << ',' << std::to_string(imgSet.lng) \
             << ',' << std::to_string(imgSet.alt) << ',' << std::to_string(imgSet.roll) << ',' << std::to_string(imgSet.pitch) \
@@ -57,7 +60,7 @@ void Logger::writeImageSet(const ImageSet &imgSet)
 //    logFile.close();
 //}
 
-void Logger::setLocation(double lat, double lng, double alt, float time)
+void Logger::setLocation(double lat, double lng, double alt, double time)
 {
     Location loc;
 
@@ -77,7 +80,7 @@ void Logger::setLocation(double lat, double lng, double alt, float time)
     }
 }
 
-void Logger::setOrientation(double roll, double pitch, double azimuth, float time)
+void Logger::setOrientation(double roll, double pitch, double azimuth, double time)
 {
     Orientation orn;
 
@@ -120,12 +123,15 @@ bool Logger::getImageSet(ImageSet &imgSet)
 {
     Location location;
     Orientation orientation;
-    float dist = 0, minDist = 1e7;
+    double dist = 0, minDist = 1e7;
 
     if (locationBuffer.size() == 0 || orientationBuffer.size() == 0 || img.image.empty())
     {
         return false;
     }
+
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner/getImageSet", "%f", img.time);
+
 
     for(int k=0; k<locationBuffer.size(); k++)
     {
