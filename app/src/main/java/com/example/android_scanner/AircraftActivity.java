@@ -174,7 +174,18 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                 @Override
                 public void run() {
                     isProcessing = true;
-                    processBitmap(binding.cameraPreview.getBitmap());
+
+                    double curr_time = -1;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        Instant ins = Instant.now() ;
+                        curr_time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                    }
+
+                    Bitmap bitmap = binding.cameraPreview.getBitmap();
+                    // TODO: set image time to it's exact message arrival
+                    setImage(bitmap, curr_time);
+                    processBitmap(bitmap);
+
                     isProcessing = false;
                 }
             };
@@ -310,12 +321,18 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                 @Override
                 public void onUpdate(@NonNull FlightControllerState flightControllerState) {
 //                    Log.i(TAG, "FlightController state is updated.");
+                    double curr_time = -1;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        Instant ins = Instant.now() ;
+                        curr_time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                    }
 
                     Attitude attitude = flightControllerState.getAttitude();
 
                     double roll = attitude.roll;
                     double pitch = attitude.pitch;
                     double yaw = attitude.yaw;
+                    double[][] fov = setOrientation(roll, pitch, yaw, curr_time);
 
                     runOnUiThread(new Runnable() {
                         @Override
@@ -328,6 +345,8 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     double lat = location.getLatitude();
                     double lon = location.getLongitude();
                     float alt = location.getAltitude();
+
+                    setLocation(lat, lon, alt, curr_time);
 
                     GPSSignalLevel gpsLevel = flightControllerState.getGPSSignalLevel();
 
@@ -443,9 +462,9 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
      */
     public native void createScanner(String assets, int method);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
-//    public native void setImage(Bitmap bitmap, double time);
-//    public native void setLocation(double lat, double lng, double time);
-//    public native void setOrientation(double roll, double pitch, double azimuth, double time);
+    public native void setImage(Bitmap bitmap, double time);
+    public native void setLocation(double lat, double lng, double alt, double time);
+    public native double[][] setOrientation(double roll, double pitch, double azimuth, double time);
 
 
 }
