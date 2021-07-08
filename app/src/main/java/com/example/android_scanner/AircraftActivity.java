@@ -195,6 +195,10 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
     }
 
+    public synchronized AircraftActivity getInstance(){
+        return this;
+    }
+
     private class MyLocationListener implements LocationListener {
 
         @Override
@@ -213,22 +217,28 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
             double lat = loc.getLatitude();
             double lng = loc.getLongitude();
 
-            if (googleMap != null) {
-                if (user == null) {
-                    LatLng user_pos = new LatLng(lat, lng);
-                    user = googleMap.addMarker(new MarkerOptions()
-                            .position(user_pos)
-                            .title("User Position"));
-                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(user_pos, 18));
-                }
-                else
-                {
-                    LatLng user_pos = new LatLng(lat, lng);
-                    user.setPosition(user_pos);
-                }
-            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (googleMap != null) {
+                        if (user == null) {
+                            LatLng user_pos = new LatLng(lat, lng);
+                            user = googleMap.addMarker(new MarkerOptions()
+                                    .position(user_pos)
+                                    .title("User Position"));
+                            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(user_pos, 18));
+                        }
+                        else
+                        {
+                            LatLng user_pos = new LatLng(lat, lng);
+                            user.setPosition(user_pos);
+                        }
+                    }
 
-            binding.textView6.setText(s);
+                    binding.textView6.setText(s);
+                }
+            });
+
         }
 
         @Override
@@ -351,28 +361,29 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     GPSSignalLevel gpsLevel = flightControllerState.getGPSSignalLevel();
 
                     if (gpsLevel == GPSSignalLevel.LEVEL_3 || gpsLevel == GPSSignalLevel.LEVEL_4 || gpsLevel == GPSSignalLevel.LEVEL_5){
-                        if (googleMap != null) {
-                            if (aircraft == null) {
-                                LatLng ac_pos = new LatLng(lat, lon);
-                                aircraft = googleMap.addMarker(new MarkerOptions()
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (googleMap != null) {
+                                    if (aircraft == null) {
+                                        LatLng ac_pos = new LatLng(lat, lon);
+                                        aircraft = googleMap.addMarker(new MarkerOptions()
                                                 .position(ac_pos)
                                                 .anchor(0.5f,0.5f)
                                                 .title("Aircraft Position")
                                                 .rotation((float) yaw)
                                                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.aircraft)));
-                                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(ac_pos, 18));
-                            }
-                            else
-                            {
-                                LatLng ac_pos = new LatLng(lat, lon);
-                                aircraft.setPosition(ac_pos);
-                                aircraft.setRotation((float) yaw);
-                            }
-                        }
+                                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(ac_pos, 18));
+                                    }
+                                    else
+                                    {
+                                        LatLng ac_pos = new LatLng(lat, lon);
+                                        aircraft.setPosition(ac_pos);
+                                        aircraft.setRotation((float) yaw);
+                                    }
+                                }
 
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
                                 binding.textView2.setText("Longitude: " + String.valueOf(lon) + "\nLatitude: " + String.valueOf(lat) + "\nAltitude: " + String.valueOf(alt));
                             }
                         });
