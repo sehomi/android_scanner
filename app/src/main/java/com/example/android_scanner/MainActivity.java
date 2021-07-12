@@ -133,6 +133,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     double orn_time;
     double loc_time;
 
+//    boolean readMode = false;
+
 //    DateTimeFormatter formatter =
 //            DateTimeFormatter.ofLocalizedDateTime( FormatStyle.SHORT )
 //                    .withLocale( Locale.UK )
@@ -200,8 +202,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mCamera = getCameraInstance();
         float hva = mCamera.getParameters().getHorizontalViewAngle();
+        Log.v(TAG, "---------41");
         createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getBooleanExtra("Log Mode",false), getIntent().getIntExtra("Algorithm", 0), hva);
-
+        Log.v(TAG, "---------42");
         Thread thread = new Thread() {
             @Override
             public void run() {
@@ -224,7 +227,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void run() {
                 try {
                     while (true) {
-                        sleep(500);
+                        sleep(50);
                         doScan();
                     }
                 } catch (InterruptedException e) {
@@ -233,7 +236,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         };
 
-//        scan_thread.start();
+        scan_thread.start();
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -271,10 +274,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         scan();
     }
 
+
+
+//    private void readLogFile()
+//    {
+//        if (!readMode)
+//            return;
+//
+//        readLog("/storage/emulated/0/LogFolder/log_2021_07_11_19_47_12/");
+//
+//    }
+
     private class MyLocationListener implements LocationListener {
 
         @Override
         public void onLocationChanged(Location loc) {
+
+//            if (readMode)
+//                return;
+
             Log.v(TAG, "---------7");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Instant ins = Instant.now() ;
@@ -311,6 +329,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         public void onSensorChanged(SensorEvent event) {
+
+//            if (readMode)
+//                return;
+
             Log.v(TAG, "---------9");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 //                ornSet.orn_time = Instant.now();
@@ -344,23 +366,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //                Double[][] fov = {{}};
 //                boolean success = setOrientation(roll, pitch, azimuth, orn_time, fov);
                 double[][] fov = setOrientation(roll, pitch, azimuth, orn_time);
+//                double[][] fov = null;
                 if (fov != null)
                 {
-
                     Log.v(TAG, "********** fov:");
 
                     Log.v(TAG, String.valueOf(fov[0][0]) + " " + String.valueOf(fov[0][1]) + " " + String.valueOf(fov[0][2]));
                     Log.v(TAG, String.valueOf(fov[1][0]) + " " + String.valueOf(fov[1][1]) + " " + String.valueOf(fov[1][2]));
                     Log.v(TAG, String.valueOf(fov[2][0]) + " " + String.valueOf(fov[2][1]) + " " + String.valueOf(fov[2][2]));
                     Log.v(TAG, String.valueOf(fov[3][0]) + " " + String.valueOf(fov[3][1]) + " " + String.valueOf(fov[3][2]));
-
-
                 }
                 else
                 {
-                    Log.v(TAG, "\n********** fov failed: \n");
+                    Log.v(TAG, "\n********** fov failed! \n");
                 }
-                int x = 0;
             }
             Log.v(TAG, "---------10");
         }
@@ -368,7 +387,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void decodeBytesToImage(){
         Log.v(TAG, "---------11");
-        if(!isImgBytesReady)
+        if(!isImgBytesReady)// || readMode)
             return;
 
         Camera.Parameters parameters = mCamera.getParameters();
@@ -411,6 +430,65 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         binding.imageView2.setImageBitmap(dstBitmap);
     }
 
+    public void playLog(View view){
+        Log.v(TAG, "---------this is playlog");
+        MainActivity.this.runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                mCamera.stopPreview();
+                isImgBytesReady = false;
+//                mCamera = null;
+            }
+        });
+
+        Thread read_thread = new Thread() {
+            @Override
+            public void run() {
+                Log.v(TAG, "---------this is read thread run");
+                try {
+                    Log.v(TAG, "---------this is before try");
+                    while (true) {
+                        isImgBytesReady = false;
+                        Log.v(TAG, "---------this is while");
+                        sleep(500);
+                        Bitmap bitmap, processedBitmap;
+                        bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.mountain);
+                        processedBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.mountain);
+                        double[][] fov = readLog(bitmap, processedBitmap);
+                        runOnUiThread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                binding.imageView2.setImageBitmap(processedBitmap);
+                            }
+                        });
+                        if (fov != null)
+                        {
+                            Log.v(TAG, "********** fov from readlog:");
+
+                            Log.v(TAG, String.valueOf(fov[0][0]) + " " + String.valueOf(fov[0][1]) + " " + String.valueOf(fov[0][2]));
+                            Log.v(TAG, String.valueOf(fov[1][0]) + " " + String.valueOf(fov[1][1]) + " " + String.valueOf(fov[1][2]));
+                            Log.v(TAG, String.valueOf(fov[2][0]) + " " + String.valueOf(fov[2][1]) + " " + String.valueOf(fov[2][2]));
+                            Log.v(TAG, String.valueOf(fov[3][0]) + " " + String.valueOf(fov[3][1]) + " " + String.valueOf(fov[3][2]));
+                        }
+                        else
+                        {
+                            Log.v(TAG, "\n********** fov failed! - readlog \n");
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "\n********** readlog run failed! \n"+e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        read_thread.start();
+
+    }
+
+
     public void doBlur(){
 
         float sigma = (float) (binding.seekBar.getProgress() / 10.0);
@@ -445,6 +523,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public native void setLocation(double lat, double lng, double alt, double time);
 //    public native boolean setOrientation(double roll, double pitch, double azimuth, double time, Double[][] oa);
     public native double[][] setOrientation(double roll, double pitch, double azimuth, double time);
+    public native double[][] readLog(Bitmap bitmap, Bitmap processedBitmap);
 
     @Override
     public void onResume() {

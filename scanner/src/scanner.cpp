@@ -7,7 +7,7 @@
 
 Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, bool log_mode, float hva_, int maxdist)
 {
-
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-1");
     hva = hva_;
     max_dist = maxdist;
 //    RAD = PI/180.0;
@@ -21,8 +21,8 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 
     beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
-    logger = new Logger(logsDir, log_mode);
-
+    logger = new Logger(logsDir, log_mode, true, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-2");
 }
 
 Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, float f_, float cx_, float cy_, float res_, int maxdist)
@@ -45,10 +45,29 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 
     // TODO: log_mode must be input
     bool log_mode = false;
-    logger = new Logger(logsDir, log_mode);
+    logger = new Logger(logsDir, log_mode, false, "");
 }
 
-void Scanner::setCamInfo(Mat img)
+//void Scanner::readFromLog(std::string logs_dir)
+//{
+//    int count = 0;
+//    std::string txt_adrs = logs_dir + "log.txt";
+//    std::ifstream file;
+//    file.open(txt_adrs);
+//    std::string line_text;
+//
+//    while (getline(file, line_text))
+//    {
+//        ImuSet imuSt;
+//        Mat image;
+//        count++;
+//        std::string img_adrs = logs_dir + "image" + std::to_string(count) + ".jpg";
+//        logger->readData(img_adrs, line_text, image, imuSt);
+//    }
+//    file.close();
+//}
+
+void Scanner::setCamInfo(Mat &img)
 {
     int width = img.size().width;
     int height = img.size().height;
@@ -57,13 +76,47 @@ void Scanner::setCamInfo(Mat img)
     cy = height/2;
 }
 
-void Scanner::scan()
+bool Scanner::scan(ImageSet &imgSt)
 {
-    ImageSet imgSt;
+    if (!logger->readFromLog)
+        return false;
+
     std::vector<cv::Rect> bboxes;
     std::vector<Eigen::VectorXd> object_pos;
+    std::vector<Location> fov_poses;
 
-    bool check = logger->getImageSet(imgSt);
+    if (!camInfoSet)
+    {
+        setCamInfo(imgSt.image);
+        camInfoSet = true;
+    }
+
+    detector->detect(imgSt.image, bboxes);
+
+    camToMap(bboxes, imgSt, object_pos);
+
+    associate(object_pos);
+
+    return true;
+}
+
+bool Scanner::scan()
+{
+    if (logger->readFromLog)
+        return false;
+
+    ImageSet imgSt;
+    ImuSet imuSt;
+    std::vector<cv::Rect> bboxes;
+    std::vector<Eigen::VectorXd> object_pos;
+    std::vector<Location> fov_poses;
+
+    bool check;
+
+    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------113");
+
+    if (!logger->getImageSet(imgSt))
+        return false;
 
     if (!camInfoSet)
     {
@@ -99,6 +152,8 @@ void Scanner::scan()
 //    img_msg = self.bridge.cv2_to_imgmsg(img)
 //    self.image_pub.publish(img_msg)
 //    self._is_scanning = False
+
+    return true;
 
 }
 
@@ -283,7 +338,10 @@ void Scanner::associate(std::vector<Eigen::VectorXd> &object_pos)
 
 bool Scanner::calcFov(std::vector<Location> &poses_gps)
 {
-    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-1");
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-1");
+    if(logger->readFromLog)
+        return false;
+
     int w, h;
     double x, y;
     Eigen::Quaternion<double> q;
@@ -291,24 +349,59 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps)
     Eigen::Matrix3d camToInertia;
     std::vector<Eigen::VectorXd> vs, scaled_vs, poses;//, ws;
 
-//    std::vector<std::vector<Eigen::VectorXd>> arrows;
+    std::vector<std::vector<Eigen::VectorXd>> arrows;
+
     ImuSet imuSt;
-    if (!logger->getImuSet(imuSt))
-    {
-        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------logger->imuset");
+    ImageSet imgSt;
 
+
+    if (!logger->getImuSet(imuSt)) {
+        //        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------logger->imuset");
         return false;
     }
-    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-2");
-    // TODO: move this check to getImuSet
-    if (logger->img.image.empty())
-    {
-        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------logger->imgempty");
-        return false;
-    }
-
     w = logger->img.image.size().width;
     h = logger->img.image.size().height;
+
+    q = eulerToQuat(imuSt.roll, imuSt.pitch, imuSt.azimuth);
+    gpsToUtm(imuSt.lat, imuSt.lng, x, y);
+    pos << y, -x, imuSt.alt;
+    camToInertiaMat(90+beta, 0, 90, imuSt.roll, imuSt.pitch, imuSt.azimuth, camToInertia);
+    std::vector<Point> points{{0, 0}, { 0, h }, {w, h}, {w, 0}};
+    for (auto & point : points)
+    {
+        Eigen::VectorXd w_(3), v(3), p(3), scaled_v(3);
+        calcDirVec(point.x, point.y, w_);
+        v = camToInertia * w_;
+        vs.push_back(v);
+        scaleVector1(v, scaled_v, pos[2]);
+        scaled_vs.push_back(scaled_v);
+        p << v[0] + pos[0], v[1] + pos[1], v[2] + pos[2];
+        poses.push_back(p);
+//        vector<Eigen::VectorXd> arrow{pos, p};
+//        arrows.push_back(arrow);
+//      TODO : The scanned places must be saved - An overall fov must be generated simultaneously
+    }
+    utmToGps(poses, poses_gps);
+    return true;
+}
+
+bool Scanner::calcFov(std::vector<Location> &poses_gps, ImuSet &imuSt, ImageSet &imgSt)
+{
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-1");
+    if (!logger->readFromLog)
+        return false;
+
+    double x, y;
+    Eigen::Quaternion<double> q;
+    Eigen::VectorXd pos(3);
+    Eigen::Matrix3d camToInertia;
+    std::vector<Eigen::VectorXd> vs, scaled_vs, poses;//, ws;
+
+    std::vector<std::vector<Eigen::VectorXd>> arrows;
+
+    int w = imgSt.image.size().width;
+    int h = imgSt.image.size().height;
+
     q = eulerToQuat(imuSt.roll, imuSt.pitch, imuSt.azimuth);
     gpsToUtm(imuSt.lat, imuSt.lng, x, y);
     pos << y, -x, imuSt.alt;

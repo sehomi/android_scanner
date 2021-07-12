@@ -49,7 +49,7 @@ class Scanner{
     void gpsToUtm(double, double, double&, double&);
     void camToInertiaMat(double, double, double, double, double, double, Eigen::Matrix3d&);
     void calcDirVec(float, float, Eigen::VectorXd&);
-    void setCamInfo(Mat);
+    void setCamInfo(Mat&);
     void utmToGps(std::vector<Eigen::VectorXd>, std::vector<Location>&);
 
 public:
@@ -63,8 +63,11 @@ public:
     Scanner(std::string, std::string, DetectionMethod, bool, float, int);
     void myFlip(Mat src);
     void myBlur(Mat src, float sigma);
-    void scan();
+    bool scan();
+    bool scan(ImageSet&);
     bool calcFov(std::vector<Location>&);
+    bool calcFov(std::vector<Location>&, ImuSet&, ImageSet&);
+//    void readFromLog(std::string);
 };
 
 

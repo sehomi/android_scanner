@@ -15,11 +15,15 @@
 #include "time.h"
 #include <android/log.h>
 #include <fstream>
+//#include "dirent.h"
 
 using namespace cv;
 //using namespace std;
 
 #define PI 3.14159265
+
+//DIR *dir;
+//struct dirent *ent;
 
 struct Image
 {
@@ -69,19 +73,16 @@ struct ImuSet
 class Logger {
 
     std::string logsDir;
+    bool logMode;
+    std::ofstream logFile;
+    std::ifstream iLogFile;
 
     Location refLoc;
-//    Orientation orn;
-    ImageSet imgSet;
-//    ImuSet imuSet;
 
     std::vector<Location> locationBuffer;
     std::vector<Orientation> orientationBuffer;
     int locBufLen = 5, ornBufLen = 40, counter;
-
-    bool logMode;
-
-    std::ofstream logFile;
+    std::string prelogged_dir;
 
     void bufferLocation(Location);
     void bufferOrientation(Orientation);
@@ -92,15 +93,18 @@ class Logger {
 public:
 
     Image img;
+    bool readFromLog;
 
-    Logger(std::string, bool);
+    Logger(std::string, bool, bool, std::string);
     void setImage(Mat&, double);
     void setLocation(double, double, double, double);
-    void setOrientation(double, double, double, double);
+    bool setOrientation(double, double, double, double);
     bool getImageSet(ImageSet&);
     bool getImuSet(ImuSet&);
     void disableLogMode();
     void enableLogMode();
+    void readData(std::string, Mat&, ImuSet&);
+    bool getImageSetFromLogger(ImageSet &, ImuSet &);
 };
 
 #endif //ANDROID_SCANNER_SCANNER_H
