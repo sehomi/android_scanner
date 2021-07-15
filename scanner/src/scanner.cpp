@@ -3,6 +3,7 @@
 //
 
 #include "scanner.h"
+#include "sweeper.h"
 //#include <opencv2/imgproc.hpp>
 
 Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, bool log_mode, float hva_, int maxdist)
@@ -22,6 +23,7 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 //    beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
     logger = new Logger(logsDir, log_mode, true, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
+    sweeper = new SweeperGeometry::Sweeper();
 //    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-2");
 }
 
@@ -401,7 +403,7 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps)
     return true;
 }
 
-bool Scanner::calcFov(std::vector<Location> &poses_gps, ImuSet &imuSt, ImageSet &imgSt)
+bool Scanner::calcFov(std::vector<Location> &poses_gps, std::vector<Location> &sweeped_area, ImuSet &imuSt, ImageSet &imgSt)
 {
 //    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-1");
     if (!logger->readFromLog)
@@ -463,7 +465,11 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps, ImuSet &imuSt, ImageSet 
 //        arrows.push_back(arrow);
 //      TODO : The scanned places must be saved - An overall fov must be generated simultaneously
     }
+
     utmToGps(poses, poses_gps);
+
+    sweeper->update(poses_gps, sweeped_area);
+
 //    for (auto & p : poses)
 //    {
 //        std::stringstream ss;

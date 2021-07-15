@@ -1,0 +1,1 @@
+adb logcat -d | grep 'com.example.android_scanner' -B 100 -A 100 > C:\Users\a\Desktop\log_app.txt

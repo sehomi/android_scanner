@@ -111,20 +111,34 @@ void matToBitmap(JNIEnv* env, Mat src, jobject bitmap, jboolean needPremultiplyA
     }
 }
 
-jobjectArray convertArray(JNIEnv* env, std::vector<Location> fov_poses)
+jobjectArray putIntoArray(JNIEnv* env, std::vector<Location> fov_poses, int type=2, jobjectArray outer = NULL)
 {
+    int prior_len = 0;
     jclass cls = env->FindClass("[D");
-    jdoubleArray iniVal = env->NewDoubleArray(3);
-// Create the returnable jobjectArray with an initial value
-    jobjectArray outer = env->NewObjectArray(fov_poses.size(),cls, iniVal);
+    jdoubleArray iniVal = env->NewDoubleArray(4);
 
-    for (int i = 0; i < fov_poses.size(); i++)
+    if (outer == NULL) {
+        // Create the returnable jobjectArray with an initial value
+        outer = env->NewObjectArray(fov_poses.size(), cls, iniVal);
+    }
+    else{
+        prior_len = env -> GetArrayLength(outer);
+        jobjectArray new_outer = env->NewObjectArray( prior_len + fov_poses.size(), cls, iniVal);
+
+        for(int i=0; i<prior_len; i++){
+            env->SetObjectArrayElement(new_outer, i, env->GetObjectArrayElement(outer, i));
+        }
+
+        outer = new_outer;
+    }
+
+    for (int i = prior_len; i < prior_len + fov_poses.size(); i++)
     {
-        jdoubleArray inner = env->NewDoubleArray(3);
+        jdoubleArray inner = env->NewDoubleArray(4);
 
         Location pos = fov_poses[i];
-        double posa[3] = {pos.lat, pos.lng, pos.alt};
-        env->SetDoubleArrayRegion(inner, 0, 3, posa);
+        double posa[4] = {pos.lat, pos.lng, pos.alt, (double) type};
+        env->SetDoubleArrayRegion(inner, 0, 4, posa);
 //             set inner's values
         env->SetObjectArrayElement(outer, i, inner);
         env->DeleteLocalRef(inner);
@@ -252,7 +266,7 @@ Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobje
     bool success = sc->calcFov(fov_poses);
     if (success)
     {
-        return convertArray(env, fov_poses);
+        return putIntoArray(env, fov_poses);
     }
     else
         {
@@ -268,6 +282,7 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     ImageSet imgSt;
     ImuSet imuSt;
     std::vector<Location> fov_locs;
+    std::vector<Location> sweeped_area;
     jobjectArray fov_poses_array = NULL;
 
 //    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1");
@@ -288,8 +303,11 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     cvtColor(dst, dst, COLOR_BGR2RGB);
     matToBitmap(env, dst, processedBitmap, false);
 
-    if (sc->calcFov(fov_locs, imuSt, imgSt))
-        fov_poses_array = convertArray(env, fov_locs);
+    if (sc->calcFov(fov_locs, sweeped_area, imuSt, imgSt))
+    {
+        fov_poses_array = putIntoArray(env, fov_locs);
+        fov_poses_array = putIntoArray(env, fov_locs, 3, fov_poses_array);
+    }
 
     return fov_poses_array;
 
@@ -356,7 +374,7 @@ Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, j
     bool success = sc->calcFov(fov_poses);
     if (success)
     {
-        return convertArray(env, fov_poses);
+        return putIntoArray(env, fov_poses);
     }
     else
     {
