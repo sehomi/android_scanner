@@ -16,10 +16,11 @@
 
 #include "detector.h"
 #include "Logger.h"
+#include "sweeper.h"
 #include "UTM.h"
 
 
-#define PI 3.141592
+//#define PI 3.14159265
 
 using namespace cv;
 //using namespace std;
@@ -55,6 +56,7 @@ public:
 
     Detector* detector;
     Logger* logger;
+    SweeperGeometry::Sweeper* sweeper;
 
 //    Scanner(std::string);
 //    Scanner(std::string, float&, float&, float&, float&, int maxdist);
@@ -65,7 +67,7 @@ public:
     bool scan();
     bool scan(ImageSet&, Mat&);
     bool calcFov(std::vector<Location>&);
-    bool calcFov(std::vector<Location>&, ImuSet&, ImageSet&);
+    bool calcFov(std::vector<Location>&, std::vector<Location>&, ImuSet&, ImageSet&);
 //    void readFromLog(std::string);
 };
 

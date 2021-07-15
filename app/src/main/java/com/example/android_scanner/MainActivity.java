@@ -18,6 +18,7 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
@@ -58,6 +59,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
@@ -138,6 +140,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     double loc_time;
 
     Polyline polyline = null;
+    PolygonOptions fov_polygon = null;
+    PolygonOptions sweep_polygon = null;
     GoogleMap googleMap = null;
 
 //    boolean readMode = false;
@@ -459,22 +463,61 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             public void run() {
                                 binding.imageView2.setImageBitmap(processedBitmap);
                                 if (fov != null && googleMap != null) {
-                                    if (polyline == null) {
-                                        polyline = googleMap.addPolyline(new PolylineOptions()
-                                                .clickable(true)
-                                                .add(
-                                                        new LatLng(fov[0][0], fov[0][1]),
-                                                        new LatLng(fov[1][0], fov[1][1]),
-                                                        new LatLng(fov[2][0], fov[2][1]),
-                                                        new LatLng(fov[3][0], fov[3][1])));
+                                    if (fov_polygon == null)
                                         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(fov[0][0], fov[0][1]), 18));
+//                                    if (polyline == null) {
+
+                                    googleMap.clear();
+                                    fov_polygon = new PolygonOptions();
+                                    sweep_polygon = new PolygonOptions();
+
+                                    for(int i=0; i<fov.length; i++){
+
+                                        if (fov[i][3] == 0){
+
+                                        }
+                                        else if(fov[i][3] == 1)
+                                        {
+
+                                        }
+                                        else if(fov[i][3] == 2)
+                                        {
+                                            fov_polygon.add(new LatLng(fov[i][0], fov[i][1]));
+                                        }
+                                        else if(fov[i][3] == 3)
+                                        {
+                                            sweep_polygon.add(new LatLng(fov[i][0], fov[i][1]));
+                                        }
+
                                     }
-                                    else
-                                    {
-//                                        LatLng[] ll = {new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1])};
-                                        List<LatLng> lll = Arrays.asList(new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[1][0], fov[1][1]), new LatLng(fov[2][0], fov[2][1]), new LatLng(fov[3][0], fov[3][1]));
-                                        polyline.setPoints(lll);
-                                    }
+
+                                    fov_polygon.add(new LatLng(fov[0][0], fov[0][1]));
+                                    sweep_polygon.add(new LatLng(fov[5][0], fov[5][1]));
+
+                                    sweep_polygon.fillColor(Color.argb(20, 255, 255, 255));
+                                    sweep_polygon.strokeColor(Color.argb(0, 255, 255, 255));
+                                    fov_polygon.strokeColor(Color.BLACK);
+
+                                    googleMap.addPolygon(sweep_polygon);
+                                    googleMap.addPolygon(fov_polygon);
+
+//                                        polyline = googleMap.addPolyline(new PolylineOptions()
+//                                                .clickable(true)
+//                                                .add(
+//                                                        new LatLng(fov[0][0], fov[0][1]),
+//                                                        new LatLng(fov[1][0], fov[1][1]),
+//                                                        new LatLng(fov[2][0], fov[2][1]),
+//                                                        new LatLng(fov[3][0], fov[3][1]),
+//                                                        new LatLng(fov[0][0], fov[0][1])));
+
+//                                    }
+//                                    else
+//                                    {
+//                                        fov_polygon
+////                                        LatLng[] ll = {new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1])};
+//                                        List<LatLng> lll = Arrays.asList(new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[1][0], fov[1][1]), new LatLng(fov[2][0], fov[2][1]), new LatLng(fov[3][0], fov[3][1]));
+//                                        polyline.setPoints(lll);
+//                                    }
                                 }
                             }
                         });
