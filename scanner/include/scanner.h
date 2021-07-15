@@ -33,8 +33,8 @@ struct Marker
 
 class Scanner{
 
-    float hva, res, RAD, beta;
-    double f, cx, cy;
+    float res, RAD, hva;
+    float f, cx, cy;
     int max_dist, zone;
     bool camInfoSet = false, isSouth = false;
     std::vector<Eigen::VectorXd> object_poses;
@@ -47,10 +47,10 @@ class Scanner{
     void associate(std::vector<Eigen::VectorXd>&);
     Eigen::Quaternion<double> eulerToQuat(double, double, double);
     void gpsToUtm(double, double, double&, double&);
-    void camToInertiaMat(double, double, double, double, double, double, Eigen::Matrix3d&);
+    void eulerToRotationMat(double, double, double, Eigen::Matrix3d&);
     void calcDirVec(float, float, Eigen::VectorXd&);
-    void setCamInfo(Mat&);
     void utmToGps(std::vector<Eigen::VectorXd>, std::vector<Location>&);
+    void setCamInfo(Mat&);
 
 public:
 

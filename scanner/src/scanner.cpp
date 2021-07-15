@@ -19,7 +19,7 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
     else if (dm == YOLO_TINY)
         detector = new Detector(assetsDir, DetectionMethod::YOLO_TINY, 0.4, 0.4);
 
-    beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
+//    beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
     logger = new Logger(logsDir, log_mode, true, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
 //    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-2");
@@ -41,7 +41,7 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
     else if (dm == YOLO_TINY)
         detector = new Detector(assetsDir, DetectionMethod::YOLO_TINY, 0.4, 0.4);
 
-    beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
+//    beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
     // TODO: log_mode must be input
     bool log_mode = false;
@@ -71,9 +71,9 @@ void Scanner::setCamInfo(Mat &img)
 {
     int width = img.size().width;
     int height = img.size().height;
-    f = (0.5 * width * (1.0 / tan((hva/2)*PI/180)));
-    cx = width/2;
-    cy = height/2;
+    f = (float) (0.5 * width * (1.0 / tan((hva/2.0)*PI/180)));
+    cx = (float) width/2;
+    cy = (float) height/2;
 }
 
 bool Scanner::scan(ImageSet &imgSt)
@@ -85,17 +85,21 @@ bool Scanner::scan(ImageSet &imgSt)
     std::vector<Eigen::VectorXd> object_pos;
     std::vector<Location> fov_poses;
 
+    // TODO: hva must be set automatically from log
+    //       This is for mavic mini:
+    hva = 66.0;
     if (!camInfoSet)
     {
         setCamInfo(imgSt.image);
         camInfoSet = true;
     }
 
-    detector->detect(imgSt.image, bboxes);
-
-    camToMap(bboxes, imgSt, object_pos);
-
-    associate(object_pos);
+    // TODO: Continue with uncommenting these:
+//    detector->detect(imgSt.image, bboxes);
+//
+//    camToMap(bboxes, imgSt, object_pos);
+//
+//    associate(object_pos);
 
     return true;
 }
@@ -175,7 +179,8 @@ void Scanner::camToMap(std::vector<Rect> &objects, const ImageSet& is, std::vect
     std::vector<Eigen::VectorXd> objects_ws, objects_vs, scaled_objects_vs;
     Eigen::Matrix3d camToInertia;
 
-    camToInertiaMat(90+beta, 0, 90, is.roll, is.pitch, is.azimuth, camToInertia);
+    //    eulerToRotationMat(90+beta, 0, 90, imuSt.roll, imuSt.pitch, imuSt.azimuth, camToInertia);
+    eulerToRotationMat(is.roll, is.pitch, is.azimuth, camToInertia);
 
     toDirectionVector(objects, objects_ws);
 
@@ -208,20 +213,26 @@ void Scanner::camToMap(std::vector<Rect> &objects, const ImageSet& is, std::vect
     }
 }
 
-void Scanner::camToInertiaMat(double phi, double theta, double psi, double roll, double pitch, double azimuth, Eigen::Matrix3d &output)
+void Scanner::eulerToRotationMat(/*double phi, double theta, double psi,*/ double roll, double pitch, double azimuth, Eigen::Matrix3d &output)
 {
-    Eigen::AngleAxisd rollAngle(phi, Eigen::Vector3d::UnitX());
-    Eigen::AngleAxisd pitchAngle(theta, Eigen::Vector3d::UnitY());
-    Eigen::AngleAxisd yawAngle(psi, Eigen::Vector3d::UnitZ());
+//    Eigen::AngleAxisd rollAngle(phi, Eigen::Vector3d::UnitX());
+//    Eigen::AngleAxisd pitchAngle(theta, Eigen::Vector3d::UnitY());
+//    Eigen::AngleAxisd yawAngle(psi, Eigen::Vector3d::UnitZ());
+//
+//    Eigen::Quaternion<double> q1 = rollAngle * pitchAngle * yawAngle;
 
-    Eigen::Quaternion<double> q1 = rollAngle *pitchAngle* yawAngle;
+//    Eigen::Matrix3d dcm_cam_to_body = q1.matrix();
 
-    Eigen::Matrix3d dcm_cam_to_body = q1.matrix();
+//    Eigen::Quaternion<double> q2 = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX())
+//                                   * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())
+//                                   * Eigen::AngleAxisd(azimuth, Eigen::Vector3d::UnitZ());
+    Eigen::Quaternion<double> q2 = Eigen::AngleAxisd(azimuth, Eigen::Vector3d::UnitZ())
+                                   * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())
+                                   * Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX());
 
-    Eigen::Quaternion<double> q2 = eulerToQuat(roll, pitch, azimuth);
     Eigen::Matrix3d dcm_body_to_inertia = q2.matrix();
 
-    output = dcm_body_to_inertia * dcm_cam_to_body;
+    output = dcm_body_to_inertia;// * dcm_cam_to_body;
 }
 
 void Scanner::gpsToUtm(double lat, double lng, double &x, double &y)
@@ -235,27 +246,25 @@ void Scanner::gpsToUtm(double lat, double lng, double &x, double &y)
 
 }
 
-Eigen::Quaternion<double> Scanner::eulerToQuat(double roll, double pitch, double azimuth)
-{
-    return Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX())
-           * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())
-           * Eigen::AngleAxisd(azimuth, Eigen::Vector3d::UnitZ());
-}
+//Eigen::Quaternion<double> Scanner::eulerToQuat(double roll, double pitch, double azimuth)
+//{
+//    return Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX())
+//           * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())
+//           * Eigen::AngleAxisd(azimuth, Eigen::Vector3d::UnitZ());
+//}
 
 void Scanner::scaleVector1(Eigen::VectorXd v, Eigen::VectorXd &output, double z)
 {
-    if (v[2] < 0)
+    if (v[2] > 0)
     {
         double factor = fabs(z) / fabs(v[2]);
         if ((factor*v).norm() < max_dist)
         {
             output = factor*v;
+            return;
         }
     }
-    else
-    {
-        output = max_dist * v;
-    }
+    output = max_dist * v;
 }
 
 bool Scanner::scaleVector2(Eigen::VectorXd v, Eigen::VectorXd &output, double z)
@@ -295,9 +304,12 @@ void Scanner::toDirectionVector(std::vector<Rect> &objects, std::vector<Eigen::V
 void Scanner::calcDirVec(float x, float y, Eigen::VectorXd &z)
 {
     Eigen::VectorXd w(3);
-    w<<-(x-cx),
-       -(y-cy),
-       f;
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "cx: %s", std::to_string(cx).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "cy: %s", std::to_string(cy).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "f: %s", std::to_string(f).c_str());
+    w<<(double) (x-cx),
+       (double) (y-cy),
+       (double) f;
     z = w*(1/w.norm());
 }
 
@@ -346,7 +358,7 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps)
     double x, y;
     Eigen::Quaternion<double> q;
     Eigen::VectorXd pos(3);
-    Eigen::Matrix3d camToInertia;
+    Eigen::Matrix3d inertiaToCam, imToCam;
     std::vector<Eigen::VectorXd> vs, scaled_vs, poses;//, ws;
 
     std::vector<std::vector<Eigen::VectorXd>> arrows;
@@ -362,20 +374,24 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps)
     w = logger->img.image.size().width;
     h = logger->img.image.size().height;
 
-    q = eulerToQuat(imuSt.roll, imuSt.pitch, imuSt.azimuth);
+//    q = eulerToQuat(imuSt.roll, imuSt.pitch, imuSt.azimuth);
     gpsToUtm(imuSt.lat, imuSt.lng, x, y);
-    pos << y, -x, imuSt.alt;
-    camToInertiaMat(90+beta, 0, 90, imuSt.roll, imuSt.pitch, imuSt.azimuth, camToInertia);
-    std::vector<Point> points{{0, 0}, { 0, h }, {w, h}, {w, 0}};
+    pos << y, -x, -imuSt.alt;
+//    eulerToRotationMat(90+beta, 0, 90, imuSt.roll, imuSt.pitch, imuSt.azimuth, camToInertia);
+    eulerToRotationMat(90,0,90, imToCam);
+    eulerToRotationMat(imuSt.roll,imuSt.pitch, imuSt.azimuth, inertiaToCam);
+    std::vector<Point2f> points{{0, 0}, { 0, (float)h }, {(float)w, (float)h}, {(float)w, 0}};
     for (auto & point : points)
     {
         Eigen::VectorXd w_(3), v(3), p(3), scaled_v(3);
+
         calcDirVec(point.x, point.y, w_);
-        v = camToInertia * w_;
-        vs.push_back(v);
+        v = inertiaToCam.transpose() * imToCam.transpose() * w_;
+//        vs.push_back(v);
         scaleVector1(v, scaled_v, pos[2]);
-        scaled_vs.push_back(scaled_v);
-        p << v[0] + pos[0], v[1] + pos[1], v[2] + pos[2];
+//        scaled_vs.push_back(scaled_v);
+//        p << scaled_v[0] + pos[0], scaled_v[1] + pos[1], scaled_v[2] + pos[2];
+        p << -(scaled_v[1] + pos[1]), scaled_v[0] + pos[0], -(scaled_v[2] + pos[2]);
         poses.push_back(p);
 //        vector<Eigen::VectorXd> arrow{pos, p};
 //        arrows.push_back(arrow);
@@ -394,7 +410,7 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps, ImuSet &imuSt, ImageSet 
     double x, y;
     Eigen::Quaternion<double> q;
     Eigen::VectorXd pos(3);
-    Eigen::Matrix3d camToInertia;
+    Eigen::Matrix3d imToCam, inertiaToCam;
     std::vector<Eigen::VectorXd> vs, scaled_vs, poses;//, ws;
 
     std::vector<std::vector<Eigen::VectorXd>> arrows;
@@ -402,26 +418,65 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps, ImuSet &imuSt, ImageSet 
     int w = imgSt.image.size().width;
     int h = imgSt.image.size().height;
 
-    q = eulerToQuat(imuSt.roll, imuSt.pitch, imuSt.azimuth);
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----1", "roll: %s", std::to_string(imuSt.roll).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----1", "pitch: %s", std::to_string(imuSt.pitch).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----1", "az: %s", std::to_string(imuSt.azimuth).c_str());
+
     gpsToUtm(imuSt.lat, imuSt.lng, x, y);
-    pos << y, -x, imuSt.alt;
-    camToInertiaMat(90+beta, 0, 90, imuSt.roll, imuSt.pitch, imuSt.azimuth, camToInertia);
-    std::vector<Point> points{{0, 0}, { 0, h }, {w, h}, {w, 0}};
+    pos << y, x, -imuSt.alt;
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "x: %s", std::to_string(x).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "y: %s", std::to_string(y).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "zone: %s", std::to_string(zone).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "isSouth: %s", std::to_string(isSouth).c_str());
+
+//    eulerToRotationMat(90+beta, 0, 90, imuSt.roll, imuSt.pitch, imuSt.azimuth, camToInertia);
+    eulerToRotationMat(90,0,90, imToCam);
+    eulerToRotationMat(imuSt.roll, imuSt.pitch, imuSt.azimuth, inertiaToCam);
+//    eulerToRotationMat(0, imuSt.pitch, 0, inertiaToCam);
+//    inertiaToCam << cos(imuSt.pitch) , 0, sin(imuSt.pitch),
+//                    0                , 1, 0               ,
+//                    -sin(imuSt.pitch), 0, cos(imuSt.pitch);
+    std::vector<Point2f> points{{0, 0}, { 0, (float)h }, {(float)w, (float)h}, {(float)w, 0}};
     for (auto & point : points)
     {
-        Eigen::VectorXd w_(3), v(3), p(3), scaled_v(3);
+        Eigen::VectorXd w_cam(3), w_(3), v(3), p(3), scaled_v(3);
         calcDirVec(point.x, point.y, w_);
-        v = camToInertia * w_;
-        vs.push_back(v);
+
+        w_cam << w_[2], w_[0], w_[1];
+        v = inertiaToCam * w_cam;
+
+        // TODO: This method must be applied ... not the above mess
+//        v = camToInertia.transpose() * imToCam.transpose() * w_;
+
+        std::stringstream ss;
+        ss << v;
+        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "v: %s", ss.str().c_str());
+
+//        vs.push_back(v);
         scaleVector1(v, scaled_v, pos[2]);
-        scaled_vs.push_back(scaled_v);
-        p << v[0] + pos[0], v[1] + pos[1], v[2] + pos[2];
+//        scaled_vs.push_back(scaled_v);
+
+//        p << v[0] + pos[0], v[1] + pos[1], v[2] + pos[2];
+        p << (scaled_v[1] + pos[1]), scaled_v[0] + pos[0], -(scaled_v[2] + pos[2]);
         poses.push_back(p);
 //        vector<Eigen::VectorXd> arrow{pos, p};
 //        arrows.push_back(arrow);
 //      TODO : The scanned places must be saved - An overall fov must be generated simultaneously
     }
     utmToGps(poses, poses_gps);
+//    for (auto & p : poses)
+//    {
+//        std::stringstream ss;
+//        ss << p;
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "pose: %s", ss.str().c_str());
+//    }
+//    for (auto & p : poses_gps)
+//    {
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "final lat: %s", std::to_string(p.lat).c_str());
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "final lng: %s", std::to_string(p.lng).c_str());
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "final alt %s", std::to_string(p.alt).c_str());
+//    }
+
     return true;
 }
 
@@ -430,11 +485,11 @@ void Scanner::utmToGps(std::vector<Eigen::VectorXd> utms, std::vector<Location> 
     latlons.clear();
     for (auto & utm : utms)
     {
-        double lat, lon;
+        double lat=0, lon=0;
         UTMXYToLatLon (utm[0], utm[1], zone, isSouth, lat, lon);
         Location loc;
-        loc.lat = lat;
-        loc.lng = lon;
+        loc.lat = lat*180/PI;
+        loc.lng = lon*180/PI;
         loc.alt = utm[2];
         latlons.push_back(loc);
     }

@@ -156,6 +156,7 @@ Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobjec
 
 //    sc = new Scanner(assets_str, (DetectionMethod)method, 1.0, 1.0, 1.0, 1.0, 300);
 //    __android_log_print(ANDROID_LOG_VERBOSE, "outerrrrrrrr", "oute");
+
     sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, (bool) log_mode, hva, 300);
 //    __android_log_print(ANDROID_LOG_VERBOSE, "outerrrrrrrr", "outer[0][0]");
 
@@ -273,7 +274,7 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     sc->logger->getImageSetFromLogger(imgSt, imuSt);
 
 //    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "2");
-//    sc->scan(imgSt);
+    sc->scan(imgSt);
     std::vector<Rect> bboxes;
     Mat dst = imgSt.image.clone();
     Mat src = imgSt.image.clone();

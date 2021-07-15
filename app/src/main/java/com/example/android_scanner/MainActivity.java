@@ -52,11 +52,14 @@ import android.widget.Toast;
 
 import com.codemonkeylabs.fpslibrary.TinyDancer;
 import com.example.android_scanner.databinding.ActivityMainBinding;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -68,6 +71,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -132,6 +136,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     double orn_time;
     double loc_time;
+
+    Polyline polyline = null;
+    GoogleMap googleMap = null;
 
 //    boolean readMode = false;
 
@@ -274,16 +281,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         scan();
     }
 
-
-
-//    private void readLogFile()
-//    {
-//        if (!readMode)
-//            return;
-//
-//        readLog("/storage/emulated/0/LogFolder/log_2021_07_11_19_47_12/");
-//
-//    }
 
     private class MyLocationListener implements LocationListener {
 
@@ -461,6 +458,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             @Override
                             public void run() {
                                 binding.imageView2.setImageBitmap(processedBitmap);
+                                if (fov != null && googleMap != null) {
+                                    if (polyline == null) {
+                                        polyline = googleMap.addPolyline(new PolylineOptions()
+                                                .clickable(true)
+                                                .add(
+                                                        new LatLng(fov[0][0], fov[0][1]),
+                                                        new LatLng(fov[1][0], fov[1][1]),
+                                                        new LatLng(fov[2][0], fov[2][1]),
+                                                        new LatLng(fov[3][0], fov[3][1])));
+                                        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(fov[0][0], fov[0][1]), 18));
+                                    }
+                                    else
+                                    {
+//                                        LatLng[] ll = {new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1])};
+                                        List<LatLng> lll = Arrays.asList(new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[1][0], fov[1][1]), new LatLng(fov[2][0], fov[2][1]), new LatLng(fov[3][0], fov[3][1]));
+                                        polyline.setPoints(lll);
+                                    }
+                                }
                             }
                         });
                         if (fov != null)
@@ -501,11 +516,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     @Override
-    public void onMapReady(@NonNull GoogleMap googleMap) {
+    public void onMapReady(@NonNull GoogleMap ggleMap) {
         LatLng sydney = new LatLng(-33.852, 151.211);
-        googleMap.addMarker(new MarkerOptions()
+        ggleMap.addMarker(new MarkerOptions()
                 .position(sydney)
                 .title("Marker in Sydney"));
+        googleMap = ggleMap;
 
     }
 
