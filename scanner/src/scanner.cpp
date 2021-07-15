@@ -78,13 +78,12 @@ void Scanner::setCamInfo(Mat &img)
     cy = (float) height/2;
 }
 
-bool Scanner::scan(ImageSet &imgSt, Mat &img)
+bool Scanner::scan(ImageSet &imgSt, Mat &img, std::vector<Location> &object_poses)
 {
     if (!logger->readFromLog)
         return false;
 
     std::vector<cv::Rect> bboxes;
-    std::vector<Location> object_poses;
 
     // TODO: hva must be set automatically from log
     //       This is for mavic mini:
@@ -99,12 +98,15 @@ bool Scanner::scan(ImageSet &imgSt, Mat &img)
     detector->drawDetections(img, bboxes);
 
     camToMap(bboxes, imgSt, object_poses);
-//    for (auto & op : object_poses)
-//    {
-//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "lat %s", std::to_string(op.lat).c_str());
-//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "lng %s", std::to_string(op.lng).c_str());
-//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "alt %s", std::to_string(op.alt).c_str());
-//    }
+
+    for (auto & op : object_poses)
+    {
+        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "lat %s", std::to_string(op.lat).c_str());
+        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "lng %s", std::to_string(op.lng).c_str());
+        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "alt %s", std::to_string(op.alt).c_str());
+        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "x %s", std::to_string(op.x).c_str());
+        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "y %s", std::to_string(op.y).c_str());
+    }
 //    associate(object_poses);
 
     return true;

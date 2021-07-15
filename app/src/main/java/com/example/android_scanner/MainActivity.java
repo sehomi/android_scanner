@@ -472,9 +472,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     sweep_polygon = new PolygonOptions();
 
                                     for(int i=0; i<fov.length; i++){
-
+                                        Log.v(TAG, String.valueOf(fov[i][0]) + " " + String.valueOf(fov[i][1]) + " " + String.valueOf(fov[i][3]));
                                         if (fov[i][3] == 0){
-
+                                            LatLng per = new LatLng(fov[i][0], fov[i][1]);
+                                            googleMap.addMarker(new MarkerOptions()
+                                                    .position(per)
+                                                    .title("Person"));
                                         }
                                         else if(fov[i][3] == 1)
                                         {
@@ -494,9 +497,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     fov_polygon.add(new LatLng(fov[0][0], fov[0][1]));
                                     sweep_polygon.add(new LatLng(fov[5][0], fov[5][1]));
 
-                                    sweep_polygon.fillColor(Color.argb(20, 255, 255, 255));
+                                    sweep_polygon.fillColor(Color.argb(150, 255, 255, 255));
                                     sweep_polygon.strokeColor(Color.argb(0, 255, 255, 255));
-                                    fov_polygon.strokeColor(Color.BLACK);
+                                    fov_polygon.strokeColor(Color.BLUE);
 
                                     googleMap.addPolygon(sweep_polygon);
                                     googleMap.addPolygon(fov_polygon);
@@ -521,19 +524,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 }
                             }
                         });
-                        if (fov != null)
-                        {
-                            Log.v(TAG, "********** fov from readlog:");
+//                        if (fov != null)
+//                        {
+//                            Log.v(TAG, "********** fov from readlog:");
 
-                            Log.v(TAG, String.valueOf(fov[0][0]) + " " + String.valueOf(fov[0][1]) + " " + String.valueOf(fov[0][2]));
-                            Log.v(TAG, String.valueOf(fov[1][0]) + " " + String.valueOf(fov[1][1]) + " " + String.valueOf(fov[1][2]));
-                            Log.v(TAG, String.valueOf(fov[2][0]) + " " + String.valueOf(fov[2][1]) + " " + String.valueOf(fov[2][2]));
-                            Log.v(TAG, String.valueOf(fov[3][0]) + " " + String.valueOf(fov[3][1]) + " " + String.valueOf(fov[3][2]));
-                        }
-                        else
-                        {
-                            Log.v(TAG, "\n********** fov failed! - readlog \n");
-                        }
+//                            Log.v(TAG, String.valueOf(fov[0][0]) + " " + String.valueOf(fov[0][1]) + " " + String.valueOf(fov[0][2]));
+//                            Log.v(TAG, String.valueOf(fov[1][0]) + " " + String.valueOf(fov[1][1]) + " " + String.valueOf(fov[1][2]));
+//                            Log.v(TAG, String.valueOf(fov[2][0]) + " " + String.valueOf(fov[2][1]) + " " + String.valueOf(fov[2][2]));
+//                            Log.v(TAG, String.valueOf(fov[3][0]) + " " + String.valueOf(fov[3][1]) + " " + String.valueOf(fov[3][2]));
+//                        }
+//                        else
+//                        {
+//                            Log.v(TAG, "\n********** fov failed! - readlog \n");
+//                        }
                     }
                 } catch (InterruptedException e) {
                     Log.e(TAG, "\n********** readlog run failed! \n"+e.getMessage());
@@ -560,10 +563,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onMapReady(@NonNull GoogleMap ggleMap) {
-        LatLng sydney = new LatLng(-33.852, 151.211);
-        ggleMap.addMarker(new MarkerOptions()
-                .position(sydney)
-                .title("Marker in Sydney"));
+//        LatLng sydney = new LatLng(-33.852, 151.211);
+//        ggleMap.addMarker(new MarkerOptions()
+//                .position(sydney)
+//                .title("Marker in Sydney"));
         googleMap = ggleMap;
 
     }

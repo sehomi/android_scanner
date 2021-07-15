@@ -65,7 +65,7 @@ public:
     void myFlip(Mat src);
     void myBlur(Mat src, float sigma);
     bool scan();
-    bool scan(ImageSet&, Mat&);
+    bool scan(ImageSet&, Mat&, std::vector<Location>&);
     bool calcFov(std::vector<Location>&);
     bool calcFov(std::vector<Location>&, std::vector<Location>&, ImuSet&, ImageSet&);
 //    void readFromLog(std::string);

@@ -281,7 +281,7 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
 //    sc->readFromLog(logs_str);
     ImageSet imgSt;
     ImuSet imuSt;
-    std::vector<Location> fov_locs;
+    std::vector<Location> fov_locs, object_poses;
     std::vector<Location> sweeped_area;
     jobjectArray fov_poses_array = NULL;
 
@@ -291,13 +291,8 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
 //    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "2");
 
     Mat dst = imgSt.image.clone();
-    sc->scan(imgSt, dst);
+    sc->scan(imgSt, dst, object_poses);
     std::vector<Rect> bboxes;
-
-//  Must be replaced by scan:
-
-//    sc->detector->detect(imgSt.image, bboxes);
-//    sc->detector->drawDetections(dst, bboxes);
 
     Mat src = imgSt.image.clone();
     cvtColor(src, src, COLOR_BGR2RGB);
@@ -309,7 +304,8 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     if (sc->calcFov(fov_locs, sweeped_area, imuSt, imgSt))
     {
         fov_poses_array = putIntoArray(env, fov_locs);
-        fov_poses_array = putIntoArray(env, fov_locs, 3, fov_poses_array);
+        fov_poses_array = putIntoArray(env, sweeped_area, 3, fov_poses_array);
+        fov_poses_array = putIntoArray(env, object_poses, 0);
     }
 
     return fov_poses_array;
