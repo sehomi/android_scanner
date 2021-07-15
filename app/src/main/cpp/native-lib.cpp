@@ -274,14 +274,17 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     sc->logger->getImageSetFromLogger(imgSt, imuSt);
 
 //    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "2");
-    sc->scan(imgSt);
-    std::vector<Rect> bboxes;
-    Mat dst = imgSt.image.clone();
-    Mat src = imgSt.image.clone();
-// TODO: Must be replaced by scan:
-    sc->detector->detect(imgSt.image, bboxes);
-    sc->detector->drawDetections(dst, bboxes);
 
+    Mat dst = imgSt.image.clone();
+    sc->scan(imgSt, dst);
+    std::vector<Rect> bboxes;
+
+//  Must be replaced by scan:
+
+//    sc->detector->detect(imgSt.image, bboxes);
+//    sc->detector->drawDetections(dst, bboxes);
+
+    Mat src = imgSt.image.clone();
     cvtColor(src, src, COLOR_BGR2RGB);
     matToBitmap(env, src, bitmap, false);
 
@@ -292,7 +295,6 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
         fov_poses_array = convertArray(env, fov_locs);
 
     return fov_poses_array;
-
 }
 
 extern "C"

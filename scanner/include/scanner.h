@@ -28,7 +28,7 @@ struct Marker
 {
     enum {DRAW, REMAIN, DELETE} action;
     enum {PERSON, CAR, FOV} type;
-    Eigen::VectorXd pos;
+    Location pos;
 };
 
 class Scanner{
@@ -37,20 +37,19 @@ class Scanner{
     float f, cx, cy;
     int max_dist, zone;
     bool camInfoSet = false, isSouth = false;
-    std::vector<Eigen::VectorXd> object_poses;
+    std::vector<Location> objectPoses;
     std::vector<Marker> markers;
 
-    void camToMap(std::vector<Rect>&, const ImageSet&, std::vector<Eigen::VectorXd>&);
+    void camToMap(std::vector<Rect>&, const ImageSet&, std::vector<Location>&);
     void toDirectionVector(std::vector<Rect>&, std::vector<Eigen::VectorXd>&);
-    void scaleVector1(Eigen::VectorXd, Eigen::VectorXd&, double);
-    bool scaleVector2(Eigen::VectorXd, Eigen::VectorXd&, double);
-    void associate(std::vector<Eigen::VectorXd>&);
-    Eigen::Quaternion<double> eulerToQuat(double, double, double);
+    bool scaleVector(Eigen::VectorXd, Eigen::VectorXd&, double);
+    void associate(const std::vector<Location>&);
     void gpsToUtm(double, double, double&, double&);
     void eulerToRotationMat(double, double, double, Eigen::Matrix3d&);
     void calcDirVec(float, float, Eigen::VectorXd&);
     void utmToGps(std::vector<Eigen::VectorXd>, std::vector<Location>&);
     void setCamInfo(Mat&);
+    void imageToMap(double, double, double, double, double, double, std::vector<Point2f>, std::vector<Location>&, std::vector<bool>&);
 
 public:
 
@@ -64,7 +63,7 @@ public:
     void myFlip(Mat src);
     void myBlur(Mat src, float sigma);
     bool scan();
-    bool scan(ImageSet&);
+    bool scan(ImageSet&, Mat&);
     bool calcFov(std::vector<Location>&);
     bool calcFov(std::vector<Location>&, ImuSet&, ImageSet&);
 //    void readFromLog(std::string);
