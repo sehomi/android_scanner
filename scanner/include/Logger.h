@@ -1,3 +1,5 @@
+
+
 #ifndef ANDROID_SCANNER_LOGGER_H
 #define ANDROID_SCANNER_LOGGER_H
 
@@ -15,21 +17,17 @@
 #include "time.h"
 #include <android/log.h>
 #include <fstream>
-//#include "dirent.h"
 
 using namespace cv;
-//using namespace std;
 
 #define PI 3.14159265
 
-//DIR *dir;
-//struct dirent *ent;
 
 struct Image
 {
     Mat image = Mat::zeros(Size(480, 640),CV_8UC1);
     double time = 0;
-} ;
+};
 
 struct Location
 {
@@ -39,7 +37,7 @@ struct Location
     double time = 0;
     double x = 0.0;
     double y = 0.0;
-} ;
+};
 
 struct Orientation
 {
@@ -47,7 +45,7 @@ struct Orientation
     double pitch = 0.0;
     double azimuth = 0.0;
     double time = 0;
-} ;
+};
 
 struct ImageSet
 {
@@ -90,8 +88,6 @@ class Logger {
     void bufferOrientation(Orientation);
     void writeImageSet(const ImageSet&);
 
-//    void setImageSet(image);
-
 public:
 
     Image img;
@@ -109,4 +105,4 @@ public:
     bool getImageSetFromLogger(ImageSet &, ImuSet &);
 };
 
-#endif //ANDROID_SCANNER_SCANNER_H
+#endif

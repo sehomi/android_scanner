@@ -26,7 +26,8 @@ add_library( # Sets the name of the library.
         ${CMAKE_CURRENT_LIST_DIR}/src/detector.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/sweeper.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/Logger.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/UTM.cpp)
+        ${CMAKE_CURRENT_LIST_DIR}/src/UTM.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/motionDetector.cpp)
 
 find_library(jnigraphics-lib jnigraphics)
 

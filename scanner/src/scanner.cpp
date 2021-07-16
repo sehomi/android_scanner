@@ -22,8 +22,9 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 
 //    beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
-    logger = new Logger(logsDir, log_mode, true, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
+    logger = new Logger(logsDir, log_mode, false, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
     sweeper = new SweeperGeometry::Sweeper();
+    motionDetector = new MotionDetector();
 //    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-2");
 }
 
@@ -34,7 +35,6 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
     cy = cy_;
     max_dist = maxdist;
     RAD = PI/180.0;
-
 
     if (dm == MN_SSD)
         detector = new Detector(assetsDir, DetectionMethod::MN_SSD, 0.4, 0.4);
@@ -78,7 +78,7 @@ void Scanner::setCamInfo(Mat &img)
     cy = (float) height/2;
 }
 
-bool Scanner::scan(ImageSet &imgSt, Mat &img, std::vector<Location> &object_poses)
+bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &object_poses, Mat &movings_img)
 {
     if (!logger->readFromLog)
         return false;
@@ -94,41 +94,42 @@ bool Scanner::scan(ImageSet &imgSt, Mat &img, std::vector<Location> &object_pose
         camInfoSet = true;
     }
 
+    motionDetector->detect(imgSt.image, movings_img);
+
     detector->detect(imgSt.image, bboxes);
-    detector->drawDetections(img, bboxes);
+    detector->drawDetections(detections_img, bboxes);
 
     camToMap(bboxes, imgSt, object_poses);
 
-    for (auto & op : object_poses)
-    {
-        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "lat %s", std::to_string(op.lat).c_str());
-        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "lng %s", std::to_string(op.lng).c_str());
-        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "alt %s", std::to_string(op.alt).c_str());
-        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "x %s", std::to_string(op.x).c_str());
-        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "y %s", std::to_string(op.y).c_str());
-    }
-//    associate(object_poses);
+//    for (auto & op : object_poses)
+//    {
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "lat %s", std::to_string(op.lat).c_str());
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "lng %s", std::to_string(op.lng).c_str());
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "alt %s", std::to_string(op.alt).c_str());
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "x %s", std::to_string(op.x).c_str());
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "y %s", std::to_string(op.y).c_str());
+//    }
 
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--length of objects:", "%s", std::to_string(object_poses.size()).c_str());
+    associate(object_poses);
     return true;
 }
 
-bool Scanner::scan()
+bool Scanner::scan(Mat &detections, bool rgba = false)
 {
     if (logger->readFromLog)
         return false;
 
     ImageSet imgSt;
-    ImuSet imuSt;
+//    ImuSet imuSt;
     std::vector<cv::Rect> bboxes;
-    std::vector<Location> object_poses;
-    std::vector<Location> fov_poses;
-
-    bool check;
-
-//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------113");
+    std::vector<Location> object_poses, fov_poses;
 
     if (!logger->getImageSet(imgSt))
+    {
+        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------113");
         return false;
+    }
 
     if (!camInfoSet)
     {
@@ -136,7 +137,19 @@ bool Scanner::scan()
         camInfoSet = true;
     }
 
-    detector->detect(imgSt.image, bboxes);
+    detections = imgSt.image.clone();
+
+    if (rgba)
+    {
+        Mat img;
+        cvtColor(imgSt.image, img, COLOR_RGBA2BGR);
+        cvtColor(detections, detections, COLOR_RGBA2BGR);
+        detector->detect(img, bboxes);
+    }
+    else
+        detector->detect(imgSt.image, bboxes);
+
+    detector->drawDetections(detections, bboxes);
 
     camToMap(bboxes, imgSt, object_poses);
 
@@ -166,7 +179,6 @@ bool Scanner::scan()
 //    self._is_scanning = False
 
     return true;
-
 }
 
 //Scanner::Scanner(std::string assetsDir) {
@@ -311,85 +323,59 @@ void Scanner::associate(const std::vector<Location> &object_pos)
         if (!found)
         {
             objectPoses.push_back(object);
-            Marker *mk;
-            mk->action = Marker::DRAW;
+            Marker mk;
+            mk.action = Marker::DRAW;
 //            mk.type = Marker::CAR or Marker::PERSON or ...
-            mk->pos = object;
-            markers.push_back(*mk);
+            mk.pos = object;
+            markers.push_back(mk);
         }
     }
 }
 
-bool Scanner::calcFov(std::vector<Location> &poses_gps)
+bool Scanner::calcFov(std::vector<Location> &poses_gps, std::vector<Location> &sweeped_area)
 {
 //    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-1");
     if(logger->readFromLog)
         return false;
 
-    int w, h;
-    double x, y;
-    Eigen::Quaternion<double> q;
-    Eigen::VectorXd pos(3);
-    Eigen::Matrix3d inertiaToCam, imToCam;
-    std::vector<Eigen::VectorXd> vs, scaled_vs, poses;//, ws;
-
-    std::vector<std::vector<Eigen::VectorXd>> arrows;
-
+//    std::vector<std::vector<Eigen::VectorXd>> arrows;
     ImuSet imuSt;
-    ImageSet imgSt;
-
-
     if (!logger->getImuSet(imuSt)) {
-        //        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------logger->imuset");
         return false;
     }
+
+    std::vector<bool> sps;
+    int w, h;
     w = logger->img.image.size().width;
     h = logger->img.image.size().height;
 
-//    q = eulerToQuat(imuSt.roll, imuSt.pitch, imuSt.azimuth);
-    gpsToUtm(imuSt.lat, imuSt.lng, x, y);
-    pos << y, -x, -imuSt.alt;
-//    eulerToRotationMat(90+beta, 0, 90, imuSt.roll, imuSt.pitch, imuSt.azimuth, camToInertia);
-    eulerToRotationMat(90,0,90, imToCam);
-    eulerToRotationMat(imuSt.roll,imuSt.pitch, imuSt.azimuth, inertiaToCam);
     std::vector<Point2f> points{{0, 0}, { 0, (float)h }, {(float)w, (float)h}, {(float)w, 0}};
-    for (auto & point : points)
-    {
-        Eigen::VectorXd w_(3), v(3), p(3), scaled_v(3);
 
-        calcDirVec(point.x, point.y, w_);
-        v = inertiaToCam.transpose() * imToCam.transpose() * w_;
-//        vs.push_back(v);
-        scaleVector(v, scaled_v, pos[2]);
-//        scaled_vs.push_back(scaled_v);
-//        p << scaled_v[0] + pos[0], scaled_v[1] + pos[1], scaled_v[2] + pos[2];
-        p << -(scaled_v[1] + pos[1]), scaled_v[0] + pos[0], -(scaled_v[2] + pos[2]);
-        poses.push_back(p);
-//        vector<Eigen::VectorXd> arrow{pos, p};
-//        arrows.push_back(arrow);
-//      TODO : The scanned places must be saved - An overall fov must be generated simultaneously
-    }
-    utmToGps(poses, poses_gps);
+    imageToMap(imuSt.roll, imuSt.pitch, imuSt.azimuth, imuSt.lat, imuSt.lng, imuSt.alt, points, poses_gps, sps);
+
+    sweeper->update(poses_gps, sweeped_area);
+
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--length of fov_locs:", "%s", std::to_string(poses_gps.size()).c_str());
     return true;
 }
 
 bool Scanner::calcFov(std::vector<Location> &poses_gps, std::vector<Location> &sweeped_area, ImuSet &imuSt, ImageSet &imgSt)
 {
-    std::vector<bool> sps;
 //    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-1");
     if (!logger->readFromLog)
         return false;
 
 //    std::vector<std::vector<Eigen::VectorXd>> arrows;
-
     int w = imgSt.image.size().width;
     int h = imgSt.image.size().height;
+    std::vector<bool> sps;
     std::vector<Point2f> points{{0, 0}, { 0, (float)h }, {(float)w, (float)h}, {(float)w, 0}};
 
     imageToMap(imgSt.roll, imgSt.pitch, imgSt.azimuth, imgSt.lat, imgSt.lng, imgSt.alt, points, poses_gps, sps);
 
     sweeper->update(poses_gps, sweeped_area);
 
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--length of fov_locs:", "%s", std::to_string(poses_gps.size()).c_str());
     return true;
 }
 

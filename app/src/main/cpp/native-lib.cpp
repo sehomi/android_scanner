@@ -168,76 +168,38 @@ Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobjec
     const char *convertedValuel = (env)->GetStringUTFChars(logs, &isCopyl);
     std::string logs_str = std::string(convertedValuel);
 
-//    sc = new Scanner(assets_str, (DetectionMethod)method, 1.0, 1.0, 1.0, 1.0, 300);
-//    __android_log_print(ANDROID_LOG_VERBOSE, "outerrrrrrrr", "oute");
-
     sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, (bool) log_mode, hva, 300);
-//    __android_log_print(ANDROID_LOG_VERBOSE, "outerrrrrrrr", "outer[0][0]");
 
-//    lg = new Logger();
     return;
 }
 
-extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_flip(JNIEnv* env, jobject p_this, jobject bitmapIn, jobject bitmapOut) {
-    Mat src;
-    bitmapToMat(env, bitmapIn, src, false);
-    // NOTE bitmapToMat returns Mat in RGBA format, if needed convert to BGRA using cvtColor
-
-    sc->myFlip(src);
-
-    // NOTE matToBitmap expects Mat in GRAY/RGB(A) format, if needed convert using cvtColor
-    matToBitmap(env, src, bitmapOut, false);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_blur(JNIEnv* env, jobject p_this, jobject bitmapIn, jobject bitmapOut, jfloat sigma) {
-    Mat src;
-    bitmapToMat(env, bitmapIn, src, false);
-    sc->myBlur(src, sigma);
-    matToBitmap(env, src, bitmapOut, false);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_detect(JNIEnv* env, jobject p_this, jobject bitmapIn, jobject bitmapOut) {
-    Mat src;
-    bitmapToMat(env, bitmapIn, src, false);
-    cvtColor(src, src, COLOR_RGBA2BGR);
-
-    std::vector<cv::Rect> bboxes;
-    Mat dst = src.clone();
-
-    sc->detector->detect(src, bboxes);
-    sc->detector->drawDetections(dst, bboxes);
-
-    cvtColor(dst, dst, COLOR_BGR2RGB);
-    matToBitmap(env, dst, bitmapOut, false);
-
-//    return bboxes;
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_scan(JNIEnv* env, jobject p_this) {
+//extern "C" JNIEXPORT void JNICALL
+//Java_com_example_android_1scanner_MainActivity_detect(JNIEnv* env, jobject p_this, jobject bitmapIn, jobject bitmapOut) {
 //    Mat src;
 //    bitmapToMat(env, bitmapIn, src, false);
 //    cvtColor(src, src, COLOR_RGBA2BGR);
-
-    sc->scan();
-
-
-
+//
 //    std::vector<cv::Rect> bboxes;
 //    Mat dst = src.clone();
-
+//
 //    sc->detector->detect(src, bboxes);
-//    sc->scan(bboxes)
-
 //    sc->detector->drawDetections(dst, bboxes);
-
+//
 //    cvtColor(dst, dst, COLOR_BGR2RGB);
 //    matToBitmap(env, dst, bitmapOut, false);
+//
+////    return bboxes;
+//}
 
-//    return bboxes;
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_MainActivity_scan(JNIEnv* env, jobject p_this, jobject detections) {
+
+    Mat det;
+    if (sc->scan(det, true))
+    {
+        cvtColor(det, det, COLOR_BGR2RGB);
+        matToBitmap(env, det, detections, false);
+    }
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -258,25 +220,20 @@ Java_com_example_android_1scanner_MainActivity_setLocation(JNIEnv* env, jobject 
 extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time)
 {
-    std::vector<Location> fov_poses;
+    std::vector<Location> fov_poses, sweeped_area;
 
-    if (!sc->logger->setOrientation(roll, pitch, azimuth, time))
-        return NULL;
-
-    bool success = sc->calcFov(fov_poses);
-    if (success)
+    if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_poses, sweeped_area))
     {
         return putIntoArray(env, fov_poses);
     }
     else
-        {
+    {
         return  NULL;
     }
-
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL
-Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_this, jobject bitmap, jobject processedBitmap)
+Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_this, jobject bitmap, jobject processedBitmap, jobject movingsBitmap)
 {
 //    sc->readFromLog(logs_str);
     ImageSet imgSt;
@@ -290,8 +247,9 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
 
 //    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "2");
 
+    Mat movings;
     Mat dst = imgSt.image.clone();
-    sc->scan(imgSt, dst, object_poses);
+    sc->scan(imgSt, dst, object_poses, movings);
     std::vector<Rect> bboxes;
 
     Mat src = imgSt.image.clone();
@@ -301,11 +259,14 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     cvtColor(dst, dst, COLOR_BGR2RGB);
     matToBitmap(env, dst, processedBitmap, false);
 
+    cvtColor(movings, movings, COLOR_BGR2RGB);
+    matToBitmap(env, movings, movingsBitmap, false);
+
     if (sc->calcFov(fov_locs, sweeped_area, imuSt, imgSt))
     {
         fov_poses_array = putIntoArray(env, fov_locs);
         fov_poses_array = putIntoArray(env, sweeped_area, 3, fov_poses_array);
-        fov_poses_array = putIntoArray(env, object_poses, 0);
+        fov_poses_array = putIntoArray(env, object_poses, 0, fov_poses_array);
     }
 
     return fov_poses_array;
@@ -365,12 +326,9 @@ Java_com_example_android_1scanner_AircraftActivity_setLocation(JNIEnv* env, jobj
 extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time)
 {
-    std::vector<Location> fov_poses;
+    std::vector<Location> fov_poses, sweeped_area;
 
-    sc->logger->setOrientation(roll, pitch, azimuth, time);
-
-    bool success = sc->calcFov(fov_poses);
-    if (success)
+    if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_poses, sweeped_area))
     {
         return putIntoArray(env, fov_poses);
     }

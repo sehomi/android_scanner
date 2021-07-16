@@ -308,7 +308,7 @@ bool Logger::getImuSet(ImuSet &imuSet)
     Location location;
     float dist = 0, minDist = 1e7;
 
-    if (orientationBuffer.size() == 0 || locationBuffer.size() == 0 || img.image.empty())
+    if (orientationBuffer.size() == 0/* || locationBuffer.size() == 0*/ || img.image.empty())
     {
         return false;
     }

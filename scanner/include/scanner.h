@@ -18,12 +18,10 @@
 #include "Logger.h"
 #include "sweeper.h"
 #include "UTM.h"
-
-
-//#define PI 3.14159265
+#include "motionDetector.h"
 
 using namespace cv;
-//using namespace std;
+
 
 struct Marker
 {
@@ -54,9 +52,10 @@ class Scanner{
 
 public:
 
-    Detector* detector;
-    Logger* logger;
-    SweeperGeometry::Sweeper* sweeper;
+    Detector *detector;
+    Logger *logger;
+    SweeperGeometry::Sweeper *sweeper;
+    MotionDetector *motionDetector;
 
 //    Scanner(std::string);
 //    Scanner(std::string, float&, float&, float&, float&, int maxdist);
@@ -64,9 +63,9 @@ public:
     Scanner(std::string, std::string, DetectionMethod, bool, float, int);
     void myFlip(Mat src);
     void myBlur(Mat src, float sigma);
-    bool scan();
-    bool scan(ImageSet&, Mat&, std::vector<Location>&);
-    bool calcFov(std::vector<Location>&);
+    bool scan(Mat&, bool);
+    bool scan(ImageSet&, Mat&, std::vector<Location>&, Mat&);
+    bool calcFov(std::vector<Location>&, std::vector<Location>&);
     bool calcFov(std::vector<Location>&, std::vector<Location>&, ImuSet&, ImageSet&);
 //    void readFromLog(std::string);
 };

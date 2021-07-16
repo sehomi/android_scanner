@@ -178,24 +178,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         ImageView iv = binding.imageView2;
         iv.setImageBitmap(dstBitmap);
 
-        SeekBar sb = binding.seekBar;
-        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                doBlur();
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
         Log.v(TAG, "---------4");
         Context context = this;
         boolean camDetected = checkCameraHardware(context);
@@ -222,23 +204,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 try {
                     while (true) {
                         sleep(500);
-                        decodeBytesToImage();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-
-        thread.start();
-
-        Log.v(TAG, "---------5");
-        Thread scan_thread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    while (true) {
-                        sleep(50);
                         doScan();
                     }
                 } catch (InterruptedException e) {
@@ -247,7 +212,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         };
 
-        scan_thread.start();
+        thread.start();
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -280,19 +245,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.v(TAG, "---------6");
     }
 
-    private void doScan()
-    {
-        scan();
-    }
-
-
     private class MyLocationListener implements LocationListener {
 
         @Override
         public void onLocationChanged(Location loc) {
-
-//            if (readMode)
-//                return;
 
             Log.v(TAG, "---------7");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -379,56 +335,43 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 else
                 {
-                    Log.v(TAG, "\n********** fov failed! \n");
+//                    Log.v(TAG, "\n********** fov failed! \n");
                 }
             }
             Log.v(TAG, "---------10");
         }
     };
 
-    private void decodeBytesToImage(){
+    private void doScan(){
         Log.v(TAG, "---------11");
         if(!isImgBytesReady)// || readMode)
             return;
 
         Camera.Parameters parameters = mCamera.getParameters();
-//        float fl = parameters.getFocalLength();
-//        Log.v(TAG, "focal length:   "+String.valueOf(fl));
+
         int width = parameters.getPreviewSize().width;
         int height = parameters.getPreviewSize().height;
 
-//        double fl = (0.5 * width * (1.0 / Math.tan(Math.toRadians(hva/2))));
-//        Log.v(TAG, "focal length:   "+String.valueOf(fl));
-
         YuvImage yuv = new YuvImage(imgSet.imgBytes, parameters.getPreviewFormat(), width, height, null);
-//        YuvImage yuv = new YuvImage(imgBytes, parameters.getPreviewFormat(), width, height, null);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         yuv.compressToJpeg(new Rect(0, 0, width, height), 50, out);
 
         byte[] bts = out.toByteArray();
         final Bitmap bitmap = BitmapFactory.decodeByteArray(bts, 0, bts.length);
-//        int x =0;
+
         setImage(bitmap, imgSet.image_time);
         Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
-        detect(bitmap, bitmap1);
+//        detect(bitmap, bitmap1);
+        scan(bitmap1);
         MainActivity.this.runOnUiThread(new Runnable() {
 
             @Override
             public void run() {
-//                ((ImageView) findViewById(R.id.loopback)).setImageBitmap(bitmap1);
                 binding.imageView2.setImageBitmap(bitmap1);
             }
         });
-//        binding.imageView2.setImageBitmap(bitmap1);
         Log.v(TAG, "---------12");
-    }
-
-    public void doFlip(View view){
-//        flip(srcBitmap,srcBitmap);
-//        doBlur();
-        detect(srcBitmap, dstBitmap);
-        binding.imageView2.setImageBitmap(dstBitmap);
     }
 
     public void playLog(View view){
@@ -453,14 +396,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         isImgBytesReady = false;
                         Log.v(TAG, "---------this is while");
                         sleep(500);
-                        Bitmap bitmap, processedBitmap;
+
+                        Bitmap bitmap, processedBitmap, movingsBitmap;
                         bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.mountain);
                         processedBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.mountain);
-                        double[][] fov = readLog(bitmap, processedBitmap);
+                        movingsBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.mountain);
+                        double[][] fov = readLog(bitmap, processedBitmap, movingsBitmap);
+
                         runOnUiThread(new Runnable() {
 
                             @Override
                             public void run() {
+                                binding.imageView3.setImageBitmap(movingsBitmap);
                                 binding.imageView2.setImageBitmap(processedBitmap);
                                 if (fov != null && googleMap != null) {
                                     if (fov_polygon == null)
@@ -491,7 +438,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         {
                                             sweep_polygon.add(new LatLng(fov[i][0], fov[i][1]));
                                         }
-
                                     }
 
                                     fov_polygon.add(new LatLng(fov[0][0], fov[0][1]));
@@ -550,25 +496,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    public void doBlur(){
-
-        float sigma = (float) (binding.seekBar.getProgress() / 10.0);
-        if(sigma<0.1){
-            sigma= (float) 0.1;
-        }
-
-        blur(srcBitmap, dstBitmap, sigma);
-        binding.imageView2.setImageBitmap(dstBitmap);
-    }
-
     @Override
     public void onMapReady(@NonNull GoogleMap ggleMap) {
-//        LatLng sydney = new LatLng(-33.852, 151.211);
-//        ggleMap.addMarker(new MarkerOptions()
-//                .position(sydney)
-//                .title("Marker in Sydney"));
-        googleMap = ggleMap;
 
+        googleMap = ggleMap;
     }
 
     /**
@@ -577,15 +508,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      */
     public native String stringFromJNI();
     public native void createScanner(String assets, String logs, boolean log_mode, int method, float hva);
-    public native void flip(Bitmap bitmapIn, Bitmap bitmapOut);
-    public native void blur(Bitmap bitmapIn, Bitmap bitmapOut, float sigma);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
-    public native void scan();
+    public native void scan(Bitmap detections);
     public native void setImage(Bitmap bitmap, double time);
     public native void setLocation(double lat, double lng, double alt, double time);
 //    public native boolean setOrientation(double roll, double pitch, double azimuth, double time, Double[][] oa);
     public native double[][] setOrientation(double roll, double pitch, double azimuth, double time);
-    public native double[][] readLog(Bitmap bitmap, Bitmap processedBitmap);
+    public native double[][] readLog(Bitmap bitmap, Bitmap processedBitmap, Bitmap movingsBitmap);
 
     @Override
     public void onResume() {
@@ -670,7 +599,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
 
     }
-
 }
 
 
