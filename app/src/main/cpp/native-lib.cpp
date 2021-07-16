@@ -136,10 +136,10 @@ jobjectArray putIntoArray(JNIEnv* env, std::vector<Location> fov_poses, int type
     {
         jdoubleArray inner = env->NewDoubleArray(4);
 
-        Location pos = fov_poses[i];
+        Location pos = fov_poses.at(i-prior_len);
         double posa[4] = {pos.lat, pos.lng, pos.alt, (double) type};
         env->SetDoubleArrayRegion(inner, 0, 4, posa);
-//             set inner's values
+
         env->SetObjectArrayElement(outer, i, inner);
         env->DeleteLocalRef(inner);
     }
@@ -305,7 +305,7 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     {
         fov_poses_array = putIntoArray(env, fov_locs);
         fov_poses_array = putIntoArray(env, sweeped_area, 3, fov_poses_array);
-        fov_poses_array = putIntoArray(env, object_poses, 0);
+        fov_poses_array = putIntoArray(env, object_poses, 0, fov_poses_array);
     }
 
     return fov_poses_array;

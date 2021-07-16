@@ -24,6 +24,7 @@ namespace SweeperGeometry{
 
     private:
 
+        static Location p0;
         std::vector<Location> sweeped_area_loc;
         std::vector<Point> polygon;
 
@@ -31,6 +32,12 @@ namespace SweeperGeometry{
         int orientation(Point p, Point q, Point r);
         bool doIntersect(Point p1, Point q1, Point p2, Point q2);
         bool isInside(Point p);
+        void swap(Location &p1, Location &p2);
+        static double dist(Location p1, Location p2);
+        static int compare(const void *vp1, const void *vp2);
+        static int orientation(Location p, Location q, Location r);
+        void sortToClosedPath(std::vector<Location> &);
+        void refineLocations(std::vector<Point> &, std::vector<Location> &);
 
     };
 }
