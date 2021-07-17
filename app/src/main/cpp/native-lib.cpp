@@ -136,10 +136,10 @@ jobjectArray putIntoArray(JNIEnv* env, std::vector<Location> fov_poses, int type
     {
         jdoubleArray inner = env->NewDoubleArray(4);
 
-        Location pos = fov_poses[i];
+        Location pos = fov_poses.at(i-prior_len);
         double posa[4] = {pos.lat, pos.lng, pos.alt, (double) type};
         env->SetDoubleArrayRegion(inner, 0, 4, posa);
-//             set inner's values
+
         env->SetObjectArrayElement(outer, i, inner);
         env->DeleteLocalRef(inner);
     }

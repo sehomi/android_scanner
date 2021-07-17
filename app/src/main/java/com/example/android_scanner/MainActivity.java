@@ -443,8 +443,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     fov_polygon.add(new LatLng(fov[0][0], fov[0][1]));
                                     sweep_polygon.add(new LatLng(fov[5][0], fov[5][1]));
 
-                                    sweep_polygon.fillColor(Color.argb(150, 255, 255, 255));
-                                    sweep_polygon.strokeColor(Color.argb(0, 255, 255, 255));
+                                    sweep_polygon.fillColor(Color.argb(150, 255, 0, 0));
+                                    sweep_polygon.strokeColor(Color.argb(255, 150, 150, 150));
                                     fov_polygon.strokeColor(Color.BLUE);
 
                                     googleMap.addPolygon(sweep_polygon);
