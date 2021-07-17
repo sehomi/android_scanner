@@ -365,9 +365,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //        detect(bitmap, bitmap1);
         scan(bitmap1);
         MainActivity.this.runOnUiThread(new Runnable() {
-
             @Override
             public void run() {
+                Log.v(TAG, "---------65");
                 binding.imageView2.setImageBitmap(bitmap1);
             }
         });
@@ -508,7 +508,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      */
     public native String stringFromJNI();
     public native void createScanner(String assets, String logs, boolean log_mode, int method, float hva);
-    public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
+//    public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
     public native void scan(Bitmap detections);
     public native void setImage(Bitmap bitmap, double time);
     public native void setLocation(double lat, double lng, double alt, double time);

@@ -195,11 +195,16 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_example_android_1scanner_MainActivity_scan(JNIEnv* env, jobject p_this, jobject detections) {
 
     Mat det;
-    if (sc->scan(det, true))
+    bitmapToMat(env, detections, det, false);
+    cvtColor(det, det, COLOR_RGBA2BGR);
+
+    if (!sc->scan(det, true))
     {
-        cvtColor(det, det, COLOR_BGR2RGB);
-        matToBitmap(env, det, detections, false);
+        putText(det, "SENSOR DATA NOT PROVIDED", cv::Point(50,200),cv::FONT_HERSHEY_DUPLEX,4,cv::Scalar(0,0,255),3,false);
     }
+
+    cvtColor(det, det, COLOR_BGR2RGB);
+    matToBitmap(env, det, detections, false);
 }
 
 extern "C" JNIEXPORT void JNICALL
