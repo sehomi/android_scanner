@@ -13,9 +13,9 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.location.Location;
 import android.location.LocationListener;
@@ -26,6 +26,7 @@ import android.util.Log;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import com.codemonkeylabs.fpslibrary.TinyDancer;
@@ -34,18 +35,16 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polygon;
+import com.google.android.gms.maps.model.PolygonOptions;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 import dji.common.flightcontroller.Attitude;
 import dji.common.flightcontroller.FlightControllerState;
@@ -62,14 +61,18 @@ import dji.sdk.gimbal.Gimbal;
 
 public class AircraftActivity extends AppCompatActivity implements OnMapReadyCallback, TextureView.SurfaceTextureListener {
 
-
     // Used to load the 'native-lib' library on application startup.
     static {
         System.loadLibrary("native-lib");
     }
 
     private ActivityAircraftBinding binding;
+    Polygon fov_polygon = null;
+    Polygon sweep_polygon = null;
     private GoogleMap googleMap = null;
+
+    List<Marker> AllMarkers = new ArrayList<Marker>();
+
     private Bitmap srcBitmap;
     private Bitmap dstBitmap;
     private Marker aircraft = null;
@@ -83,14 +86,20 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     protected DJICodecManager mCodecManager = null;
     protected DJICodecManager.OnGetBitmapListener bitmapListener = null;
 
+    private double aircraftYaw = 0.0;
+    private RadioGroup r_group;
+    private String detMode = "OBJECT_DETECTION";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.v(TAG, "-------///1");
         super.onCreate(savedInstanceState);
-
+        Log.v(TAG, "-------///2");
         binding = ActivityAircraftBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        initUI();
+        Log.v(TAG, "-------///3");
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         TinyDancer.create()
@@ -103,8 +112,8 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
         srcBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.mountain);
         dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
-
-        createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getBooleanExtra("Log Mode", false), 0, getIntent().getIntExtra("Algorithm", 0));
+        Log.v(TAG, "-------///4");
+        createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getBooleanExtra("Log Mode", false), (float) 66.0, getIntent().getIntExtra("Algorithm", 0));
 
         // Example of a call to a native method
         ImageView iv = binding.imageView2;
@@ -124,7 +133,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         if (binding.cameraPreview != null) {
             binding.cameraPreview.setSurfaceTextureListener(this);
         }
-
+        Log.v(TAG, "-------///5");
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         LocationListener locationListener = new MyLocationListener();
 
@@ -225,7 +234,9 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                             LatLng user_pos = new LatLng(lat, lng);
                             user = googleMap.addMarker(new MarkerOptions()
                                     .position(user_pos)
-                                    .title("User Position"));
+                                    .anchor(0.5f,0.5f)
+                                    .title("User Position")
+                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.blue_circle_icon)));
                             googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(user_pos, 18));
                         }
                         else
@@ -260,13 +271,22 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     private void processBitmap(Bitmap bitmap){
 
         Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
-        detect(bitmap, bitmap1);
+        Bitmap bitmap2 = bitmap.copy(bitmap.getConfig(), true);
+//        detect(bitmap, bitmap1);
+        double[][] object_poses;
+        if (r_group.getCheckedRadioButtonId() == R.id.objDetMode)
+            object_poses = scan(bitmap1, bitmap2, 0);
+        else
+            object_poses = scan(bitmap1, bitmap2, 1);
+
+        visualize(object_poses, bitmap2, bitmap1, false);
 
         this.runOnUiThread(new Runnable() {
 
             @Override
             public void run() {
                 binding.imageView2.setImageBitmap(bitmap1);
+                binding.motionImageView.setImageBitmap(bitmap2);
             }
         });
 
@@ -321,6 +341,30 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         super.onDestroy();
     }
 
+    private void initUI()
+    {
+        r_group = (RadioGroup) findViewById(R.id.detectionMode);
+    }
+
+//    public void onRgClick(View v)
+//    {
+//        switch (v.getId()) {
+//
+//            case R.id.btn_open: {
+//
+//                if (r_group.getCheckedRadioButtonId() == R.id.objDetMode){
+//                    detMode = "OBJECT_DETECTION";
+//                }
+//                else if (r_group.getCheckedRadioButtonId() == R.id.motDetMode){
+//                    detMode = "MOTION_DETECTION";
+//                }
+//                break;
+//            }
+//            default:
+//                break;
+//        }
+//    }
+
     private void initState() {
         FlightController flightController = CameraApplication.getFlightControllerInstance();
         Gimbal gimbal = CameraApplication.getGimbalInstance();
@@ -342,6 +386,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     double roll = attitude.roll;
                     double pitch = attitude.pitch;
                     double yaw = attitude.yaw;
+                    aircraftYaw = yaw;
 //                    double[][] fov = setOrientation(roll, pitch, yaw, curr_time);
 
                     runOnUiThread(new Runnable() {
@@ -419,12 +464,15 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                         curr_time = ins.getEpochSecond() + (ins.getNano()/1e9);
                     }
 
+                    gimbalState.getYawRelativeToAircraftHeading();
                     double groll = gimbalState.getAttitudeInDegrees().getRoll();
                     double gpitch = gimbalState.getAttitudeInDegrees().getPitch();
-                    double gyaw = gimbalState.getAttitudeInDegrees().getYaw();
+//                    double gyaw = gimbalState.getAttitudeInDegrees().getYaw() + gimbalState.getYawRelativeToAircraftHeading();
+                    double gyaw = aircraftYaw;
 
                     double[][] fov = setOrientation(groll, gpitch, gyaw, curr_time);
-
+                    visualize(fov, null, null, true);
+                    Log.e(TAG, "onResume");
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -439,6 +487,85 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         else{
             Log.e(TAG, "Gimbal is null.");
         }
+    }
+
+    private void visualize(double[][] markers, Bitmap movingsBitmap, Bitmap processedBitmap, boolean fovCall)
+    {
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                if (!fovCall) {
+                    binding.motionImageView.setImageBitmap(movingsBitmap);
+                    binding.imageView2.setImageBitmap(processedBitmap);
+                    Log.v(TAG, "vis -- obj call");
+                }
+                else
+                {
+                    Log.v(TAG, "vis -- fov call");
+                }
+
+                if (markers != null && googleMap != null) {
+                    if (fovCall)
+                    {
+                        if ( fov_polygon == null)
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(markers[0][0], markers[0][1]), 18));
+                        else{
+                            fov_polygon.remove();
+//                            sweep_polygon.remove();
+                        }
+                    }
+                    else
+                    {
+                        for (Marker mLocationMarker: AllMarkers) {
+                            mLocationMarker.remove();
+                        }
+                        AllMarkers.clear();
+                    }
+
+                    PolygonOptions fov_polygon_opt = new PolygonOptions();
+                    PolygonOptions sweep_polygon_opt = new PolygonOptions();
+
+                    for (double[] marker : markers) {
+                        Log.v(TAG, String.valueOf(marker[0]) + " " + String.valueOf(marker[1]) + " " + String.valueOf(marker[3]));
+                        if (marker[3] == 0) {
+
+                            LatLng per = new LatLng(marker[0], marker[1]);
+                            MarkerOptions locMarker = new MarkerOptions();
+                            locMarker.position(per);
+                            locMarker.anchor(0.5f,0.5f);
+                            locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.red_circle_icon));
+                            locMarker.title("Person");
+                            Marker mm = googleMap.addMarker(locMarker);
+                            AllMarkers.add(mm);
+                            Log.v(TAG, "as person");
+                        } else if (marker[3] == 1) {
+                            Log.v(TAG, "as car");
+                        } else if (marker[3] == 2) {
+                            Log.v(TAG, "as fov");
+                            fov_polygon_opt.add(new LatLng(marker[0], marker[1]));
+                        } else if (marker[3] == 3) {
+                            Log.v(TAG, "as sweeped");
+                            sweep_polygon_opt.add(new LatLng(marker[0], marker[1]));
+                        }
+                    }
+
+                    if (fovCall)
+                    {
+                        fov_polygon_opt.add(new LatLng(markers[0][0], markers[0][1]));
+                        sweep_polygon_opt.add(new LatLng(markers[4][0], markers[4][1]));
+
+                        sweep_polygon_opt.fillColor(Color.argb(150, 255, 0, 0));
+                        sweep_polygon_opt.strokeColor(Color.argb(255, 150, 150, 150));
+                        fov_polygon_opt.strokeColor(Color.BLUE);
+
+//                        sweep_polygon = googleMap.addPolygon(sweep_polygon_opt);
+                        fov_polygon = googleMap.addPolygon(fov_polygon_opt);
+                    }
+
+                }
+            }
+        });
     }
 
     private void initPreviewer() {
@@ -481,6 +608,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
      */
     public native void createScanner(String assets, String logs, boolean log_mode, float hva, int method);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
+    public native double[][] scan(Bitmap detections, Bitmap movings_img, int detMode);
     public native void setImage(Bitmap bitmap, double time);
     public native void setLocation(double lat, double lng, double alt, double time);
     public native double[][] setOrientation(double roll, double pitch, double azimuth, double time);

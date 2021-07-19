@@ -38,6 +38,7 @@ class Scanner{
     bool camInfoSet = false, isSouth = false;
     std::vector<Location> objectPoses;
     std::vector<Marker> markers;
+//    std::vector<int> DET_MODES{0, 1};
 
     void camToMap(std::vector<Rect>&, const ImageSet&, std::vector<Location>&);
     void toDirectionVector(std::vector<Rect>&, std::vector<Eigen::VectorXd>&);
@@ -63,7 +64,7 @@ public:
     Scanner(std::string, std::string, DetectionMethod, bool, float, int);
     void myFlip(Mat src);
     void myBlur(Mat src, float sigma);
-    bool scan(Mat&, bool);
+    bool scan(std::vector<Location>&, Mat&, Mat&,int, bool);
     bool scan(ImageSet&, Mat&, std::vector<Location>&, Mat&);
     bool calcFov(std::vector<Location>&, std::vector<Location>&);
     bool calcFov(std::vector<Location>&, std::vector<Location>&, ImuSet&, ImageSet&);

@@ -194,11 +194,12 @@ Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobjec
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_android_1scanner_MainActivity_scan(JNIEnv* env, jobject p_this, jobject detections) {
 
-    Mat det;
+    Mat det, movings;
+    std::vector<Location> poses;
     bitmapToMat(env, detections, det, false);
     cvtColor(det, det, COLOR_RGBA2BGR);
 
-    if (!sc->scan(det, true))
+    if (!sc->scan(poses, det, movings, 0, true))
     {
         putText(det, "SENSOR DATA NOT PROVIDED", cv::Point(50,200),cv::FONT_HERSHEY_DUPLEX,4,cv::Scalar(0,0,255),3,false);
     }
@@ -248,7 +249,9 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     jobjectArray fov_poses_array = NULL;
 
 //    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1");
-    sc->logger->getImageSetFromLogger(imgSt, imuSt);
+    // TODO: get readlog mode from connection activity
+    if (!sc->logger->getImageSetFromLogger(imgSt, imuSt))
+        return NULL;
 
 //    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "2");
 
@@ -332,19 +335,49 @@ extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time)
 {
     std::vector<Location> fov_poses, sweeped_area;
+    jobjectArray fov_poses_array = NULL;
 
     if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_poses, sweeped_area))
     {
-        return putIntoArray(env, fov_poses);
+        fov_poses_array = putIntoArray(env, fov_poses);
+        fov_poses_array = putIntoArray(env, sweeped_area, 3, fov_poses_array);
+
+        return fov_poses_array;
     }
     else
     {
         return  NULL;
     }
-//    if (outer == NULL) {
-//
-//        __android_log_print(ANDROID_LOG_VERBOSE, "outerrrrrrrr", "outer[0][0]");
-//        return NULL;
-//    }
 
+}
+
+extern "C" JNIEXPORT jobjectArray JNICALL
+Java_com_example_android_1scanner_AircraftActivity_scan(JNIEnv* env, jobject p_this, jobject detections, jobject movings_img, jint detMode) {
+
+//    jboolean isCopy;
+//    const char *convertedValue = (env)->GetStringUTFChars(detMode, &isCopy);
+//    std::string detModeStr = std::string(convertedValue);
+
+    std::vector<Location> object_poses;
+    Mat det, movings;
+    bitmapToMat(env, detections, det, false);
+    cvtColor(det, det, COLOR_RGBA2BGR);
+
+    bitmapToMat(env, movings_img, movings, false);
+    cvtColor(movings, movings, COLOR_RGBA2BGR);
+
+    if (!sc->scan(object_poses, det, movings, (int) detMode, false))
+    {
+        putText(det, "SENSOR DATA NOT PROVIDED", cv::Point(50,200),cv::FONT_HERSHEY_DUPLEX,4,cv::Scalar(0,0,255),3,false);
+        putText(movings, "SENSOR DATA NOT PROVIDED", cv::Point(50,200),cv::FONT_HERSHEY_DUPLEX,4,cv::Scalar(0,0,255),3,false);
+        return NULL;
+    }
+
+    cvtColor(det, det, COLOR_BGR2RGB);
+    matToBitmap(env, det, detections, false);
+
+    cvtColor(movings, movings, COLOR_BGR2RGB);
+    matToBitmap(env, movings, movings_img, false);
+
+    return putIntoArray(env, object_poses, 0);
 }

@@ -10,6 +10,7 @@ void MotionDetector::detect(cv::Mat &frame, cv::Mat &output)
     if (old_frame.empty())
     {
         cv::cvtColor(frame, old_frame, cv::COLOR_RGB2GRAY);
+        output = cv::Mat::zeros(frame.rows, frame.cols, CV_8UC3);
         return;
     }
 
@@ -30,6 +31,7 @@ void MotionDetector::visualize(const cv::Mat &flow, cv::Mat &output_bgr)
 
     cv::cartToPolar(flow_parts[0], flow_parts[1], magnitude, angle, true);
     cv::normalize(magnitude, magn_norm, 0.0f, 1.0f, cv::NORM_MINMAX);
+//    magn_norm = magnitude.clone();
     angle *= ((1.f / 360.f) * (180.f / 255.f));
 
     //build hsv image

@@ -447,7 +447,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     sweep_polygon.strokeColor(Color.argb(255, 150, 150, 150));
                                     fov_polygon.strokeColor(Color.BLUE);
 
-                                    googleMap.addPolygon(sweep_polygon);
+//                                    googleMap.addPolygon(sweep_polygon);
                                     googleMap.addPolygon(fov_polygon);
 
 //                                        polyline = googleMap.addPolyline(new PolylineOptions()
@@ -470,19 +470,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 }
                             }
                         });
-//                        if (fov != null)
-//                        {
-//                            Log.v(TAG, "********** fov from readlog:");
-
-//                            Log.v(TAG, String.valueOf(fov[0][0]) + " " + String.valueOf(fov[0][1]) + " " + String.valueOf(fov[0][2]));
-//                            Log.v(TAG, String.valueOf(fov[1][0]) + " " + String.valueOf(fov[1][1]) + " " + String.valueOf(fov[1][2]));
-//                            Log.v(TAG, String.valueOf(fov[2][0]) + " " + String.valueOf(fov[2][1]) + " " + String.valueOf(fov[2][2]));
-//                            Log.v(TAG, String.valueOf(fov[3][0]) + " " + String.valueOf(fov[3][1]) + " " + String.valueOf(fov[3][2]));
-//                        }
-//                        else
-//                        {
-//                            Log.v(TAG, "\n********** fov failed! - readlog \n");
-//                        }
+//
                     }
                 } catch (InterruptedException e) {
                     Log.e(TAG, "\n********** readlog run failed! \n"+e.getMessage());

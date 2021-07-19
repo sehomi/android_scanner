@@ -115,7 +115,7 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &
     return true;
 }
 
-bool Scanner::scan(Mat &detections, bool rgba = false)
+bool Scanner::scan(std::vector<Location> &object_poses, Mat &detections, Mat &movings_img, int det_mode = 0, bool rgba = false)
 {
     if (logger->readFromLog)
         return false;
@@ -123,7 +123,6 @@ bool Scanner::scan(Mat &detections, bool rgba = false)
     ImageSet imgSt;
 //    ImuSet imuSt;
     std::vector<cv::Rect> bboxes;
-    std::vector<Location> object_poses, fov_poses;
 
     if (!logger->getImageSet(imgSt))
     {
@@ -139,19 +138,24 @@ bool Scanner::scan(Mat &detections, bool rgba = false)
 
     detections = imgSt.image.clone();
 
-    if (rgba)
-    {
-        Mat img;
-        cvtColor(imgSt.image, img, COLOR_RGBA2BGR);
-        cvtColor(detections, detections, COLOR_RGBA2BGR);
-        detector->detect(img, bboxes);
+    if (det_mode == 1) {
+        motionDetector->detect(imgSt.image, movings_img);
     }
-    else
-        detector->detect(imgSt.image, bboxes);
+    else {
+        if (rgba) {
+            Mat img;
+            cvtColor(imgSt.image, img, COLOR_RGBA2BGR);
+            cvtColor(detections, detections, COLOR_RGBA2BGR);
+            detector->detect(img, bboxes);
+        } else
+            detector->detect(imgSt.image, bboxes);
 
-    detector->drawDetections(detections, bboxes);
+        detector->drawDetections(detections, bboxes);
 
-    camToMap(bboxes, imgSt, object_poses);
+        camToMap(bboxes, imgSt, object_poses);
+
+        movings_img = cv::Mat::zeros(imgSt.image.rows, imgSt.image.cols, CV_8UC3);
+    }
 
 //    associate(object_poses);
 
@@ -355,7 +359,7 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps, std::vector<Location> &s
 
     sweeper->update(poses_gps, sweeped_area);
 
-//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--length of fov_locs:", "%s", std::to_string(poses_gps.size()).c_str());
+    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--length of fov_locs:", "%s", std::to_string(poses_gps.size()).c_str());
     return true;
 }
 
