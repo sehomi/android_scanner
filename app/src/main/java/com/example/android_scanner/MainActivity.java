@@ -57,8 +57,11 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -140,9 +143,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     double loc_time;
 
     Polyline polyline = null;
-    PolygonOptions fov_polygon = null;
-    PolygonOptions sweep_polygon = null;
+    Polygon fov_polygon = null;
+    Polygon sweep_polygon = null;
     GoogleMap googleMap = null;
+    List<Marker> AllMarkers = new ArrayList<Marker>();
 
 //    boolean readMode = false;
 
@@ -414,17 +418,33 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(fov[0][0], fov[0][1]), 18));
 //                                    if (polyline == null) {
 
-                                    googleMap.clear();
-                                    fov_polygon = new PolygonOptions();
-                                    sweep_polygon = new PolygonOptions();
+//                                    googleMap.clear();
+
+                                    for (Marker mLocationMarker: AllMarkers) {
+                                        mLocationMarker.remove();
+                                    }
+                                    AllMarkers.clear();
+
+                                    if (fov_polygon != null){
+                                        fov_polygon.remove();
+                                        sweep_polygon.remove();
+                                    }
+
+                                    PolygonOptions fov_polygon_opt = new PolygonOptions();
+                                    PolygonOptions sweep_polygon_opt = new PolygonOptions();
 
                                     for(int i=0; i<fov.length; i++){
                                         Log.v(TAG, String.valueOf(fov[i][0]) + " " + String.valueOf(fov[i][1]) + " " + String.valueOf(fov[i][3]));
                                         if (fov[i][3] == 0){
                                             LatLng per = new LatLng(fov[i][0], fov[i][1]);
-                                            googleMap.addMarker(new MarkerOptions()
-                                                    .position(per)
-                                                    .title("Person"));
+                                            MarkerOptions locMarker = new MarkerOptions();
+                                            locMarker.position(per);
+                                            locMarker.anchor(0.5f,0.5f);
+                                            locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.red_circle_icon));
+                                            locMarker.title("Person");
+                                            Marker mm = googleMap.addMarker(locMarker);
+                                            AllMarkers.add(mm);
+                                            Log.v(TAG, "as person");
                                         }
                                         else if(fov[i][3] == 1)
                                         {
@@ -432,23 +452,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         }
                                         else if(fov[i][3] == 2)
                                         {
-                                            fov_polygon.add(new LatLng(fov[i][0], fov[i][1]));
+                                            fov_polygon_opt.add(new LatLng(fov[i][0], fov[i][1]));
                                         }
                                         else if(fov[i][3] == 3)
                                         {
-                                            sweep_polygon.add(new LatLng(fov[i][0], fov[i][1]));
+                                            sweep_polygon_opt.add(new LatLng(fov[i][0], fov[i][1]));
                                         }
                                     }
 
-                                    fov_polygon.add(new LatLng(fov[0][0], fov[0][1]));
-                                    sweep_polygon.add(new LatLng(fov[5][0], fov[5][1]));
+                                    fov_polygon_opt.add(new LatLng(fov[0][0], fov[0][1]));
+//                                    sweep_polygon_opt.add(new LatLng(fov[4][0], fov[4][1]));
 
-                                    sweep_polygon.fillColor(Color.argb(150, 255, 0, 0));
-                                    sweep_polygon.strokeColor(Color.argb(255, 150, 150, 150));
-                                    fov_polygon.strokeColor(Color.BLUE);
+                                    sweep_polygon_opt.fillColor(Color.argb(150, 100, 100, 100));
+                                    sweep_polygon_opt.strokeColor(Color.argb(255, 100, 100, 100));
+                                    fov_polygon_opt.fillColor(Color.argb(100, 255, 255, 255));
+                                    fov_polygon_opt.strokeColor(Color.BLACK);
 
-//                                    googleMap.addPolygon(sweep_polygon);
-                                    googleMap.addPolygon(fov_polygon);
+                                    fov_polygon = googleMap.addPolygon(fov_polygon_opt);
+                                    sweep_polygon = googleMap.addPolygon(sweep_polygon_opt);
 
 //                                        polyline = googleMap.addPolyline(new PolylineOptions()
 //                                                .clickable(true)
@@ -488,6 +509,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(@NonNull GoogleMap ggleMap) {
 
         googleMap = ggleMap;
+        googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
     }
 
     /**

@@ -143,10 +143,12 @@ public class ConnectionActivity extends Activity {
         filter.addAction(CameraApplication.FLAG_CONNECTION_CHANGE);
         registerReceiver(mReceiver, filter);
 
+        // TODO: modify this section. bug occured in nokia device
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
         LocalDateTime now = LocalDateTime.now();
         String folderName = "log_" + dtf.format(now);
         logDir = getStorageDir(folderName);
+//        logDir = "";
         Log.v(TAG, "logDir: ........................ "+logDir);
 
     }

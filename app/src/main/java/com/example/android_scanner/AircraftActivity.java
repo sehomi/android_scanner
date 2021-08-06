@@ -512,7 +512,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(markers[0][0], markers[0][1]), 18));
                         else{
                             fov_polygon.remove();
-//                            sweep_polygon.remove();
+                            sweep_polygon.remove();
                         }
                     }
                     else
@@ -553,14 +553,20 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     if (fovCall)
                     {
                         fov_polygon_opt.add(new LatLng(markers[0][0], markers[0][1]));
-                        sweep_polygon_opt.add(new LatLng(markers[4][0], markers[4][1]));
+//                        sweep_polygon_opt.add(new LatLng(markers[4][0], markers[4][1]));
 
-                        sweep_polygon_opt.fillColor(Color.argb(150, 255, 0, 0));
-                        sweep_polygon_opt.strokeColor(Color.argb(255, 150, 150, 150));
-                        fov_polygon_opt.strokeColor(Color.BLUE);
+                        sweep_polygon_opt.fillColor(Color.argb(150, 100, 100, 100));
+                        sweep_polygon_opt.strokeColor(Color.argb(255, 100, 100, 100));
+                        fov_polygon_opt.fillColor(Color.argb(100, 255, 255, 255));
+                        fov_polygon_opt.strokeColor(Color.BLACK);
 
-//                        sweep_polygon = googleMap.addPolygon(sweep_polygon_opt);
-                        fov_polygon = googleMap.addPolygon(fov_polygon_opt);
+                        if (sweep_polygon_opt.getPoints().size() > 0) {
+                            sweep_polygon = googleMap.addPolygon(sweep_polygon_opt);
+                        }
+
+                        if (fov_polygon_opt.getPoints().size() > 0) {
+                            fov_polygon = googleMap.addPolygon(fov_polygon_opt);
+                        }
                     }
 
                 }
