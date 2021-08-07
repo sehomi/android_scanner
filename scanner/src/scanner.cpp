@@ -22,7 +22,7 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 
 //    beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
-    logger = new Logger(logsDir, log_mode, false, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
+    logger = new Logger(logsDir, log_mode, true, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
     sweeper = new SweeperGeometry::Sweeper();
     motionDetector = new MotionDetector();
 //    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-2");
@@ -336,6 +336,7 @@ void Scanner::associate(const std::vector<Location> &object_pos)
     }
 }
 
+// TODO: fov calculation is not necessary when on the ground or in horizontal fov case
 bool Scanner::calcFov(std::vector<Location> &poses_gps, std::vector<Location> &sweeped_area)
 {
 //    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-1");

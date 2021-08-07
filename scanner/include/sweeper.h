@@ -33,12 +33,8 @@ namespace SweeperGeometry{
         polygon sweeped_area;
         bool isFirstPolygon = true;
 
-//        void swap(Location &p1, Location &p2);
-//        static double dist(Location p1, Location p2);
-//        static int compare(const void *vp1, const void *vp2);
-//        static int orientation(Location p, Location q, Location r);
-//        void sortToClosedPath(std::vector<Location> &);
-//        void refineLocations(std::vector<Point> &, std::vector<Location> &);
+        static double dist(double, double, double, double);
+        void refineLocations(polygon &);
 
     };
 }

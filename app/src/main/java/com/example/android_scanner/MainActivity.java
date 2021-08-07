@@ -471,8 +471,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     fov_polygon_opt.fillColor(Color.argb(100, 255, 255, 255));
                                     fov_polygon_opt.strokeColor(Color.BLACK);
 
-                                    fov_polygon = googleMap.addPolygon(fov_polygon_opt);
-                                    sweep_polygon = googleMap.addPolygon(sweep_polygon_opt);
+                                    binding.textView7.setText(String.valueOf(sweep_polygon_opt.getPoints().size()));
+                                    if (sweep_polygon_opt.getPoints().size() > 0) {
+                                        sweep_polygon = googleMap.addPolygon(sweep_polygon_opt);
+                                    }
+                                    if (fov_polygon_opt.getPoints().size() > 0) {
+                                        fov_polygon = googleMap.addPolygon(fov_polygon_opt);
+                                    }
 
 //                                        polyline = googleMap.addPolyline(new PolylineOptions()
 //                                                .clickable(true)
