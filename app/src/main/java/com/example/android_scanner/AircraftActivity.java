@@ -114,6 +114,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
         Log.v(TAG, "-------///4");
         createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getBooleanExtra("Log Mode", false), (float) 66.0, getIntent().getIntExtra("Algorithm", 0));
+//        createScanner(getIntent().getStringExtra("Assets"), "", getIntent().getBooleanExtra("Log Mode", false), (float) 66.0, getIntent().getIntExtra("Algorithm", 0));
 
         // Example of a call to a native method
         ImageView iv = binding.imageView2;

@@ -220,19 +220,19 @@ void Logger::bufferOrientation(Orientation orn)
 
 bool Logger::getImageSetFromLogger(ImageSet &imgSt, ImuSet &imuSt)
 {
-    __android_log_print(ANDROID_LOG_ERROR, "getImageSetFromLogger", "%s", "----21");
+//    __android_log_print(ANDROID_LOG_ERROR, "getImageSetFromLogger", "%s", "----21");
     if (!readFromLog)
         return false;
-    __android_log_print(ANDROID_LOG_ERROR, "getImageSetFromLogger", "%s", "----22");
+//    __android_log_print(ANDROID_LOG_ERROR, "getImageSetFromLogger", "%s", "----22");
     Mat image;
 
     std::string line_text;
     bool retVal = (bool) getline(iLogFile, line_text);
     if (!retVal)
         return false;
-    __android_log_print(ANDROID_LOG_ERROR, "getImageSetFromLogger", "%s", "----23");
+//    __android_log_print(ANDROID_LOG_ERROR, "getImageSetFromLogger", "%s", "----23");
     readData(line_text, image, imuSt);
-    __android_log_print(ANDROID_LOG_ERROR, "getImageSetFromLogger", "%s", "----24");
+//    __android_log_print(ANDROID_LOG_ERROR, "getImageSetFromLogger", "%s", "----24");
 
     imgSt.image = image;
     imgSt.time = imuSt.time;

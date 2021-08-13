@@ -244,7 +244,7 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
 //    sc->readFromLog(logs_str);
     ImageSet imgSt;
     ImuSet imuSt;
-    std::vector<Location> fov_locs, object_poses;
+    std::vector<Location> fov_locs, object_poses, moving_poses;
     std::vector<Location> sweeped_area;
     jobjectArray fov_poses_array = NULL;
 
@@ -257,8 +257,8 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
 
     Mat movings;
     Mat dst = imgSt.image.clone();
-    sc->scan(imgSt, dst, object_poses, movings);
-    std::vector<Rect> bboxes;
+
+    sc->scan(imgSt, dst, object_poses, movings, moving_poses);
 
     Mat src = imgSt.image.clone();
     cvtColor(src, src, COLOR_BGR2RGB);
@@ -270,6 +270,8 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     cvtColor(movings, movings, COLOR_BGR2RGB);
     matToBitmap(env, movings, movingsBitmap, false);
 
+    // Note: calcFov sets fov for an image after scan while scan (motionDetector) uses it for current
+    // image. But it's not important because of the assumption of fixed camera im motion detection mode
     if (sc->calcFov(fov_locs, sweeped_area, imuSt, imgSt))
     {
         fov_poses_array = putIntoArray(env, fov_locs);
