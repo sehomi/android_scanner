@@ -44,6 +44,8 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<cv::Re
     calcNormCoeffMat(fov, imgSt.lat, imgSt.lng, imgSt.alt, xNormalizationCoeff, yNormalizationCoeff);
 
     visualize(flow, xNormalizationCoeff, yNormalizationCoeff, output);
+
+    generateMovingRects(output, rects);
 }
 
 void MotionDetector::visualize(const cv::Mat &flow, const cv::Mat &xNormalizationCoeff, const cv::Mat &yNormalizationCoeff, cv::Mat &output)
@@ -87,6 +89,22 @@ void MotionDetector::calcNormCoeffMat(const std::vector<Location> &fov, double l
             xNormalizationCoeff.at<double>(i,j) = xCoeff;
             yNormalizationCoeff.at<double>(i,j) = xCoeff/cos(((double)j/((double)cols/2))*alpha);
         }
+    }
+}
+
+void MotionDetector::generateMovingRects(cv::Mat &output, std::vector<cv::Rect> &rects)
+{
+    std::vector<std::vector<cv::Point>> contours;
+    std::vector<cv::Vec4i> hierarchy;
+    findContours(output, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_TC89_KCOS, cv::Point(0, 0) );
+
+    rects.clear();
+    double area, areaRatio, imArea = output.rows * output.cols;
+    for (auto & contour : contours) {
+        area = cv::contourArea(contour);
+        areaRatio = area / imArea;
+        if (areaRatio < objectSizeUpLimit && areaRatio > objectSizeLowLimit)
+            rects.push_back(cv::boundingRect(contour));
     }
 }
 

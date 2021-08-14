@@ -392,12 +392,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Thread read_thread = new Thread() {
             @Override
             public void run() {
-                Log.v(TAG, "---------this is read thread run");
+//                Log.v(TAG, "---------this is read thread run");
                 try {
-                    Log.v(TAG, "---------this is before try");
+//                    Log.v(TAG, "---------this is before try");
                     while (true) {
                         isImgBytesReady = false;
-                        Log.v(TAG, "---------this is while");
+//                        Log.v(TAG, "---------this is while");
                         sleep(500);
 
                         Bitmap bitmap, processedBitmap, movingsBitmap;
@@ -421,24 +421,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     fov_polygon = new PolygonOptions();
                                     sweep_polygon = new PolygonOptions();
 
-                                    for(int i=0; i<fov.length; i++){
-                                        Log.v(TAG, String.valueOf(fov[i][0]) + " " + String.valueOf(fov[i][1]) + " " + String.valueOf(fov[i][3]));
-                                        if (fov[i][3] == 0){
+                                    for(int i=0; i<fov.length; i++) {
+//                                        Log.v(TAG, String.valueOf(fov[i][0]) + " " + String.valueOf(fov[i][1]) + " " + String.valueOf(fov[i][3]));
+                                        // TODO: A new marker must be assigned to moving objects (in which fov[i][3] == 4) in read-log mode
+                                        if (fov[i][3] == 0 || fov[i][3] == 4) {
                                             LatLng per = new LatLng(fov[i][0], fov[i][1]);
                                             googleMap.addMarker(new MarkerOptions()
                                                     .position(per)
                                                     .title("Person"));
                                         }
-                                        else if(fov[i][3] == 1)
-                                        {
+                                        else if(fov[i][3] == 1) {
 
                                         }
-                                        else if(fov[i][3] == 2)
-                                        {
+                                        else if(fov[i][3] == 2) {
                                             fov_polygon.add(new LatLng(fov[i][0], fov[i][1]));
                                         }
-                                        else if(fov[i][3] == 3)
-                                        {
+                                        else if(fov[i][3] == 3) {
                                             sweep_polygon.add(new LatLng(fov[i][0], fov[i][1]));
                                         }
                                     }
@@ -450,26 +448,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     sweep_polygon.strokeColor(Color.argb(255, 150, 150, 150));
                                     fov_polygon.strokeColor(Color.BLUE);
 
-//                                    googleMap.addPolygon(sweep_polygon);
                                     googleMap.addPolygon(fov_polygon);
-
-//                                        polyline = googleMap.addPolyline(new PolylineOptions()
-//                                                .clickable(true)
-//                                                .add(
-//                                                        new LatLng(fov[0][0], fov[0][1]),
-//                                                        new LatLng(fov[1][0], fov[1][1]),
-//                                                        new LatLng(fov[2][0], fov[2][1]),
-//                                                        new LatLng(fov[3][0], fov[3][1]),
-//                                                        new LatLng(fov[0][0], fov[0][1])));
-
-//                                    }
-//                                    else
-//                                    {
-//                                        fov_polygon
-////                                        LatLng[] ll = {new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1])};
-//                                        List<LatLng> lll = Arrays.asList(new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[1][0], fov[1][1]), new LatLng(fov[2][0], fov[2][1]), new LatLng(fov[3][0], fov[3][1]));
-//                                        polyline.setPoints(lll);
-//                                    }
                                 }
                             }
                         });
