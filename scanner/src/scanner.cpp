@@ -6,7 +6,7 @@
 #include "sweeper.h"
 //#include <opencv2/imgproc.hpp>
 
-Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, bool log_mode, float hva_, int maxdist)
+Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, int log_mode, float hva_, int maxdist)
 {
 //    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-1");
     hva = hva_;
@@ -22,7 +22,13 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 
 //    beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
-    logger = new Logger(logsDir, log_mode, true, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
+    if (log_mode == 0)
+        logger = new Logger(logsDir, true, false, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
+    else if (log_mode == 1)
+        logger = new Logger(logsDir, false, true, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
+    else
+        logger = new Logger(logsDir, false, false, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
+
     sweeper = new SweeperGeometry::Sweeper();
     motionDetector = new MotionDetector();
 //    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-2");

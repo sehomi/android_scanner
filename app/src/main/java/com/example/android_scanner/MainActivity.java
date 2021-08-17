@@ -203,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mCamera = getCameraInstance();
         float hva = mCamera.getParameters().getHorizontalViewAngle();
         Log.v(TAG, "---------41");
-        createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getBooleanExtra("Log Mode",false), getIntent().getIntExtra("Algorithm", 0), hva);
+        createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getIntExtra("Log Mode",2), getIntent().getIntExtra("Algorithm", 0), hva);
         Log.v(TAG, "---------42");
         Thread thread = new Thread() {
             @Override
@@ -525,7 +525,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      * which is packaged with this application.
      */
     public native String stringFromJNI();
-    public native void createScanner(String assets, String logs, boolean log_mode, int method, float hva);
+    public native void createScanner(String assets, String logs, int log_mode, int method, float hva);
 //    public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
     public native void scan(Bitmap detections);
     public native void setImage(Bitmap bitmap, double time);

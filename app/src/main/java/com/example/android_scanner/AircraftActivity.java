@@ -116,7 +116,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         srcBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.mountain);
         dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
         Log.v(TAG, "-------///4");
-        createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getBooleanExtra("Log Mode", false), (float) 66.0, getIntent().getIntExtra("Algorithm", 0));
+        createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getIntExtra("Log Mode", 2), (float) 66.0, getIntent().getIntExtra("Algorithm", 0));
 
         // Example of a call to a native method
         ImageView iv = binding.imageView2;
@@ -615,7 +615,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    public native void createScanner(String assets, String logs, boolean log_mode, float hva, int method);
+    public native void createScanner(String assets, String logs, int log_mode, float hva, int method);
     public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
     public native double[][] scan(Bitmap detections, Bitmap movings_img, int detMode);
     public native void setImage(Bitmap bitmap, double time);
