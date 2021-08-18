@@ -4,7 +4,9 @@
 
 #include "scanner.h"
 #include "sweeper.h"
-//#include <opencv2/imgproc.hpp>
+#include "grid.h"
+#include "nasagridsquare.h"
+#include "utils.h"
 
 Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, int log_mode, float hva_, int maxdist)
 {
@@ -31,7 +33,14 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 
     sweeper = new SweeperGeometry::Sweeper();
     motionDetector = new MotionDetector();
-//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-2");
+
+    float lat,lng;
+    lat = 35.749708;
+    lng = 51.593127;
+    FloodUtils::setdir(assetsDir.c_str());
+    Grid<NasaGridSquare>::cache_limit = 20;
+    Grid<NasaGridSquare> g;
+    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "\n\n**** %s ****\n\n", std::to_string(g.height(lng,lat)).c_str() );
 }
 
 Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, float f_, float cx_, float cy_, float res_, int maxdist)

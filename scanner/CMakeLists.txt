@@ -25,6 +25,7 @@ endif()
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../eigen-master)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../nasagrid)
 include_directories(${Boost_INCLUDE_DIR})
 #include_directories(D:/android_scanner/GeographicLib/include)
 
@@ -42,9 +43,27 @@ add_library( # Sets the name of the library.
         ${CMAKE_CURRENT_LIST_DIR}/src/UTM.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/motionDetector.cpp)
 
+add_library( # Sets the name of the library.
+        nasagrid
+
+        # Sets the library as a shared library.
+        SHARED
+
+        # Provides a relative path to your source file(s).
+        ${CMAKE_CURRENT_LIST_DIR}/../nasagrid/gridsquare.cc
+        ${CMAKE_CURRENT_LIST_DIR}/../nasagrid/nasagridsquare.cc
+        ${CMAKE_CURRENT_LIST_DIR}/../nasagrid/utils.cc)
+
 find_library(jnigraphics-lib jnigraphics)
+find_library(log-lib log)
 
 link_directories( ${Boost_LIBRARY_DIR} )
+
+target_link_libraries(
+        nasagrid
+
+        ${log-lib}
+        )
 
 target_link_libraries(
         scanner-lib
@@ -52,6 +71,7 @@ target_link_libraries(
         ${OpenCV_LIBS}
         ${jnigraphics-lib}
         ${Boost_LIBRARIES}
+        nasagrid
         )
 
 
