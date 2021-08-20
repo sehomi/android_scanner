@@ -34,6 +34,7 @@ class Scanner{
 
     float res, RAD, hva;
     float f, cx, cy;
+    double lastProcessStamp = -1; double lastProcessImgSetStamp = -1;
     int max_dist, zone;
     bool camInfoSet = false, isSouth = false;
     std::vector<Location> objectPoses;
@@ -65,7 +66,7 @@ public:
     void myFlip(Mat src);
     void myBlur(Mat src, float sigma);
     bool scan(std::vector<Location>&, Mat&, Mat&,int, bool);
-    bool scan(ImageSet&, Mat&, std::vector<Location>&, Mat&);
+    bool scan(ImageSet&, Mat&, std::vector<Location>&, Mat&, double);
     bool calcFov(std::vector<Location>&, std::vector<Location>&);
     bool calcFov(std::vector<Location>&, std::vector<Location>&, ImuSet&, ImageSet&);
 //    void readFromLog(std::string);

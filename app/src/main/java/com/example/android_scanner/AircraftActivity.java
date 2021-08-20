@@ -559,7 +559,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 //                        sweep_polygon_opt.add(new LatLng(markers[4][0], markers[4][1]));
 
                         sweep_polygon_opt.fillColor(Color.argb(150, 100, 100, 100));
-                        sweep_polygon_opt.strokeColor(Color.argb(255, 100, 100, 100));
+                        sweep_polygon_opt.strokeColor(Color.argb(255, 70, 70, 70));
                         fov_polygon_opt.fillColor(Color.argb(100, 255, 255, 255));
                         fov_polygon_opt.strokeColor(Color.BLACK);
 

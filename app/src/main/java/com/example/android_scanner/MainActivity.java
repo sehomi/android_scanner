@@ -394,6 +394,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
         Thread read_thread = new Thread() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void run() {
                 Log.v(TAG, "---------this is read thread run");
@@ -402,21 +403,32 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     while (true) {
                         isImgBytesReady = false;
                         Log.v(TAG, "---------this is while");
-                        sleep(500);
+                        sleep(2);
 
                         Bitmap bitmap, processedBitmap, movingsBitmap;
                         bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.mountain);
                         processedBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.mountain);
                         movingsBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.mountain);
-                        double[][] fov = readLog(bitmap, processedBitmap, movingsBitmap);
+
+                        double stamp = -1;
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            Instant ins = Instant.now();
+                            stamp = ins.getEpochSecond() + (ins.getNano()/1e9);
+                        }
+                        else
+                        {
+                            Log.e(TAG, "run: Error. time stamp could not be calculated due to sdk version.");
+                        }
+                        double[][] fov = readLog(bitmap, processedBitmap, movingsBitmap, stamp);
 
                         runOnUiThread(new Runnable() {
 
                             @Override
                             public void run() {
-                                binding.imageView3.setImageBitmap(movingsBitmap);
-                                binding.imageView2.setImageBitmap(processedBitmap);
                                 if (fov != null && googleMap != null) {
+                                    binding.imageView3.setImageBitmap(movingsBitmap);
+                                    binding.imageView2.setImageBitmap(processedBitmap);
+
                                     if (fov_polygon == null)
                                         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(fov[0][0], fov[0][1]), 18));
 //                                    if (polyline == null) {
@@ -467,7 +479,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //                                    sweep_polygon_opt.add(new LatLng(fov[4][0], fov[4][1]));
 
                                     sweep_polygon_opt.fillColor(Color.argb(150, 100, 100, 100));
-                                    sweep_polygon_opt.strokeColor(Color.argb(255, 100, 100, 100));
+                                    sweep_polygon_opt.strokeColor(Color.argb(255, 70, 70, 70));
                                     fov_polygon_opt.fillColor(Color.argb(100, 255, 255, 255));
                                     fov_polygon_opt.strokeColor(Color.BLACK);
 
@@ -479,23 +491,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         fov_polygon = googleMap.addPolygon(fov_polygon_opt);
                                     }
 
-//                                        polyline = googleMap.addPolyline(new PolylineOptions()
-//                                                .clickable(true)
-//                                                .add(
-//                                                        new LatLng(fov[0][0], fov[0][1]),
-//                                                        new LatLng(fov[1][0], fov[1][1]),
-//                                                        new LatLng(fov[2][0], fov[2][1]),
-//                                                        new LatLng(fov[3][0], fov[3][1]),
-//                                                        new LatLng(fov[0][0], fov[0][1])));
-
-//                                    }
-//                                    else
-//                                    {
-//                                        fov_polygon
-////                                        LatLng[] ll = {new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[0][0], fov[0][1])};
-//                                        List<LatLng> lll = Arrays.asList(new LatLng(fov[0][0], fov[0][1]), new LatLng(fov[1][0], fov[1][1]), new LatLng(fov[2][0], fov[2][1]), new LatLng(fov[3][0], fov[3][1]));
-//                                        polyline.setPoints(lll);
-//                                    }
                                 }
                             }
                         });
@@ -531,8 +526,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public native void setImage(Bitmap bitmap, double time);
     public native void setLocation(double lat, double lng, double alt, double time);
 //    public native boolean setOrientation(double roll, double pitch, double azimuth, double time, Double[][] oa);
-    public native double[][] setOrientation(double roll, double pitch, double azimuth, double time);
-    public native double[][] readLog(Bitmap bitmap, Bitmap processedBitmap, Bitmap movingsBitmap);
+    public native double[][] setOrientation(double roll, double pitch, double azithmu, double time);
+    public native double[][] readLog(Bitmap bitmap, Bitmap processedBitmap, Bitmap movingsBitmap, double stamp);
 
     @Override
     public void onResume() {

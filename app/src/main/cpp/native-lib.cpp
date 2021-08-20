@@ -239,7 +239,7 @@ Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobje
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL
-Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_this, jobject bitmap, jobject processedBitmap, jobject movingsBitmap)
+Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_this, jobject bitmap, jobject processedBitmap, jobject movingsBitmap, jdouble stamp)
 {
 //    sc->readFromLog(logs_str);
     ImageSet imgSt;
@@ -249,7 +249,6 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     jobjectArray fov_poses_array = NULL;
 
 //    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1");
-    // TODO: get readlog mode from connection activity
     if (!sc->logger->getImageSetFromLogger(imgSt, imuSt))
         return NULL;
 
@@ -257,8 +256,8 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
 
     Mat movings;
     Mat dst = imgSt.image.clone();
-    sc->scan(imgSt, dst, object_poses, movings);
-    std::vector<Rect> bboxes;
+    if ( !sc->scan(imgSt, dst, object_poses, movings, stamp) )
+        return NULL;
 
     Mat src = imgSt.image.clone();
     cvtColor(src, src, COLOR_BGR2RGB);

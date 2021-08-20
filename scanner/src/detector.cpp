@@ -76,8 +76,8 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
             double cnf;
 
             cv::minMaxLoc(scores, 0, &cnf, 0, &classIdPoint);
-//            __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", "  Confidence: %f, id: %d", cnf, classIdPoint.x);
-            if (cnf > this->confidence && (classIdPoint.x == 0 || classIdPoint.x == 2 || classIdPoint.x == 3 || classIdPoint.x == 5 || classIdPoint.x == 7))
+            __android_log_print(ANDROID_LOG_VERBOSE, "Detector: ", "  Confidence: %f, id: %d", cnf, classIdPoint.x);
+            if ((float)cnf > this->confidence && (classIdPoint.x == 0 || classIdPoint.x == 2 || classIdPoint.x == 3 || classIdPoint.x == 5 || classIdPoint.x == 7))
             {
                 int centerX = (int)(data[0] * frame.cols);
                 int centerY = (int)(data[1] * frame.rows);
@@ -86,7 +86,7 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
                 int left = centerX - width / 2;
                 int top = centerY - height / 2;
 
-                confidences.push_back((float)confidence);
+                confidences.push_back((float)cnf);
 //                boxes.push_back(cv::Rect(left, top, width, height));
                 bboxes.push_back(cv::Rect(left, top, width, height));
             }

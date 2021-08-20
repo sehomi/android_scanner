@@ -16,20 +16,25 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 //    RAD = PI/180.0;
 
     if (dm == MN_SSD)
-        detector = new Detector(assetsDir, DetectionMethod::MN_SSD, 0.4, 0.4);
+        detector = new Detector(assetsDir, DetectionMethod::MN_SSD, 0.1, 0.4);
     else if (dm == YOLO_V3)
-        detector = new Detector(assetsDir, DetectionMethod::YOLO_V3, 0.4, 0.4);
+        detector = new Detector(assetsDir, DetectionMethod::YOLO_V3, 0.1, 0.4);
     else if (dm == YOLO_TINY)
-        detector = new Detector(assetsDir, DetectionMethod::YOLO_TINY, 0.4, 0.4);
+        detector = new Detector(assetsDir, DetectionMethod::YOLO_TINY, 0.1, 0.4);
 
 //    beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
+//    string logFolder = "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/";
+//    string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_18_52_14/";
+//    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_18_59_38/";
+    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_19_10_35/";
+
     if (log_mode == 0)
-        logger = new Logger(logsDir, true, false, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
+        logger = new Logger(logsDir, true, false, logFolder);
     else if (log_mode == 1)
-        logger = new Logger(logsDir, false, true, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
+        logger = new Logger(logsDir, false, true, logFolder);
     else
-        logger = new Logger(logsDir, false, false, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
+        logger = new Logger(logsDir, false, false, logFolder);
 
     sweeper = new SweeperGeometry::Sweeper();
     motionDetector = new MotionDetector();
@@ -93,10 +98,27 @@ void Scanner::setCamInfo(Mat &img)
     cy = (float) height/2;
 }
 
-bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &object_poses, Mat &movings_img)
+bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &object_poses, Mat &movings_img, double stamp)
 {
     if (!logger->readFromLog)
         return false;
+
+    if (lastProcessStamp == -1){
+        lastProcessStamp = stamp;
+        lastProcessImgSetStamp = imgSt.time;
+    }
+    else{
+        double diff1 = stamp - lastProcessStamp;
+        double diff2 = imgSt.time - lastProcessImgSetStamp;
+
+        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "diff %f %f %f %f", (float)diff1, (float)diff2, (float)stamp, (float)imgSt.time);
+
+        if (diff2 < diff1)
+            return false;
+
+        lastProcessStamp = stamp;
+        lastProcessImgSetStamp = imgSt.time;
+    }
 
     std::vector<cv::Rect> bboxes;
 
