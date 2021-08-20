@@ -531,7 +531,8 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
                     for (double[] marker : markers) {
                         Log.v(TAG, String.valueOf(marker[0]) + " " + String.valueOf(marker[1]) + " " + String.valueOf(marker[3]));
-                        if (marker[3] == 0) {
+                        // TODO: A new marker must be assigned to moving objects (in which marker[3] == 4)
+                        if (marker[3] == 0 || marker[3] == 4) {
 
                             LatLng per = new LatLng(marker[0], marker[1]);
                             MarkerOptions locMarker = new MarkerOptions();

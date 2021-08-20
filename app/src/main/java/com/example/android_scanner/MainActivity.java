@@ -394,15 +394,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
         Thread read_thread = new Thread() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void run() {
-                Log.v(TAG, "---------this is read thread run");
+//                Log.v(TAG, "---------this is read thread run");
                 try {
-                    Log.v(TAG, "---------this is before try");
+//                    Log.v(TAG, "---------this is before try");
                     while (true) {
                         isImgBytesReady = false;
-                        Log.v(TAG, "---------this is while");
+//                        Log.v(TAG, "---------this is while");
                         sleep(2);
 
                         Bitmap bitmap, processedBitmap, movingsBitmap;
@@ -448,9 +447,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     PolygonOptions fov_polygon_opt = new PolygonOptions();
                                     PolygonOptions sweep_polygon_opt = new PolygonOptions();
 
-                                    for(int i=0; i<fov.length; i++){
-                                        Log.v(TAG, String.valueOf(fov[i][0]) + " " + String.valueOf(fov[i][1]) + " " + String.valueOf(fov[i][3]));
-                                        if (fov[i][3] == 0){
+                                    for(int i=0; i<fov.length; i++) {
+//                                        Log.v(TAG, String.valueOf(fov[i][0]) + " " + String.valueOf(fov[i][1]) + " " + String.valueOf(fov[i][3]));
+                                        // TODO: A new marker must be assigned to moving objects (in which fov[i][3] == 4) in read-log mode
+                                        if (fov[i][3] == 0 || fov[i][3] == 4) {
                                             LatLng per = new LatLng(fov[i][0], fov[i][1]);
                                             MarkerOptions locMarker = new MarkerOptions();
                                             locMarker.position(per);
@@ -494,7 +494,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 }
                             }
                         });
-//
                     }
                 } catch (InterruptedException e) {
                     Log.e(TAG, "\n********** readlog run failed! \n"+e.getMessage());

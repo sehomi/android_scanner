@@ -37,7 +37,8 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
         logger = new Logger(logsDir, false, false, logFolder);
 
     sweeper = new SweeperGeometry::Sweeper();
-    motionDetector = new MotionDetector();
+    motionDetector = new MotionDetector(hva_);
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-2");
 
     float lat,lng;
     lat = 35.749708;
@@ -48,46 +49,6 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
     __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "\n\n**** %s ****\n\n", std::to_string(g.height(lng,lat)).c_str() );
 }
 
-Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, float f_, float cx_, float cy_, float res_, int maxdist)
-{
-    f = f_;
-    cx = cx_;
-    cy = cy_;
-    max_dist = maxdist;
-    RAD = PI/180.0;
-
-    if (dm == MN_SSD)
-        detector = new Detector(assetsDir, DetectionMethod::MN_SSD, 0.4, 0.4);
-    else if (dm == YOLO_V3)
-        detector = new Detector(assetsDir, DetectionMethod::YOLO_V3, 0.4, 0.4);
-    else if (dm == YOLO_TINY)
-        detector = new Detector(assetsDir, DetectionMethod::YOLO_TINY, 0.4, 0.4);
-
-//    beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
-
-    // TODO: log_mode must be input
-    bool log_mode = false;
-    logger = new Logger(logsDir, log_mode, false, "");
-}
-
-//void Scanner::readFromLog(std::string logs_dir)
-//{
-//    int count = 0;
-//    std::string txt_adrs = logs_dir + "log.txt";
-//    std::ifstream file;
-//    file.open(txt_adrs);
-//    std::string line_text;
-//
-//    while (getline(file, line_text))
-//    {
-//        ImuSet imuSt;
-//        Mat image;
-//        count++;
-//        std::string img_adrs = logs_dir + "image" + std::to_string(count) + ".jpg";
-//        logger->readData(img_adrs, line_text, image, imuSt);
-//    }
-//    file.close();
-//}
 
 void Scanner::setCamInfo(Mat &img)
 {
@@ -98,7 +59,7 @@ void Scanner::setCamInfo(Mat &img)
     cy = (float) height/2;
 }
 
-bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &object_poses, Mat &movings_img, double stamp)
+bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &object_poses, Mat &movings_img, std::vector<Location> &movings_poses, double stamp)
 {
     if (!logger->readFromLog)
         return false;
@@ -120,7 +81,7 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &
         lastProcessImgSetStamp = imgSt.time;
     }
 
-    std::vector<cv::Rect> bboxes;
+    std::vector<cv::Rect> bboxes, movings_bboxes;
 
     // TODO: hva must be set automatically from log
     //       This is for mavic mini:
@@ -131,12 +92,13 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &
         camInfoSet = true;
     }
 
-    motionDetector->detect(imgSt.image, movings_img);
+    motionDetector->detect(imgSt, movings_img, movings_bboxes, fovPoses);
 
     detector->detect(imgSt.image, bboxes);
     detector->drawDetections(detections_img, bboxes);
 
     camToMap(bboxes, imgSt, object_poses);
+    camToMap(movings_bboxes, imgSt, movings_poses);
 
 //    for (auto & op : object_poses)
 //    {
@@ -176,7 +138,7 @@ bool Scanner::scan(std::vector<Location> &object_poses, Mat &detections, Mat &mo
     detections = imgSt.image.clone();
 
     if (det_mode == 1) {
-        motionDetector->detect(imgSt.image, movings_img);
+        motionDetector->detect(imgSt, movings_img, bboxes, fovPoses);
     }
     else {
         if (rgba) {
@@ -189,10 +151,10 @@ bool Scanner::scan(std::vector<Location> &object_poses, Mat &detections, Mat &mo
 
         detector->drawDetections(detections, bboxes);
 
-        camToMap(bboxes, imgSt, object_poses);
-
         movings_img = cv::Mat::zeros(imgSt.image.rows, imgSt.image.cols, CV_8UC3);
     }
+
+    camToMap(bboxes, imgSt, object_poses);
 
 //    associate(object_poses);
 
@@ -240,7 +202,7 @@ void Scanner::camToMap(std::vector<Rect> &objects, const ImageSet& is, std::vect
     std::vector<Point2f> centers;
     std::vector<bool> show_permissions;
 
-    centers.reserve(objects.size());
+//    centers.reserve(objects.size());
     for (auto & object : objects)
     {
         centers.push_back(Point(object.x + float(object.width)/2, object.y + float (object.height)/2));
@@ -391,7 +353,7 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps, std::vector<Location> &s
     w = logger->img.image.size().width;
     h = logger->img.image.size().height;
 
-    std::vector<Point2f> points{{0, 0}, { 0, (float)h }, {(float)w, (float)h}, {(float)w, 0}};
+    std::vector<Point2f> points{{0, 0}, {(float)w, 0}, {(float)w, (float)h}, { 0, (float)h }};
 
     imageToMap(imuSt.roll, imuSt.pitch, imuSt.azimuth, imuSt.lat, imuSt.lng, imuSt.alt, points, poses_gps, sps);
 
@@ -411,13 +373,21 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps, std::vector<Location> &s
     int w = imgSt.image.size().width;
     int h = imgSt.image.size().height;
     std::vector<bool> sps;
-    std::vector<Point2f> points{{0, 0}, { 0, (float)h }, {(float)w, (float)h}, {(float)w, 0}};
+    std::vector<Point2f> points{{0, 0}, {(float)w, 0}, {(float)w, (float)h}, { 0, (float)h }};
 
     imageToMap(imgSt.roll, imgSt.pitch, imgSt.azimuth, imgSt.lat, imgSt.lng, imgSt.alt, points, poses_gps, sps);
 
     sweeper->update(poses_gps, sweeped_area);
 
-//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--length of fov_locs:", "%s", std::to_string(poses_gps.size()).c_str());
+    fovPoses.clear();
+    fovPoses = poses_gps;
+
+//    for (int k=0; k<poses_gps.size(); k++) {
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--element of fov_locs:", "%s",
+//                            std::to_string(poses_gps[k].lat).c_str());
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--element of fov_locs:", "%s",
+//                            std::to_string(poses_gps[k].lng).c_str());
+//    }
     return true;
 }
 
