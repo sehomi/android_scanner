@@ -14,6 +14,10 @@
 //#include "GeographicLib/UTMUPS.hpp"
 #include <math.h>
 
+#include "grid.h"
+#include "nasagridsquare.h"
+#include "utils.h"
+
 #include "detector.h"
 #include "Logger.h"
 #include "sweeper.h"
@@ -35,10 +39,14 @@ class Scanner{
     float res, RAD, hva;
     float f, cx, cy;
     double lastProcessStamp = -1; double lastProcessImgSetStamp = -1;
+    std::string assets_dir;
     int max_dist, zone;
-    bool camInfoSet = false, isSouth = false;
+    bool camInfoSet = false, isSouth = false, locationInitialized = false, useElev = true;
+    Location initLoc;
+    Grid<NasaGridSquare> *grid;
     std::vector<Location> objectPoses, fovPoses;
     std::vector<Marker> markers;
+
 //    std::vector<int> DET_MODES{0, 1};
 
     void camToMap(std::vector<Rect>&, const ImageSet&, std::vector<Location>&);
@@ -50,6 +58,7 @@ class Scanner{
     void calcDirVec(float, float, Eigen::VectorXd&);
     void utmToGps(std::vector<Eigen::VectorXd>, std::vector<Location>&);
     void setCamInfo(Mat&);
+    bool elevDiff(double, double, double&);
     void imageToMap(double, double, double, double, double, double, std::vector<Point2f>, std::vector<Location>&, std::vector<bool>&);
 
 public:
@@ -69,6 +78,8 @@ public:
     bool scan(ImageSet&, Mat&, std::vector<Location>&, Mat&, std::vector<Location>&, double);
     bool calcFov(std::vector<Location>&, std::vector<Location>&);
     bool calcFov(std::vector<Location>&, std::vector<Location>&, ImuSet&, ImageSet&);
+    double elev();
+    double elev(ImuSet &);
 //    void readFromLog(std::string);
 };
 

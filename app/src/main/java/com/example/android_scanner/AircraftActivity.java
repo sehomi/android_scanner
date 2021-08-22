@@ -67,6 +67,13 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         System.loadLibrary("native-lib");
     }
 
+    private class GroundLocation
+    {
+        public double lat = 0.0;
+        public double lng = 0.0;
+        public double elev = 0.0;
+    };
+
     private ActivityAircraftBinding binding;
     Polygon fov_polygon = null;
     Polygon sweep_polygon = null;
@@ -472,14 +479,27 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     double gpitch = gimbalState.getAttitudeInDegrees().getPitch();
 //                    double gyaw = gimbalState.getAttitudeInDegrees().getYaw() + gimbalState.getYawRelativeToAircraftHeading();
                     double gyaw = aircraftYaw;
+                    GroundLocation elev = new GroundLocation();
 
-                    double[][] fov = setOrientation(groll, gpitch, gyaw, curr_time);
+                    double[][] fov = setOrientation(groll, gpitch, gyaw, curr_time, elev);
                     visualize(fov, null, null, true);
                     Log.e(TAG, "onResume");
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             binding.textView3.setText("\ngimbal roll: "+String.valueOf(groll)+"\ngimbal pitch: "+String.valueOf(gpitch)+"\ngimbal yaw: "+String.valueOf(gyaw));
+
+                            binding.textView11.setText(String.valueOf(elev.elev));
+                            if (elev.elev == 0) {
+                                binding.textView11.setTextColor(Color.BLACK);
+                            }
+                            else if (elev.elev == -32768){
+                                binding.textView11.setTextColor(Color.RED);
+                                binding.textView11.setText("No File");
+                            }
+                            else{
+                                binding.textView11.setTextColor(Color.GREEN);
+                            }
                         }
                     });
                 }
@@ -621,7 +641,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     public native double[][] scan(Bitmap detections, Bitmap movings_img, int detMode);
     public native void setImage(Bitmap bitmap, double time);
     public native void setLocation(double lat, double lng, double alt, double time);
-    public native double[][] setOrientation(double roll, double pitch, double azimuth, double time);
+    public native double[][] setOrientation(double roll, double pitch, double azimuth, double time, GroundLocation elev);
 
 
 }

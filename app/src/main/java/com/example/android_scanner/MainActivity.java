@@ -1,6 +1,9 @@
 package com.example.android_scanner;
 
 // TODO: ask for location to be enabled
+// TODO: elevations are to be fixed
+// TODO: motion detection should be separated in main activity
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -136,6 +139,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         public double image_time;      // = Instant.now() ;
         public Instant ins;
 //        public double nano;
+    };
+
+    private class GroundLocation
+    {
+        public double lat = 0.0;
+        public double lng = 0.0;
+        public double elev = 0.0;
     };
 
     private imageSet imgSet = new imageSet();
@@ -418,7 +428,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         {
                             Log.e(TAG, "run: Error. time stamp could not be calculated due to sdk version.");
                         }
-                        double[][] fov = readLog(bitmap, processedBitmap, movingsBitmap, stamp);
+                        GroundLocation elev = new GroundLocation();
+                        double[][] fov = readLog(bitmap, processedBitmap, movingsBitmap, stamp, elev);
 
                         runOnUiThread(new Runnable() {
 
@@ -484,6 +495,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     fov_polygon_opt.strokeColor(Color.BLACK);
 
                                     binding.textView7.setText(String.valueOf(sweep_polygon_opt.getPoints().size()));
+
+                                    binding.textView9.setText(String.valueOf(elev.elev));
+                                    if (elev.elev == 0) {
+                                        binding.textView9.setTextColor(Color.BLACK);
+                                    }
+                                    else if (elev.elev == -32768){
+                                        binding.textView9.setTextColor(Color.RED);
+                                        binding.textView9.setText("No File");
+                                    }
+                                    else{
+                                        binding.textView9.setTextColor(Color.GREEN);
+                                    }
+
                                     if (sweep_polygon_opt.getPoints().size() > 0) {
                                         sweep_polygon = googleMap.addPolygon(sweep_polygon_opt);
                                     }
@@ -526,7 +550,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public native void setLocation(double lat, double lng, double alt, double time);
 //    public native boolean setOrientation(double roll, double pitch, double azimuth, double time, Double[][] oa);
     public native double[][] setOrientation(double roll, double pitch, double azithmu, double time);
-    public native double[][] readLog(Bitmap bitmap, Bitmap processedBitmap, Bitmap movingsBitmap, double stamp);
+    public native double[][] readLog(Bitmap bitmap, Bitmap processedBitmap, Bitmap movingsBitmap, double stamp, GroundLocation elev);
 
     @Override
     public void onResume() {

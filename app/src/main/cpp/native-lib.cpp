@@ -239,7 +239,7 @@ Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobje
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL
-Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_this, jobject bitmap, jobject processedBitmap, jobject movingsBitmap, jdouble stamp)
+Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_this, jobject bitmap, jobject processedBitmap, jobject movingsBitmap, jdouble stamp, jobject outElev)
 {
 //    sc->readFromLog(logs_str);
     ImageSet imgSt;
@@ -278,6 +278,10 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
         fov_poses_array = putIntoArray(env, object_poses, 0, fov_poses_array);
         fov_poses_array = putIntoArray(env, moving_poses, 4, fov_poses_array);
     }
+
+    jclass clazz = env->GetObjectClass(outElev);
+    jfieldID param1Field = env->GetFieldID(clazz, "elev", "D");
+    env->SetDoubleField(outElev, param1Field, sc->elev(imuSt));
 
     return fov_poses_array;
 }
@@ -334,10 +338,14 @@ Java_com_example_android_1scanner_AircraftActivity_setLocation(JNIEnv* env, jobj
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL
-Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time)
+Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time, jobject outElev)
 {
     std::vector<Location> fov_poses, sweeped_area;
     jobjectArray fov_poses_array = NULL;
+
+    jclass clazz = env->GetObjectClass(outElev);
+    jfieldID param1Field = env->GetFieldID(clazz, "elev", "D");
+    env->SetDoubleField(outElev, param1Field, sc->elev());
 
     if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_poses, sweeped_area))
     {

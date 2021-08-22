@@ -4,9 +4,6 @@
 
 #include "scanner.h"
 #include "sweeper.h"
-#include "grid.h"
-#include "nasagridsquare.h"
-#include "utils.h"
 
 Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, int log_mode, float hva_, int maxdist)
 {
@@ -24,8 +21,8 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 
 //    beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
 
-//    string logFolder = "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/";
-//    string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_18_52_14/";
+//    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/";
+//    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_18_52_14/";
 //    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_18_59_38/";
     std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_19_10_35/";
 
@@ -40,13 +37,11 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
     motionDetector = new MotionDetector(hva_);
 //    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-2");
 
-    float lat,lng;
-    lat = 35.749708;
-    lng = 51.593127;
-    FloodUtils::setdir(assetsDir.c_str());
-    Grid<NasaGridSquare>::cache_limit = 20;
-    Grid<NasaGridSquare> g;
-    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "\n\n**** %s ****\n\n", std::to_string(g.height(lng,lat)).c_str() );
+    assets_dir = assetsDir;
+//    FloodUtils::setdir(assetsDir.c_str());
+//    Grid<NasaGridSquare>::cache_limit = 20;
+//    grid = new Grid<NasaGridSquare>();
+
 }
 
 
@@ -391,6 +386,65 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps, std::vector<Location> &s
     return true;
 }
 
+double Scanner::elev(ImuSet &imuSt)
+{
+    FloodUtils::setdir(assets_dir.c_str());
+    Grid<NasaGridSquare>::cache_limit = 20;
+    grid = new Grid<NasaGridSquare>();
+
+    return (double) grid->height((float)imuSt.lng,(float)imuSt.lat);
+}
+
+double Scanner::elev()
+{
+    FloodUtils::setdir(assets_dir.c_str());
+    Grid<NasaGridSquare>::cache_limit = 20;
+    grid = new Grid<NasaGridSquare>();
+
+    ImuSet imuSt;
+    if (!logger->getImuSet(imuSt)) {
+        return 0.0;
+    }
+
+    return (double) grid->height((float)imuSt.lng,(float)imuSt.lat);
+}
+
+bool Scanner::elevDiff(double newLat, double newLon, double &diff)
+{
+    FloodUtils::setdir(assets_dir.c_str());
+    Grid<NasaGridSquare>::cache_limit = 20;
+    grid = new Grid<NasaGridSquare>();
+
+    if (!useElev){
+        diff = 0;
+        return true;
+    }
+
+    if (!locationInitialized){
+        initLoc.lat = newLat;
+        initLoc.lng = newLon;
+
+        locationInitialized = true;
+        diff = 0;
+        return true;
+    }
+
+    double newElev = (double) grid->height((float)newLon,(float)newLat);
+    double initElev = (double) grid->height((float)initLoc.lng,(float)initLoc.lat);
+
+    __android_log_print(ANDROID_LOG_VERBOSE, "imageToMap", " %f %f %f %f %f %f", (float)newLon,(float)newLat, (float)initLoc.lng,(float)initLoc.lat, (float)newElev, (float)initElev );
+
+    if (newElev == -32768 || initElev == -32768) {
+        diff = 0;
+        return false;
+    }
+    else
+    {
+        diff = newElev - initElev;
+        return true;
+    }
+}
+
 void Scanner::imageToMap(double roll, double pitch, double azimuth, double lat, double lng, double alt, std::vector<Point2f> points, std::vector<Location> &poses_gps, std::vector<bool> &show_permissions)
 {
     double x, y;
@@ -401,7 +455,9 @@ void Scanner::imageToMap(double roll, double pitch, double azimuth, double lat, 
     show_permissions.clear();
 
     gpsToUtm(lat, lng, x, y);
-    pos << y, x, -alt;
+    double diff = 0;
+    bool res = elevDiff(lat,lng,diff);
+    pos << y, x, -(alt+diff);
 
     eulerToRotationMat(roll, pitch, azimuth, camToInertia);
 
