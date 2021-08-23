@@ -67,13 +67,15 @@ public:
     Scanner(std::string, std::string, DetectionMethod, bool, float, int);
     void myFlip(Mat src);
     void myBlur(Mat src, float sigma);
-    bool scan(std::vector<Location>&, Mat&, Mat&,int, bool);
-//    bool scan(ImageSet&, Mat&, std::vector<Location>&, Mat&, std::vector<Location>&);
+//    bool scan(std::vector<Location>&, Mat&, Mat&,int, bool);
+    bool scan(std::vector<Object>&, Mat&, Mat&,int, bool);
+    //    bool scan(ImageSet&, Mat&, std::vector<Location>&, Mat&, std::vector<Location>&);
 //    bool scan(ImageSet&, Mat&, std::vector<Location>&, Mat&);
     bool scan(ImageSet&, Mat&, Mat&, std::vector<Object>&);
-    bool calcFov(std::vector<Location>&, std::vector<Location>&);
-//    bool calcFov(std::vector<Location>&, std::vector<Location>&, ImuSet&, ImageSet&);
-    bool calcFov(std::vector<Object>&, std::vector<Location>&, ImageSet&);
+//    bool calcFov(std::vector<Location>&, std::vector<Location>&);
+    bool calcFov(std::vector<Object>&);
+    //    bool calcFov(std::vector<Location>&, std::vector<Location>&, ImuSet&, ImageSet&);
+    bool calcFov(std::vector<Object>&, ImageSet&);
 //    void readFromLog(std::string);
 };
 

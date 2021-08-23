@@ -148,32 +148,72 @@ void matToBitmap(JNIEnv* env, Mat src, jobject bitmap, jboolean needPremultiplyA
 //}
 
 // for <Object> vectors
-jobjectArray putIntoArray(JNIEnv* env, std::vector<Object> objects, int type=2, jobjectArray outer = NULL)
+//jobjectArray putIntoArray(JNIEnv* env, std::vector<Object> objects, int type=2, jobjectArray outer = NULL)
+//{
+//    int prior_len = 0;
+//    jclass cls = env->FindClass("[D");
+//    jdoubleArray iniVal = env->NewDoubleArray(4);
+//
+//    if (outer == NULL) {
+//        // Create the returnable jobjectArray with an initial value
+//        outer = env->NewObjectArray(objects.size(), cls, iniVal);
+//    }
+//    else {
+//        prior_len = env -> GetArrayLength(outer);
+//        jobjectArray new_outer = env->NewObjectArray( prior_len + objects.size(), cls, iniVal);
+//
+//        for(int i=0; i<prior_len; i++){
+//            env->SetObjectArrayElement(new_outer, i, env->GetObjectArrayElement(outer, i));
+//        }
+//
+//        outer = new_outer;
+//    }
+//
+//    for (int i = prior_len; i < prior_len + objects.size(); i++)
+//    {
+//        jdoubleArray inner = env->NewDoubleArray(4);
+//
+//        Object det = objects.at(i-prior_len);
+//        double posa[4] = {det.location.lat, det.location.lng, det.location.alt, (double) type};
+//        env->SetDoubleArrayRegion(inner, 0, 4, posa);
+//
+//        env->SetObjectArrayElement(outer, i, inner);
+//        env->DeleteLocalRef(inner);
+//    }
+//
+//    return outer;
+//}
+
+jobjectArray putIntoArray(JNIEnv* env, std::vector<Object> objects)
 {
-    int prior_len = 0;
+    int type = 5;
     jclass cls = env->FindClass("[D");
     jdoubleArray iniVal = env->NewDoubleArray(4);
+    jobjectArray outer = env->NewObjectArray(objects.size(), cls, iniVal);
 
-    if (outer == NULL) {
-        // Create the returnable jobjectArray with an initial value
-        outer = env->NewObjectArray(objects.size(), cls, iniVal);
-    }
-    else {
-        prior_len = env -> GetArrayLength(outer);
-        jobjectArray new_outer = env->NewObjectArray( prior_len + objects.size(), cls, iniVal);
-
-        for(int i=0; i<prior_len; i++){
-            env->SetObjectArrayElement(new_outer, i, env->GetObjectArrayElement(outer, i));
-        }
-
-        outer = new_outer;
-    }
-
-    for (int i = prior_len; i < prior_len + objects.size(); i++)
+    for (int i = 0; i < objects.size(); i++)
     {
         jdoubleArray inner = env->NewDoubleArray(4);
 
-        Object det = objects.at(i-prior_len);
+        Object det = objects.at(i);
+        switch (det.type) {
+            case Object::PERSON: {
+                type = 0;
+                break; }
+            case Object::CAR: {
+                type = 1;
+                break; }
+            case Object::FOV: {
+                type = 2;
+                break; }
+            case Object::SWEPT: {
+                type = 3;
+                break; }
+            case Object::MOVING: {
+                type = 4;
+                break; }
+            default: break;
+        }
         double posa[4] = {det.location.lat, det.location.lng, det.location.alt, (double) type};
         env->SetDoubleArrayRegion(inner, 0, 4, posa);
 
@@ -232,12 +272,14 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_example_android_1scanner_MainActivity_scan(JNIEnv* env, jobject p_this, jobject detections) {
 
     Mat det, movings;
-    std::vector<Location> poses;
+//    std::vector<Location> poses;
+    std::vector<Object> objects;
     bitmapToMat(env, detections, det, false);
     cvtColor(det, det, COLOR_RGBA2BGR);
 
-    if (!sc->scan(poses, det, movings, 0, true))
-    {
+//    if (!sc->scan(poses, det, movings, 0, true))
+    if (!sc->scan(objects, det, movings, 0, true))
+        {
         putText(det, "SENSOR DATA NOT PROVIDED", cv::Point(50,200),cv::FONT_HERSHEY_DUPLEX,4,cv::Scalar(0,0,255),3,false);
     }
 
@@ -264,12 +306,13 @@ extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time)
 {
     std::vector<Location> fov_poses, sweeped_area;
-    std::vector<Object> fob_objects;
+    std::vector<Object> fov_objects;
 
-    if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_poses, sweeped_area))
+//    if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_poses, sweeped_area))
+    if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_objects))
     {
 //        return putIntoArray(env, fov_poses);
-        return putIntoArray(env, fob_objects);
+        return putIntoArray(env, fov_objects);
     }
     else
     {
@@ -283,8 +326,8 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
 //    sc->readFromLog(logs_str);
     ImageSet imgSt;
     ImuSet imuSt;
-    std::vector<Location> fov_locs, object_poses, moving_poses;
-    std::vector<Location> sweeped_area;
+//    std::vector<Location> fov_locs, object_poses, moving_poses;
+//    std::vector<Location> sweeped_area;
     jobjectArray fov_poses_array = NULL;
     std::vector<Object> objects, fov_objects;
 
@@ -315,16 +358,19 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     // Note: calcFov sets fov for an image after scan while scan (motionDetector) uses it for current
     // image. But it's not important because of the assumption of fixed camera in motion detection mode
 //    if (sc->calcFov(fov_locs, sweeped_area, imuSt, imgSt))
-    if (sc->calcFov(fov_objects, sweeped_area, imgSt))
+    if (sc->calcFov(fov_objects, imgSt))
     {
 //        fov_poses_array = putIntoArray(env, fov_locs);
 //        fov_poses_array = putIntoArray(env, sweeped_area, 3, fov_poses_array);
 //        fov_poses_array = putIntoArray(env, object_poses, 0, fov_poses_array);
-        fov_poses_array = putIntoArray(env, fov_objects);
-        fov_poses_array = putIntoArray(env, objects, 0, fov_poses_array);
-    }
 
-    return fov_poses_array;
+//        fov_poses_array = putIntoArray(env, fov_objects);
+//        fov_poses_array = putIntoArray(env, objects, 0);
+
+        fov_objects.insert(fov_objects.end(), objects.begin(), objects.end());
+        return putIntoArray(env, fov_objects);
+    } else
+        return NULL;
 }
 
 extern "C"
@@ -385,8 +431,9 @@ Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, j
     std::vector<Object> fov_objects;
     jobjectArray fov_poses_array = NULL;
 
-    if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_poses, sweeped_area))
-    {
+//    if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_poses, sweeped_area))
+    if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_objects))
+        {
 //        fov_poses_array = putIntoArray(env, fov_poses);
 //        fov_poses_array = putIntoArray(env, sweeped_area, 3, fov_poses_array);
         fov_poses_array = putIntoArray(env, fov_objects);
@@ -407,7 +454,7 @@ Java_com_example_android_1scanner_AircraftActivity_scan(JNIEnv* env, jobject p_t
 //    const char *convertedValue = (env)->GetStringUTFChars(detMode, &isCopy);
 //    std::string detModeStr = std::string(convertedValue);
 
-    std::vector<Location> object_poses;
+//    std::vector<Location> object_poses;
     std::vector<Object> objects;
 
     Mat det, movings;
@@ -417,7 +464,8 @@ Java_com_example_android_1scanner_AircraftActivity_scan(JNIEnv* env, jobject p_t
     bitmapToMat(env, movings_img, movings, false);
     cvtColor(movings, movings, COLOR_RGBA2BGR);
 
-    if (!sc->scan(object_poses, det, movings, (int) detMode, false))
+//    if (!sc->scan(object_poses, det, movings, (int) detMode, false))
+    if (!sc->scan(objects, det, movings, (int) detMode, false))
     {
         putText(det, "SENSOR DATA NOT PROVIDED", cv::Point(50,200),cv::FONT_HERSHEY_DUPLEX,4,cv::Scalar(0,0,255),3,false);
         putText(movings, "SENSOR DATA NOT PROVIDED", cv::Point(50,200),cv::FONT_HERSHEY_DUPLEX,4,cv::Scalar(0,0,255),3,false);
@@ -431,5 +479,6 @@ Java_com_example_android_1scanner_AircraftActivity_scan(JNIEnv* env, jobject p_t
     matToBitmap(env, movings, movings_img, false);
 
 //    return putIntoArray(env, object_poses, 0);
-    return putIntoArray(env, objects, 0);
+//    return putIntoArray(env, objects, 0);
+    return putIntoArray(env, objects);
 }

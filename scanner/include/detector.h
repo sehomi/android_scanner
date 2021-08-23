@@ -19,7 +19,7 @@ enum DetectionMethod {
 struct Object
 {
 //	enum {DRAW, REMAIN, DELETE} action;
-	enum {PERSON, CAR, MOVING, FOV} type;
+	enum {PERSON, CAR, FOV, SWEPT, MOVING} type;
 	cv::Rect box;
 	cv::Mat picture;
 	double distance;
