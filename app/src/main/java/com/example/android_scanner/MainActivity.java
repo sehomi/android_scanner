@@ -405,7 +405,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         processedBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.mountain);
                         movingsBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.mountain);
                         double[][] fov = readLog(bitmap, processedBitmap, movingsBitmap);
-
                         runOnUiThread(new Runnable() {
 
                             @Override
@@ -422,7 +421,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     sweep_polygon = new PolygonOptions();
 
                                     for(int i=0; i<fov.length; i++) {
-//                                        Log.v(TAG, String.valueOf(fov[i][0]) + " " + String.valueOf(fov[i][1]) + " " + String.valueOf(fov[i][3]));
+                                        Log.v(TAG, String.valueOf(fov[i][0]) + " " + String.valueOf(fov[i][1]) + " " + String.valueOf(fov[i][3]));
                                         // TODO: A new marker must be assigned to moving objects (in which fov[i][3] == 4) in read-log mode
                                         if (fov[i][3] == 0 || fov[i][3] == 4) {
                                             LatLng per = new LatLng(fov[i][0], fov[i][1]);
@@ -442,10 +441,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     }
 
                                     fov_polygon.add(new LatLng(fov[0][0], fov[0][1]));
-                                    sweep_polygon.add(new LatLng(fov[5][0], fov[5][1]));
-
-                                    sweep_polygon.fillColor(Color.argb(150, 255, 0, 0));
-                                    sweep_polygon.strokeColor(Color.argb(255, 150, 150, 150));
+//                                    sweep_polygon.add(new LatLng(fov[5][0], fov[5][1]));
+//
+//                                    sweep_polygon.fillColor(Color.argb(150, 255, 0, 0));
+//                                    sweep_polygon.strokeColor(Color.argb(255, 150, 150, 150));
                                     fov_polygon.strokeColor(Color.BLUE);
 
                                     googleMap.addPolygon(fov_polygon);

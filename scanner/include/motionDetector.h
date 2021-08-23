@@ -12,6 +12,7 @@
 #include "Logger.h"
 #include "UTM.h"
 #include <math.h>
+#include "detector.h"
 //#include <Eigen/Geometry>
 //#include "Eigen/Core"
 
@@ -24,13 +25,15 @@ class MotionDetector{
 
     void visualize(const cv::Mat&, const cv::Mat&, const cv::Mat&, cv::Mat&);
     void setFocalLength(int);
-    void calcNormCoeffMat(const std::vector<Location>&, double, double, double, cv::Mat&, cv::Mat&);
-    void generateMovingRects(cv::Mat &output, std::vector<cv::Rect> &rects);
+    void calcNormCoeffMat(const std::vector<Object>&, double, double, double, cv::Mat&, cv::Mat&);
+//    void generateMovingRects(cv::Mat &, std::vector<cv::Rect> &);
+    void generateMovingRects(cv::Mat &, std::vector<Object> &);
 
 public:
 
     MotionDetector(float);
-    void detect(ImageSet&, cv::Mat&, std::vector<cv::Rect>&, std::vector<Location>);
+//    void detect(ImageSet&, cv::Mat&, std::vector<cv::Rect>&, std::vector<Location>);
+    void detect(ImageSet&, cv::Mat&, std::vector<Object>&, std::vector<Object>);
 };
 
 

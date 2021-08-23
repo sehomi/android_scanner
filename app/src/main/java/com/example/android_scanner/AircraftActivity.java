@@ -273,7 +273,6 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
         Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
         Bitmap bitmap2 = bitmap.copy(bitmap.getConfig(), true);
-//        detect(bitmap, bitmap1);
         double[][] object_poses;
         if (r_group.getCheckedRadioButtonId() == R.id.objDetMode)
             object_poses = scan(bitmap1, bitmap2, 0);
@@ -525,7 +524,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     }
 
                     PolygonOptions fov_polygon_opt = new PolygonOptions();
-                    PolygonOptions sweep_polygon_opt = new PolygonOptions();
+//                    PolygonOptions sweep_polygon_opt = new PolygonOptions();
 
                     for (double[] marker : markers) {
                         Log.v(TAG, String.valueOf(marker[0]) + " " + String.valueOf(marker[1]) + " " + String.valueOf(marker[3]));
@@ -547,18 +546,18 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                             Log.v(TAG, "as fov");
                             fov_polygon_opt.add(new LatLng(marker[0], marker[1]));
                         } else if (marker[3] == 3) {
-                            Log.v(TAG, "as sweeped");
-                            sweep_polygon_opt.add(new LatLng(marker[0], marker[1]));
+//                            Log.v(TAG, "as sweeped");
+//                            sweep_polygon_opt.add(new LatLng(marker[0], marker[1]));
                         }
                     }
 
                     if (fovCall)
                     {
                         fov_polygon_opt.add(new LatLng(markers[0][0], markers[0][1]));
-                        sweep_polygon_opt.add(new LatLng(markers[4][0], markers[4][1]));
-
-                        sweep_polygon_opt.fillColor(Color.argb(150, 255, 0, 0));
-                        sweep_polygon_opt.strokeColor(Color.argb(255, 150, 150, 150));
+//                        sweep_polygon_opt.add(new LatLng(markers[4][0], markers[4][1]));
+//
+//                        sweep_polygon_opt.fillColor(Color.argb(150, 255, 0, 0));
+//                        sweep_polygon_opt.strokeColor(Color.argb(255, 150, 150, 150));
                         fov_polygon_opt.strokeColor(Color.BLUE);
 
 //                        sweep_polygon = googleMap.addPolygon(sweep_polygon_opt);
@@ -609,7 +608,6 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
      * which is packaged with this application.
      */
     public native void createScanner(String assets, String logs, boolean log_mode, float hva, int method);
-    public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
     public native double[][] scan(Bitmap detections, Bitmap movings_img, int detMode);
     public native void setImage(Bitmap bitmap, double time);
     public native void setLocation(double lat, double lng, double alt, double time);

@@ -36,12 +36,16 @@ void Scanner::setCamInfo(Mat &img)
     cy = (float) height/2;
 }
 
-bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &object_poses, Mat &movings_img, std::vector<Location> &movings_poses)
+//bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &object_poses, Mat &movings_img, std::vector<Location> &movings_poses)
+//bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &object_poses, Mat &movings_img)
+bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, Mat &movings_img, std::vector<Object> &objects)
 {
     if (!logger->readFromLog)
         return false;
-
-    std::vector<cv::Rect> bboxes, movings_bboxes;
+    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----", "%s", "ji_1");
+    std::vector<int> ids;
+//    std::vector<cv::Rect> bboxes, movings_bboxes;
+    std::vector<Object> /*objects,*/ moving_objects;
 
     // TODO: hva must be set automatically from log
     //       This is for mavic mini:
@@ -52,13 +56,20 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &
         camInfoSet = true;
     }
 
-    motionDetector->detect(imgSt, movings_img, movings_bboxes, fovPoses);
+//    motionDetector->detect(imgSt, movings_img, movings_bboxes, fovPoses);
+    motionDetector->detect(imgSt, movings_img, moving_objects, fovPoses);
 
-    detector->detect(imgSt.image, bboxes);
-    detector->drawDetections(detections_img, bboxes);
+//    detector->detect(imgSt.image, bboxes, ids);
+//    detector->drawDetections(detections_img, bboxes);
+    detector->detect(imgSt.image, objects);
+    detector->drawDetections(detections_img, objects);
 
-    camToMap(bboxes, imgSt, object_poses);
-    camToMap(movings_bboxes, imgSt, movings_poses);
+//    camToMap(bboxes, imgSt, object_poses);
+//    camToMap(movings_bboxes, imgSt, movings_poses);
+    objects.insert(objects.end(), moving_objects.begin(), moving_objects.end());
+//    camToMap(objects, imgSt, object_poses);
+    camToMap(objects, imgSt);
+//    camToMap(moving_objects, imgSt, movings_poses);
 
 //    for (auto & op : object_poses)
 //    {
@@ -70,7 +81,7 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &
 //    }
 
 //    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--length of objects:", "%s", std::to_string(object_poses.size()).c_str());
-    associate(object_poses);
+//    associate(object_poses);
     return true;
 }
 
@@ -81,7 +92,10 @@ bool Scanner::scan(std::vector<Location> &object_poses, Mat &detections, Mat &mo
 
     ImageSet imgSt;
 //    ImuSet imuSt;
-    std::vector<cv::Rect> bboxes;
+//
+//    std::vector<int> ids;
+//    std::vector<cv::Rect> objects;
+    std::vector<Object> objects;
 
     if (!logger->getImageSet(imgSt))
     {
@@ -98,23 +112,27 @@ bool Scanner::scan(std::vector<Location> &object_poses, Mat &detections, Mat &mo
     detections = imgSt.image.clone();
 
     if (det_mode == 1) {
-        motionDetector->detect(imgSt, movings_img, bboxes, fovPoses);
+//        motionDetector->detect(imgSt, movings_img, bboxes, fovPoses);
+        motionDetector->detect(imgSt, movings_img, objects, fovPoses);
     }
     else {
         if (rgba) {
             Mat img;
             cvtColor(imgSt.image, img, COLOR_RGBA2BGR);
             cvtColor(detections, detections, COLOR_RGBA2BGR);
-            detector->detect(img, bboxes);
+            detector->detect(img, objects);
+//            detector->detect(img, bboxes, ids);
         } else
-            detector->detect(imgSt.image, bboxes);
+            detector->detect(imgSt.image, objects);
+//            detector->detect(imgSt.image, bboxes, ids);
 
-        detector->drawDetections(detections, bboxes);
+        detector->drawDetections(detections, objects);
 
         movings_img = cv::Mat::zeros(imgSt.image.rows, imgSt.image.cols, CV_8UC3);
     }
 
-    camToMap(bboxes, imgSt, object_poses);
+    camToMap(objects, imgSt, object_poses);
+//    camToMap(objects, imgSt);
 
 //    associate(object_poses);
 
@@ -157,7 +175,8 @@ void Scanner::myBlur(Mat src, float sigma) {
     GaussianBlur(src, src, Size(), sigma);
 }
 
-void Scanner::camToMap(std::vector<Rect> &objects, const ImageSet& is, std::vector<Location> &object_poses)
+//void Scanner::camToMap(std::vector<cv::Rect> &objects, const ImageSet& is, std::vector<Location> &object_poses)
+void Scanner::camToMap(std::vector<Object> &objects, const ImageSet& is, std::vector<Location> &object_poses)
 {
     std::vector<Point2f> centers;
     std::vector<bool> show_permissions;
@@ -165,10 +184,30 @@ void Scanner::camToMap(std::vector<Rect> &objects, const ImageSet& is, std::vect
 //    centers.reserve(objects.size());
     for (auto & object : objects)
     {
-        centers.push_back(Point(object.x + float(object.width)/2, object.y + float (object.height)/2));
+        centers.push_back(Point(object.box.x + float(object.box.width)/2, object.box.y + float (object.box.height)/2));
+//        centers.push_back(Point(object.x + float(object.width)/2, object.y + float (object.height)/2));
     }
 
+//    imageToMap(is.roll, is.pitch, is.azimuth, is.lat, is.lng, is.alt, centers, object_poses, show_permissions);
     imageToMap(is.roll, is.pitch, is.azimuth, is.lat, is.lng, is.alt, centers, object_poses, show_permissions);
+}
+
+void Scanner::camToMap(std::vector<Object> &objects, const ImageSet& is)
+{
+    std::vector<Point2f> centers;
+    std::vector<bool> show_permissions;
+
+//    centers.reserve(objects.size());
+    for (auto & object : objects)
+    {
+//        centers.push_back(Point(object.box.x + float(object.box.width)/2, object.box.y + float (object.box.height)/2));
+        // TODO: center attribute must be initialized in the detector
+        object.center = cv::Point(object.box.x + float(object.box.width)/2, object.box.y + float (object.box.height)/2);
+//        centers.push_back(Point(object.x + float(object.width)/2, object.y + float (object.height)/2));
+    }
+
+//    imageToMap(is.roll, is.pitch, is.azimuth, is.lat, is.lng, is.alt, centers, object_poses, show_permissions);
+    imageToMap(is.roll, is.pitch, is.azimuth, is.lat, is.lng, is.alt, objects);
 }
 
 void Scanner::eulerToRotationMat(double roll, double pitch, double azimuth, Eigen::Matrix3d &output)
@@ -322,9 +361,11 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps, std::vector<Location> &s
     return true;
 }
 
-bool Scanner::calcFov(std::vector<Location> &poses_gps, std::vector<Location> &sweeped_area, ImuSet &imuSt, ImageSet &imgSt)
+//bool Scanner::calcFov(std::vector<Location> &poses_gps, std::vector<Location> &sweeped_area, ImuSet &imuSt, ImageSet &imgSt)
+bool Scanner::calcFov(std::vector<Object> &objects, std::vector<Location> &sweeped_area, ImageSet &imgSt)
 {
-//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-1");
+    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "ji---1-1");
+
     if (!logger->readFromLog)
         return false;
 
@@ -333,23 +374,78 @@ bool Scanner::calcFov(std::vector<Location> &poses_gps, std::vector<Location> &s
     int h = imgSt.image.size().height;
     std::vector<bool> sps;
     std::vector<Point2f> points{{0, 0}, {(float)w, 0}, {(float)w, (float)h}, { 0, (float)h }};
+    for (auto & point : points)
+    {
+        Object obj;
+        obj.center.x = point.x;
+        obj.center.y = point.y;
+        objects.push_back(obj);
+    }
 
-    imageToMap(imgSt.roll, imgSt.pitch, imgSt.azimuth, imgSt.lat, imgSt.lng, imgSt.alt, points, poses_gps, sps);
+//    imageToMap(imgSt.roll, imgSt.pitch, imgSt.azimuth, imgSt.lat, imgSt.lng, imgSt.alt, points, poses_gps, sps);
+    imageToMap(imgSt.roll, imgSt.pitch, imgSt.azimuth, imgSt.lat, imgSt.lng, imgSt.alt, objects);
 
-    sweeper->update(poses_gps, sweeped_area);
+//    sweeper->update(poses_gps, sweeped_area);
 
     fovPoses.clear();
-    fovPoses = poses_gps;
+//    fovPoses = poses_gps;
+    fovPoses = objects;
 
-//    for (int k=0; k<poses_gps.size(); k++) {
-//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--element of fov_locs:", "%s",
-//                            std::to_string(poses_gps[k].lat).c_str());
-//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--element of fov_locs:", "%s",
-//                            std::to_string(poses_gps[k].lng).c_str());
+//    for (int k=0; k<objects.size(); k++) {
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--lat element of fov_locs:", "%s",
+//                            std::to_string(objects[k].location.lat).c_str());
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--lng element of fov_locs:", "%s",
+//                            std::to_string(objects[k].location.lng).c_str());
 //    }
+    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "ji---1-4");
     return true;
 }
 
+// after change:
+void Scanner::imageToMap(double roll, double pitch, double azimuth, double lat, double lng, double alt, std::vector<Object> &objects)
+{
+    double x, y;
+    Eigen::VectorXd pos(3);
+    Eigen::Matrix3d camToInertia;
+    std::vector<Eigen::VectorXd> poses;//, ws;
+
+//    show_permissions.clear();
+
+    gpsToUtm(lat, lng, x, y);
+    pos << y, x, -alt;
+
+    eulerToRotationMat(roll, pitch, azimuth, camToInertia);
+
+    for (auto & object : objects)
+    {
+        Eigen::VectorXd w_cam(3), w_(3), v(3), p(3), scaled_v(3);
+        calcDirVec(object.center.x, object.center.y, w_);
+        w_cam << w_[2], w_[0], w_[1];
+        v = camToInertia * w_cam;
+
+        // TODO: This method must be applied ... not the above mess
+//        v = camToInertia.transpose() * imToCam.transpose() * w_;
+
+//        std::stringstream ss;
+//        ss << v;
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "v: %s", ss.str().c_str());
+
+//        show_permissions.push_back(scaleVector(v, scaled_v, pos[2]));
+        object.show = scaleVector(v, scaled_v, pos[2]);
+
+//        p << (scaled_v[1] + pos[1]), scaled_v[0] + pos[0], -(scaled_v[2] + pos[2]);
+//        poses.push_back(p);
+        object.location.x = (scaled_v[1] + pos[1]);
+        object.location.y = scaled_v[0] + pos[0];
+        object.location.alt = -(scaled_v[2] + pos[2]);
+
+//      TODO : The scanned places must be saved - An overall fov must be generated simultaneously
+    }
+//    utmToGps(poses, poses_gps);
+    utmToGps(objects);
+}
+
+// before change:
 void Scanner::imageToMap(double roll, double pitch, double azimuth, double lat, double lng, double alt, std::vector<Point2f> points, std::vector<Location> &poses_gps, std::vector<bool> &show_permissions)
 {
     double x, y;
@@ -391,6 +487,28 @@ void Scanner::imageToMap(double roll, double pitch, double azimuth, double lat, 
     utmToGps(poses, poses_gps);
 }
 
+// after change:
+void Scanner::utmToGps(std::vector<Object> &objs)
+{
+//    latlons.clear();
+    for (auto & obj : objs)
+    {
+        double lat=0, lon=0;
+//        UTMXYToLatLon (utm[0], utm[1], zone, isSouth, lat, lon);
+        UTMXYToLatLon (obj.location.x, obj.location.y, zone, isSouth, lat, lon);
+        obj.location.lat = lat*180/PI;
+        obj.location.lng = lon*180/PI;
+//        Location loc;
+//        loc.lat = lat*180/PI;
+//        loc.lng = lon*180/PI;
+//        loc.alt = obj.utm[2];
+//        loc.x = obj.utm[0];
+//        loc.y = obj.utm[1];
+//        latlons.push_back(loc);
+    }
+}
+
+// before change:
 void Scanner::utmToGps(std::vector<Eigen::VectorXd> utms, std::vector<Location> &latlons)
 {
     latlons.clear();
