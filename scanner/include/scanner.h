@@ -41,7 +41,7 @@ class Scanner{
     double lastProcessStamp = -1; double lastProcessImgSetStamp = -1;
     std::string assets_dir;
     int max_dist, zone;
-    bool camInfoSet = false, isSouth = false, locationInitialized = false, useElev = true;
+    bool camInfoSet = false, isSouth = false, locationInitialized = false, useElev = false;
     Location initLoc;
     Grid<NasaGridSquare> *grid;
     std::vector<Location> objectPoses, fovPoses;
@@ -52,12 +52,14 @@ class Scanner{
     void camToMap(std::vector<Rect>&, const ImageSet&, std::vector<Location>&);
     void toDirectionVector(std::vector<Rect>&, std::vector<Eigen::VectorXd>&);
     bool scaleVector(Eigen::VectorXd, Eigen::VectorXd&, double);
-    void associate(const std::vector<Location>&);
+    void associate(std::vector<Location>&);
     void gpsToUtm(double, double, double&, double&);
     void eulerToRotationMat(double, double, double, Eigen::Matrix3d&);
     void calcDirVec(float, float, Eigen::VectorXd&);
     void utmToGps(std::vector<Eigen::VectorXd>, std::vector<Location>&);
     void setCamInfo(Mat&);
+    void cropObjectImage(Mat&, std::vector<Rect>&, std::vector<Location>&, float);
+    void calcDistanceFromHome(std::vector<Location>&);
     bool elevDiff(double, double, double&);
     void imageToMap(double, double, double, double, double, double, std::vector<Point2f>, std::vector<Location>&, std::vector<bool>&);
 

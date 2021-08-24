@@ -429,7 +429,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             Log.e(TAG, "run: Error. time stamp could not be calculated due to sdk version.");
                         }
                         GroundLocation elev = new GroundLocation();
+
+                        // TODO: action should be considered for markers
                         double[][] fov = readLog(bitmap, processedBitmap, movingsBitmap, stamp, elev);
+                        Bitmap[] objImages = getImages();
+
+                        if (objImages != null)
+                            Log.v(TAG, "objImages size: " + String.valueOf(objImages.length));
 
                         runOnUiThread(new Runnable() {
 
@@ -551,6 +557,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //    public native boolean setOrientation(double roll, double pitch, double azimuth, double time, Double[][] oa);
     public native double[][] setOrientation(double roll, double pitch, double azithmu, double time);
     public native double[][] readLog(Bitmap bitmap, Bitmap processedBitmap, Bitmap movingsBitmap, double stamp, GroundLocation elev);
+    public native Bitmap[] getImages();
 
     @Override
     public void onResume() {

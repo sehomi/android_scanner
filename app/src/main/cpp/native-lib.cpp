@@ -111,11 +111,23 @@ void matToBitmap(JNIEnv* env, Mat src, jobject bitmap, jboolean needPremultiplyA
     }
 }
 
-jobjectArray putIntoArray(JNIEnv* env, std::vector<Location> fov_poses, int type=2, jobjectArray outer = NULL)
+void createBitmap(JNIEnv* env, int w, int h, jobject &java_bitmap)
+{
+    jclass java_bitmap_class = (jclass)env->FindClass("android/graphics/Bitmap");
+    jmethodID mid = env->GetStaticMethodID(java_bitmap_class, "createBitmap", "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
+    const wchar_t config_name[] = L"ARGB_8888";
+    jstring j_config_name = env->NewString((const jchar*)config_name, wcslen(config_name));
+    jclass bcfg_class = env->FindClass("android/graphics/Bitmap$Config");
+    jobject java_bitmap_config = env->CallStaticObjectMethod(bcfg_class, env->GetStaticMethodID(bcfg_class, "valueOf", "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;"), env->NewStringUTF("ARGB_8888"));
+    //    jobject java_bitmap_config = env->CallStaticObjectMethod(bcfg_class, midValueOf, env->NewStringUTF("ARGB_8888"));
+    java_bitmap = env->CallStaticObjectMethod(java_bitmap_class, mid, w, h, java_bitmap_config);
+}
+
+jobjectArray putIntoArray(JNIEnv* env, std::vector<Location> &fov_poses, int type=2, jobjectArray outer = NULL)
 {
     int prior_len = 0;
     jclass cls = env->FindClass("[D");
-    jdoubleArray iniVal = env->NewDoubleArray(4);
+    jdoubleArray iniVal = env->NewDoubleArray(5);
 
     if (outer == NULL) {
         // Create the returnable jobjectArray with an initial value
@@ -134,11 +146,11 @@ jobjectArray putIntoArray(JNIEnv* env, std::vector<Location> fov_poses, int type
 
     for (int i = prior_len; i < prior_len + fov_poses.size(); i++)
     {
-        jdoubleArray inner = env->NewDoubleArray(4);
+        jdoubleArray inner = env->NewDoubleArray(5);
 
         Location pos = fov_poses.at(i-prior_len);
-        double posa[4] = {pos.lat, pos.lng, pos.alt, (double) type};
-        env->SetDoubleArrayRegion(inner, 0, 4, posa);
+        double posa[5] = {pos.lat, pos.lng, pos.alt, (double) type, pos.distance};
+        env->SetDoubleArrayRegion(inner, 0, 5, posa);
 
         env->SetObjectArrayElement(outer, i, inner);
         env->DeleteLocalRef(inner);
@@ -146,6 +158,22 @@ jobjectArray putIntoArray(JNIEnv* env, std::vector<Location> fov_poses, int type
 
     return outer;
 }
+
+void putIntoBitmapArray(JNIEnv* env, std::vector<Location> &fov_poses, jobjectArray &ret)
+{
+    jclass cls = env->FindClass("android/graphics/Bitmap");
+    ret = env->NewObjectArray( fov_poses.size(), cls, NULL);
+
+    for (int i=0; i<fov_poses.size(); i++){
+        jobject bitmap;
+        createBitmap(env, fov_poses.at(i).objImage.cols, fov_poses.at(i).objImage.rows, bitmap);
+        matToBitmap(env, fov_poses.at(i).objImage, bitmap, false);
+
+        env->SetObjectArrayElement(ret, i, bitmap);
+    }
+
+}
+
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_example_android_1scanner_MainActivity_stringFromJNI(
@@ -238,13 +266,15 @@ Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobje
     }
 }
 
+std::vector<Location> object_poses;
+
 extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_this, jobject bitmap, jobject processedBitmap, jobject movingsBitmap, jdouble stamp, jobject outElev)
 {
 //    sc->readFromLog(logs_str);
     ImageSet imgSt;
     ImuSet imuSt;
-    std::vector<Location> fov_locs, object_poses, moving_poses;
+    std::vector<Location> fov_locs, moving_poses; object_poses.clear();
     std::vector<Location> sweeped_area;
     jobjectArray fov_poses_array = NULL;
 
@@ -276,7 +306,8 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
         fov_poses_array = putIntoArray(env, fov_locs);
         fov_poses_array = putIntoArray(env, sweeped_area, 3, fov_poses_array);
         fov_poses_array = putIntoArray(env, object_poses, 0, fov_poses_array);
-        fov_poses_array = putIntoArray(env, moving_poses, 4, fov_poses_array);
+//        fov_poses_array = putIntoArray(env, moving_poses, 4, fov_poses_array);
+
     }
 
     jclass clazz = env->GetObjectClass(outElev);
@@ -284,6 +315,28 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     env->SetDoubleField(outElev, param1Field, sc->elev(imuSt));
 
     return fov_poses_array;
+}
+
+extern "C" JNIEXPORT jobjectArray JNICALL
+        Java_com_example_android_1scanner_MainActivity_getImages(JNIEnv* env, jobject p_this)
+{
+//    jobjectArray objImages;
+//    putIntoBitmapArray(env, object_poses, objImages);
+
+    if (object_poses.size()==0) return NULL;
+
+    jclass cls = env->FindClass("android/graphics/Bitmap");
+    jobjectArray ret = env->NewObjectArray( object_poses.size(), cls, NULL);
+
+    for (int i=0; i<object_poses.size(); i++){
+        jobject bitmap;
+        createBitmap(env, object_poses.at(i).objImage.cols, object_poses.at(i).objImage.rows, bitmap);
+        matToBitmap(env, object_poses.at(i).objImage, bitmap, false);
+
+        env->SetObjectArrayElement(ret, i, bitmap);
+    }
+
+    return ret;
 }
 
 extern "C"

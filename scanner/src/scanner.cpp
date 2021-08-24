@@ -95,18 +95,42 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &
     camToMap(bboxes, imgSt, object_poses);
     camToMap(movings_bboxes, imgSt, movings_poses);
 
-//    for (auto & op : object_poses)
-//    {
-//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "lat %s", std::to_string(op.lat).c_str());
-//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "lng %s", std::to_string(op.lng).c_str());
-//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "alt %s", std::to_string(op.alt).c_str());
-//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "x %s", std::to_string(op.x).c_str());
-//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----32", "y %s", std::to_string(op.y).c_str());
-//    }
+    cropObjectImage(imgSt.image, bboxes, object_poses, 2);
 
-//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner--length of objects:", "%s", std::to_string(object_poses.size()).c_str());
+    calcDistanceFromHome(object_poses);
+
     associate(object_poses);
+
     return true;
+}
+
+void Scanner::cropObjectImage(Mat& image, std::vector<Rect>& rects, std::vector<Location>& locs, float scale)
+{
+    if (rects.size() != locs.size()){
+        return;
+    }
+
+    for(int i=0; i<rects.size(); i++){
+        cv::Rect rect = rects.at(i);
+        rect.height *= scale;
+        rect.width *= scale;
+        rect.x -= (scale-1)/2.0 * rect.width;
+        rect.y -= (scale-1)/2.0 * rect.height;
+
+        locs.at(i).objImage = image(rect);
+    }
+}
+
+void Scanner::calcDistanceFromHome(std::vector<Location>& poses)
+{
+    if (!locationInitialized)
+        return;
+
+    for (int i=0; i<poses.size(); i++)
+    {
+        Location pos = poses.at(i);
+        poses.at(i).distance = sqrt(((initLoc.x-pos.x)*(initLoc.x-pos.x))+((initLoc.y-pos.y)*(initLoc.y-pos.y)));
+    }
 }
 
 bool Scanner::scan(std::vector<Location> &object_poses, Mat &detections, Mat &movings_img, int det_mode = 0, bool rgba = false)
@@ -301,7 +325,7 @@ void Scanner::calcDirVec(float x, float y, Eigen::VectorXd &z)
     z = w*(1/w.norm());
 }
 
-void Scanner::associate(const std::vector<Location> &object_pos)
+void Scanner::associate(std::vector<Location> &object_pos)
 {
     for(auto & object : object_pos)
     {
@@ -309,7 +333,7 @@ void Scanner::associate(const std::vector<Location> &object_pos)
         for (int k = 0; k < objectPoses.size(); k++)
         {
             double dist = sqrt(((objectPoses[k].x-object.x)*(objectPoses[k].x-object.x))+((objectPoses[k].y-object.y)*(objectPoses[k].y-object.y)));
-            if (dist < 10)
+            if (dist < 2)
             {
                 objectPoses[k] = object;
                 markers[k].action = Marker::REMAIN;
@@ -328,6 +352,8 @@ void Scanner::associate(const std::vector<Location> &object_pos)
             markers.push_back(mk);
         }
     }
+
+    object_pos = objectPoses;
 }
 
 // TODO: fov calculation is not necessary when on the ground or in horizontal fov case
@@ -423,6 +449,7 @@ bool Scanner::elevDiff(double newLat, double newLon, double &diff)
     if (!locationInitialized){
         initLoc.lat = newLat;
         initLoc.lng = newLon;
+        gpsToUtm(newLat, newLon, initLoc.x, initLoc.y);
 
         locationInitialized = true;
         diff = 0;
