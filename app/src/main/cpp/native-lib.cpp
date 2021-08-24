@@ -186,36 +186,38 @@ void matToBitmap(JNIEnv* env, Mat src, jobject bitmap, jboolean needPremultiplyA
 
 jobjectArray putIntoArray(JNIEnv* env, std::vector<Object> objects)
 {
-    int type = 5;
+    const int colsNum = 5;
     jclass cls = env->FindClass("[D");
-    jdoubleArray iniVal = env->NewDoubleArray(4);
+    jdoubleArray iniVal = env->NewDoubleArray(colsNum);
     jobjectArray outer = env->NewObjectArray(objects.size(), cls, iniVal);
 
     for (int i = 0; i < objects.size(); i++)
     {
-        jdoubleArray inner = env->NewDoubleArray(4);
+        jdoubleArray inner = env->NewDoubleArray(colsNum);
 
         Object det = objects.at(i);
-        switch (det.type) {
-            case Object::PERSON: {
-                type = 0;
-                break; }
-            case Object::CAR: {
-                type = 1;
-                break; }
-            case Object::FOV: {
-                type = 2;
-                break; }
-            case Object::SWEPT: {
-                type = 3;
-                break; }
-            case Object::MOVING: {
-                type = 4;
-                break; }
-            default: break;
-        }
-        double posa[4] = {det.location.lat, det.location.lng, det.location.alt, (double) type};
-        env->SetDoubleArrayRegion(inner, 0, 4, posa);
+//        no need to this:
+//        switch (det.type) {
+//            case Object::PERSON: {
+//                type = 0;
+//                break; }
+//            case Object::CAR: {
+//                type = 1;
+//                break; }
+//            case Object::FOV: {
+//                type = 2;
+//                break; }
+//            case Object::SWEPT: {
+//                type = 3;
+//                break; }
+//            case Object::MOVING: {
+//                type = 4;
+//                break; }
+//            default: break;
+//        }
+        int type = det.type;
+        double posa[colsNum] = {det.location.lat, det.location.lng, det.location.alt, (double) type, det.distance};
+        env->SetDoubleArrayRegion(inner, 0, colsNum, posa);
 
         env->SetObjectArrayElement(outer, i, inner);
         env->DeleteLocalRef(inner);
@@ -422,6 +424,12 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_example_android_1scanner_AircraftActivity_setLocation(JNIEnv* env, jobject p_this, jdouble lat, jdouble lng, jdouble alt, jdouble time)
 {
     sc->logger->setLocation(lat, lng, alt, time);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_android_1scanner_AircraftActivity_setUserLocation(JNIEnv* env, jobject p_this, jdouble lat, jdouble lng)
+{
+    sc->setReferenceLoc(lat, lng, true);
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL

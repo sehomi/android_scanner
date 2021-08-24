@@ -37,6 +37,7 @@ struct Location
     double time = 0;
     double x = 0.0;
     double y = 0.0;
+    int zone = 0;
 };
 
 struct Orientation

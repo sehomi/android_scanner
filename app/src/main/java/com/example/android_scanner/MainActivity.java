@@ -428,6 +428,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             googleMap.addMarker(new MarkerOptions()
                                                     .position(per)
                                                     .title("Person"));
+                                            Log.v(TAG, String.valueOf(fov[i][4]) + " is the distance" );
                                         }
                                         else if(fov[i][3] == 1) {
 

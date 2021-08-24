@@ -27,13 +27,15 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 }
 
 
-void Scanner::setCamInfo(Mat &img)
+void Scanner::setInitialInfo(ImageSet &imgSt)
 {
-    int width = img.size().width;
-    int height = img.size().height;
+    int width = imgSt.image.size().width;
+    int height = imgSt.image.size().height;
     f = (float) (0.5 * width * (1.0 / tan((hva/2.0)*PI/180)));
     cx = (float) width/2;
     cy = (float) height/2;
+
+    setReferenceLoc(imgSt.lat, imgSt.lng, false);
 }
 
 //bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, std::vector<Location> &object_poses, Mat &movings_img, std::vector<Location> &movings_poses)
@@ -42,18 +44,18 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, Mat &movings_img, std::
 {
     if (!logger->readFromLog)
         return false;
-    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----", "%s", "ji_1");
-    std::vector<int> ids;
+
+//    std::vector<int> ids;
 //    std::vector<cv::Rect> bboxes, movings_bboxes;
     std::vector<Object> /*objects,*/ moving_objects;
 
     // TODO: hva must be set automatically from log
     //       This is for mavic mini:
     hva = 66.0;
-    if (!camInfoSet)
+    if (!initialInfoSet)
     {
-        setCamInfo(imgSt.image);
-        camInfoSet = true;
+        setInitialInfo(imgSt);
+        initialInfoSet = true;
     }
 
 //    motionDetector->detect(imgSt, movings_img, movings_bboxes, fovPoses);
@@ -101,14 +103,14 @@ bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_i
 
     if (!logger->getImageSet(imgSt))
     {
-        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------113");
+        __android_log_print(ANDROID_LOG_ERROR, "android_scanner", "Logger did not provide image set for scanner");
         return false;
     }
 
-    if (!camInfoSet)
+    if (!initialInfoSet)
     {
-        setCamInfo(imgSt.image);
-        camInfoSet = true;
+        setInitialInfo(imgSt);
+        initialInfoSet = true;
     }
 
     detections = imgSt.image.clone();
@@ -168,14 +170,6 @@ bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_i
 //    return;
 //}
 
-void Scanner::myFlip(Mat src) {
-    flip(src, src, 0);
-}
-
-void Scanner::myBlur(Mat src, float sigma) {
-    GaussianBlur(src, src, Size(), sigma);
-}
-
 //void Scanner::camToMap(std::vector<cv::Rect> &objects, const ImageSet& is, std::vector<Location> &object_poses)
 //void Scanner::camToMap(std::vector<Object> &objects, const ImageSet& is, std::vector<Location> &object_poses)
 //{
@@ -209,6 +203,21 @@ void Scanner::camToMap(std::vector<Object> &objects, const ImageSet& is)
 
 //    imageToMap(is.roll, is.pitch, is.azimuth, is.lat, is.lng, is.alt, centers, object_poses, show_permissions);
     imageToMap(is.roll, is.pitch, is.azimuth, is.lat, is.lng, is.alt, objects);
+
+    calcDistances(objects);
+}
+
+void Scanner::calcDistances(std::vector<Object> &objects)
+{
+    double refX, refY;
+
+    refX = (userLocation.zone != 0 ? userLocation.x : firstLocation.x);
+    refY = (userLocation.zone != 0 ? userLocation.y : firstLocation.y);
+
+    for (auto & object : objects)
+    {
+        object.distance = sqrt(pow((refX - object.location.x),2) + pow((refY - object.location.y),2));
+    }
 }
 
 void Scanner::eulerToRotationMat(double roll, double pitch, double azimuth, Eigen::Matrix3d &output)
@@ -538,3 +547,11 @@ void Scanner::utmToGps(std::vector<Object> &objs)
 //        latlons.push_back(loc);
 //    }
 //}
+
+void Scanner::setReferenceLoc(double lat, double lng, bool isUserLoc)
+{
+    if (isUserLoc)
+        userLocation.zone = LatLonToUTMXY(lat, lng, 0, userLocation.x, userLocation.y);
+    else
+        firstLocation.zone = LatLonToUTMXY(lat, lng, 0, firstLocation.x, firstLocation.y);
+}

@@ -22,7 +22,7 @@ struct Object
 	enum {PERSON, CAR, FOV, SWEPT, MOVING} type;
 	cv::Rect box;
 	cv::Mat picture;
-	double distance;
+	double distance = -1;
 	cv::Point2f center = cv::Point(0,0);
 	bool show = true;
 	Location location;
