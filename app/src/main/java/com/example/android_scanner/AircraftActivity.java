@@ -530,8 +530,8 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     for (double[] marker : markers) {
                         Log.v(TAG, String.valueOf(marker[0]) + " " + String.valueOf(marker[1]) + " " + String.valueOf(marker[3]));
                         // TODO: A new marker must be assigned to moving objects (in which marker[3] == 4)
-                        if (marker[3] == 0 || marker[3] == 4) {
-
+                        if (marker[3] == 0 || marker[3] == 4)
+                        {
                             LatLng per = new LatLng(marker[0], marker[1]);
                             MarkerOptions locMarker = new MarkerOptions();
                             locMarker.position(per);
@@ -541,12 +541,18 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                             Marker mm = googleMap.addMarker(locMarker);
                             AllMarkers.add(mm);
                             Log.v(TAG, "as person");
-                        } else if (marker[3] == 1) {
+                        }
+                        else if (marker[3] == 1)
+                        {
                             Log.v(TAG, "as car");
-                        } else if (marker[3] == 2) {
+                        }
+                        else if (marker[3] == 2)
+                        {
                             Log.v(TAG, "as fov");
                             fov_polygon_opt.add(new LatLng(marker[0], marker[1]));
-                        } else if (marker[3] == 3) {
+                        }
+                        else if (marker[3] == 3)
+                        {
 //                            Log.v(TAG, "as sweeped");
 //                            sweep_polygon_opt.add(new LatLng(marker[0], marker[1]));
                         }
@@ -555,11 +561,12 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     if (fovCall)
                     {
                         fov_polygon_opt.add(new LatLng(markers[0][0], markers[0][1]));
+                        fov_polygon_opt.strokeColor(Color.BLUE);
+
+                        // TODO: Uncomment these after fixing sweeper to match "Object" structure
 //                        sweep_polygon_opt.add(new LatLng(markers[4][0], markers[4][1]));
-//
 //                        sweep_polygon_opt.fillColor(Color.argb(150, 255, 0, 0));
 //                        sweep_polygon_opt.strokeColor(Color.argb(255, 150, 150, 150));
-                        fov_polygon_opt.strokeColor(Color.BLUE);
 
 //                        sweep_polygon = googleMap.addPolygon(sweep_polygon_opt);
                         fov_polygon = googleMap.addPolygon(fov_polygon_opt);

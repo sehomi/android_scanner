@@ -13,11 +13,9 @@ MotionDetector::MotionDetector(float hva_)
 void MotionDetector::setFocalLength(int w)
 {
     fl = (float) (0.5 * w * (1.0 / tan((hva/2.0)*PI/180)));
-//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "md--v1: %s", std::to_string(fl).c_str());
     focalLengthSet = true;
 }
 
-//void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<cv::Rect> &objects, std::vector<Location> fov)
 void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object> &objects, const std::vector<Object> &fov)
 {
     if (old_frame.empty())
@@ -75,7 +73,6 @@ void MotionDetector::calcNormCoeffMat(const std::vector<Object> &fov, double lat
     double v1_1 = fov[0].location.x-fov[1].location.x, v1_2 = fov[0].location.y-fov[1].location.y, v2_1 = fov[2].location.x-fov[1].location.x, v2_2 = fov[2].location.y-fov[1].location.y;
     double v1dotv2 = v1_1*v2_1 + v1_2*v2_2;
     double alpha = (PI/2) - acos(v1dotv2/(sqrt(pow(v1_1,2)+pow(v1_2,2))*sqrt(pow(v2_1,2)+pow(v2_2,2))));
-//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "md-v1: %s", "one2");
     int rows = old_frame.rows, cols = old_frame.cols;
     for (int i=0; i<rows; i++) {
         double rowFirstX = fov[0].location.x + i*(fov[3].location.x - fov[0].location.x)/rows;
@@ -93,7 +90,6 @@ void MotionDetector::calcNormCoeffMat(const std::vector<Object> &fov, double lat
     }
 }
 
-//void MotionDetector::generateMovingRects(cv::Mat &output, std::vector<cv::Rect> &objects)
 void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::vector<Object> &objects)
 {
     std::vector<std::vector<cv::Point>> contours;
@@ -112,7 +108,6 @@ void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::v
             obj.picture = input(obj.box);
             obj.type = Object::MOVING;
             objects.push_back(obj);
-//            objects.push_back(cv::boundingRect(contour));
         }
     }
 }

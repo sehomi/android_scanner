@@ -13,8 +13,6 @@
 #include "UTM.h"
 #include <math.h>
 #include "detector.h"
-//#include <Eigen/Geometry>
-//#include "Eigen/Core"
 
 // TODO: It is much better that the MotionDetector class inherits Scanner in order to access its focal length and fov
 class MotionDetector{
@@ -26,15 +24,12 @@ class MotionDetector{
     void visualize(const cv::Mat&, const cv::Mat&, const cv::Mat&, cv::Mat&);
     void setFocalLength(int);
     void calcNormCoeffMat(const std::vector<Object>&, double, double, double, cv::Mat&, cv::Mat&);
-//    void generateMovingRects(cv::Mat &, std::vector<cv::Rect> &);
     void generateMovingRects(cv::Mat &, cv::Mat &, std::vector<Object> &);
 
 public:
 
     MotionDetector(float);
-//    void detect(ImageSet&, cv::Mat&, std::vector<cv::Rect>&, std::vector<Location>);
     void detect(ImageSet&, cv::Mat&, std::vector<Object>&, const std::vector<Object>&);
 };
 
-
-#endif //ANDROID_SCANNER_SCANNER_H
+#endif //ANDROID_SCANNER_MOTIONDETECTOR_H

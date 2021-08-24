@@ -11,7 +11,6 @@
 #include "Eigen/Core"
 #include <Eigen/Geometry>
 #include <android/log.h>
-//#include "GeographicLib/UTMUPS.hpp"
 #include <math.h>
 
 #include "detector.h"
@@ -40,8 +39,7 @@ class Scanner{
     std::vector<Marker> markers;
     Location userLocation = {.x = -1.0, .y = -1.0}, firstLocation = {.x = -1.0, .y = -1.0};
 
-//    void camToMap(std::vector<Rect>&, const ImageSet&, std::vector<Location>&);
-//    void camToMap(std::vector<Object>&, const ImageSet&, std::vector<Location>&);
+
     void camToMap(std::vector<Object>&, const ImageSet&);
     void toDirectionVector(std::vector<Rect>&, std::vector<Eigen::VectorXd>&);
     bool scaleVector(Eigen::VectorXd, Eigen::VectorXd&, double);
@@ -49,11 +47,9 @@ class Scanner{
     void gpsToUtm(double, double, double&, double&);
     void eulerToRotationMat(double, double, double, Eigen::Matrix3d&);
     void calcDirVec(float, float, Eigen::VectorXd&);
-//    void utmToGps(std::vector<Eigen::VectorXd>, std::vector<Location>&);    // before
-    void utmToGps(std::vector<Object>&);                                 // after
+    void utmToGps(std::vector<Object>&);
     void setInitialInfo(ImageSet&);
-//    void imageToMap(double, double, double, double, double, double, std::vector<Point2f>, std::vector<Location>&, std::vector<bool>&);  // before
-    void imageToMap(double, double, double, double, double, double, std::vector<Object>&);                                            // after
+    void imageToMap(double, double, double, double, double, double, std::vector<Object>&);
     void calcDistances(std::vector<Object>&);
 
 public:
@@ -63,18 +59,12 @@ public:
     SweeperGeometry::Sweeper *sweeper;
     MotionDetector *motionDetector;
 
-//    Scanner(std::string);
-//    Scanner(std::string, float&, float&, float&, float&, int maxdist);
+
     Scanner(std::string, std::string, DetectionMethod, bool, float, int);
     void setReferenceLoc(double, double, bool);
-//    bool scan(std::vector<Location>&, Mat&, Mat&,int, bool);
     bool scan(std::vector<Object>&, Mat&, Mat&, int, bool);
-    //    bool scan(ImageSet&, Mat&, std::vector<Location>&, Mat&, std::vector<Location>&);
-//    bool scan(ImageSet&, Mat&, std::vector<Location>&, Mat&);
     bool scan(ImageSet&, Mat&, Mat&, std::vector<Object>&);
-//    bool calcFov(std::vector<Location>&, std::vector<Location>&);
     bool calcFov(std::vector<Object>&);
-    //    bool calcFov(std::vector<Location>&, std::vector<Location>&, ImuSet&, ImageSet&);
     bool calcFov(std::vector<Object>&, ImageSet&);
 };
 

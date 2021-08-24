@@ -422,7 +422,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                                     for(int i=0; i<fov.length; i++) {
                                         Log.v(TAG, String.valueOf(fov[i][0]) + " " + String.valueOf(fov[i][1]) + " " + String.valueOf(fov[i][3]));
-                                        // TODO: A new marker must be assigned to moving objects (in which fov[i][3] == 4) in read-log mode
+                                        // TODO: (in read-log mode) A new marker must be assigned to moving objects (in which fov[i][3] == 4)
                                         if (fov[i][3] == 0 || fov[i][3] == 4) {
                                             LatLng per = new LatLng(fov[i][0], fov[i][1]);
                                             googleMap.addMarker(new MarkerOptions()

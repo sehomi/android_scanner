@@ -39,7 +39,6 @@ Detector::Detector(std::string assetsDir, DetectionMethod dm, float conf, float 
     this->assets_dir = assetsDir;
 }
 
-//void Detector::detect(cv::Mat &frame, std::vector<cv::Rect> &objects, std::vector<int> &ids)
 void Detector::detect(cv::Mat &frame, std::vector<Object> &objects)
 {
     cv::Mat blob;
@@ -63,7 +62,6 @@ void Detector::detect(cv::Mat &frame, std::vector<Object> &objects)
     }
 }
 
-//void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& outs, std::vector<cv::Rect> &objects, std::vector<int> &ids)
 void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& outs, std::vector<Object> &objects)
 {
     std::vector<float> confidences;
@@ -79,7 +77,6 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
             double cnf;
 
             cv::minMaxLoc(scores, 0, &cnf, 0, &classIdPoint);
-//            __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", "  Confidence: %f, id: %d", cnf, classIdPoint.x);
 //            coco.names: person, bicycle, car, motorbike, aeroplane, bus, train, truck, ...
             if (cnf > this->confidence && (classIdPoint.x == 0 || classIdPoint.x == 2 || classIdPoint.x == 3 || classIdPoint.x == 5 || classIdPoint.x == 7))
             {
@@ -91,7 +88,7 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
                 int top = centerY - height / 2;
 
                 confidences.push_back((float)confidence);
-//                objects.push_back(cv::Rect(left, top, width, height));
+
                 Object obj;
                 obj.box = cv::Rect(left, top, width, height);
                 obj.picture = frame(obj.box);
@@ -120,7 +117,6 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
 
 }
 
-//void Detector::ssdPostProcess(cv::Mat& frame, cv::Mat &outs, std::vector<cv::Rect> &objects, std::vector<int> &ids)
 void Detector::ssdPostProcess(cv::Mat& frame, cv::Mat &outs, std::vector<Object> &objects)
 {
     cv::Mat detectionMat(outs.size[2], outs.size[3], CV_32F, outs.ptr<float>());
@@ -145,7 +141,6 @@ void Detector::ssdPostProcess(cv::Mat& frame, cv::Mat &outs, std::vector<Object>
                             (int)(xRightTop - xLeftBottom),
                             (int)(yRightTop - yLeftBottom));
 
-//            objects.push_back(box);
             Object obj;
             obj.box = box;
             obj.picture = frame(obj.box);
@@ -178,17 +173,10 @@ std::vector<cv::String> Detector::getOutputsNames(const cv::dnn::Net& net)
     return names;
 }
 
-//void Detector::drawDetections(cv::Mat &dst, std::vector<cv::Rect> &bboxs)
 void Detector::drawDetections(cv::Mat &dst, std::vector<Object> &objects)
 {
-
-//    for(unsigned i=0; i<bboxs.size(); i++)
-//    {
-//        rectangle(dst, bboxs[i], cv::Scalar(0,0,255), 3, 1);
-//    }
-    for(unsigned i=0; i<objects.size(); i++)
+    for(auto & object : objects)
     {
-        rectangle(dst, objects[i].box, cv::Scalar(0,0,255), 3, 1);
+        rectangle(dst, object.box, cv::Scalar(0,0,255), 3, 1);
     }
-
 }

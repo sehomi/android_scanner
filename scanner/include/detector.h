@@ -33,9 +33,7 @@ class Detector {
 public:
 
     Detector(std::string, DetectionMethod, float, float);
-//	void detect(cv::Mat&, std::vector<cv::Rect>&, std::vector<int>&);
 	void detect(cv::Mat&, std::vector<Object>&);
-//	void drawDetections(cv::Mat &, std::vector<cv::Rect> &);
 	void drawDetections(cv::Mat &, std::vector<Object> &);
 
 private:
@@ -47,8 +45,6 @@ private:
 
 	std::string assets_dir;
 
-//	void yolov3PostProcess(cv::Mat&, const std::vector<cv::Mat> &, std::vector<cv::Rect> &, std::vector<int> &);
-//	void ssdPostProcess(cv::Mat&, cv::Mat &, std::vector<cv::Rect> &, std::vector<int>&);
 	void yolov3PostProcess(cv::Mat&, const std::vector<cv::Mat> &, std::vector<Object> &);
 	void ssdPostProcess(cv::Mat&, cv::Mat &, std::vector<Object> &);
 	std::vector<cv::String> getOutputsNames(const cv::dnn::Net& net);
