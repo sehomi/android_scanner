@@ -94,6 +94,7 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
 //                objects.push_back(cv::Rect(left, top, width, height));
                 Object obj;
                 obj.box = cv::Rect(left, top, width, height);
+                obj.picture = frame(obj.box);
                 if (classIdPoint.x == 0)
                     obj.type = Object::PERSON;
                 else
@@ -147,6 +148,7 @@ void Detector::ssdPostProcess(cv::Mat& frame, cv::Mat &outs, std::vector<Object>
 //            objects.push_back(box);
             Object obj;
             obj.box = box;
+            obj.picture = frame(obj.box);
             if (idx == 15)
                 obj.type = Object::PERSON;
             else

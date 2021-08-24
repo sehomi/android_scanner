@@ -18,7 +18,7 @@ void MotionDetector::setFocalLength(int w)
 }
 
 //void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<cv::Rect> &objects, std::vector<Location> fov)
-void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object> &objects, std::vector<Object> fov)
+void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object> &objects, const std::vector<Object> &fov)
 {
     if (old_frame.empty())
     {
@@ -46,7 +46,7 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
 
     visualize(flow, xNormalizationCoeff, yNormalizationCoeff, output);
 
-    generateMovingRects(output, objects);
+    generateMovingRects(imgSt.image, output, objects);
 }
 
 void MotionDetector::visualize(const cv::Mat &flow, const cv::Mat &xNormalizationCoeff, const cv::Mat &yNormalizationCoeff, cv::Mat &output)
@@ -94,7 +94,7 @@ void MotionDetector::calcNormCoeffMat(const std::vector<Object> &fov, double lat
 }
 
 //void MotionDetector::generateMovingRects(cv::Mat &output, std::vector<cv::Rect> &objects)
-void MotionDetector::generateMovingRects(cv::Mat &output, std::vector<Object> &objects)
+void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::vector<Object> &objects)
 {
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
@@ -109,6 +109,7 @@ void MotionDetector::generateMovingRects(cv::Mat &output, std::vector<Object> &o
         {
             Object obj;
             obj.box = cv::boundingRect(contour);
+            obj.picture = input(obj.box);
             obj.type = Object::MOVING;
             objects.push_back(obj);
 //            objects.push_back(cv::boundingRect(contour));

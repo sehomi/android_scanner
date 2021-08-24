@@ -27,13 +27,13 @@ class MotionDetector{
     void setFocalLength(int);
     void calcNormCoeffMat(const std::vector<Object>&, double, double, double, cv::Mat&, cv::Mat&);
 //    void generateMovingRects(cv::Mat &, std::vector<cv::Rect> &);
-    void generateMovingRects(cv::Mat &, std::vector<Object> &);
+    void generateMovingRects(cv::Mat &, cv::Mat &, std::vector<Object> &);
 
 public:
 
     MotionDetector(float);
 //    void detect(ImageSet&, cv::Mat&, std::vector<cv::Rect>&, std::vector<Location>);
-    void detect(ImageSet&, cv::Mat&, std::vector<Object>&, std::vector<Object>);
+    void detect(ImageSet&, cv::Mat&, std::vector<Object>&, const std::vector<Object>&);
 };
 
 

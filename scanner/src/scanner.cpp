@@ -71,6 +71,13 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, Mat &movings_img, std::
     objects.insert(objects.end(), moving_objects.begin(), moving_objects.end());
 //    camToMap(objects, imgSt, object_poses);
     camToMap(objects, imgSt);
+
+    for (auto & obj : objects)
+    {
+        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----", "object type: %s", std::to_string(obj.type).c_str());
+        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----", "object width: %s", std::to_string(obj.picture.cols).c_str());
+        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----", "object height: %s", std::to_string(obj.picture.rows).c_str());
+    }
 //    camToMap(moving_objects, imgSt, movings_poses);
 
 //    for (auto & op : object_poses)
@@ -408,7 +415,7 @@ bool Scanner::calcFov(std::vector<Object> &objects, ImageSet &imgSt)
 //    fovPoses = poses_gps;
     fovPoses = objects;
 
-//    TODO: Add the swept_area to the objects vector like this. In the "putIntoArray" function, the objects will be recognized from each other using object.type attribute
+//    TODO: Add the swept_area to the objects vector like below. In the "putIntoArray" function, the objects will be recognized using object.type attribute
 //    std::vector<Object> swept_area;
 //    sweeper->update(poses_gps, swept_area);
 //    objects.insert(objects.end(), swept_area.begin(), swept_area.end());
