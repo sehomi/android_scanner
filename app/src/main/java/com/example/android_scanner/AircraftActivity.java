@@ -235,6 +235,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
             double lat = loc.getLatitude();
             double lng = loc.getLongitude();
+            setUserLocation(lat, lng);
 
             runOnUiThread(new Runnable() {
                 @Override
@@ -282,7 +283,6 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
         Bitmap bitmap1 = bitmap.copy(bitmap.getConfig(), true);
         Bitmap bitmap2 = bitmap.copy(bitmap.getConfig(), true);
-//        detect(bitmap, bitmap1);
         double[][] object_poses;
         if (r_group.getCheckedRadioButtonId() == R.id.objDetMode)
             object_poses = scan(bitmap1, bitmap2, 0);
@@ -637,7 +637,6 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
      * which is packaged with this application.
      */
     public native void createScanner(String assets, String logs, int log_mode, float hva, int method);
-    public native void detect(Bitmap bitmapIn, Bitmap bitmapOut);
     public native double[][] scan(Bitmap detections, Bitmap movings_img, int detMode);
     public native void setImage(Bitmap bitmap, double time);
     public native void setLocation(double lat, double lng, double alt, double time);

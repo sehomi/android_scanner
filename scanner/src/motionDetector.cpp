@@ -13,11 +13,10 @@ MotionDetector::MotionDetector(float hva_)
 void MotionDetector::setFocalLength(int w)
 {
     fl = (float) (0.5 * w * (1.0 / tan((hva/2.0)*PI/180)));
-//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "md--v1: %s", std::to_string(fl).c_str());
     focalLengthSet = true;
 }
 
-void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<cv::Rect> &rects, std::vector<Location> fov)
+void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object> &objects, const std::vector<Object> &fov)
 {
     if (old_frame.empty())
     {
@@ -45,7 +44,7 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<cv::Re
 
     visualize(flow, xNormalizationCoeff, yNormalizationCoeff, output);
 
-    generateMovingRects(output, rects);
+    generateMovingRects(imgSt.image, output, objects);
 }
 
 void MotionDetector::visualize(const cv::Mat &flow, const cv::Mat &xNormalizationCoeff, const cv::Mat &yNormalizationCoeff, cv::Mat &output)
@@ -65,22 +64,21 @@ void MotionDetector::visualize(const cv::Mat &flow, const cv::Mat &xNormalizatio
     output.convertTo(output, CV_8U);
 }
 
-void MotionDetector::calcNormCoeffMat(const std::vector<Location> &fov, double lat, double lng, double alt, cv::Mat &xNormalizationCoeff, cv::Mat &yNormalizationCoeff)
+void MotionDetector::calcNormCoeffMat(const std::vector<Object> &fov, double lat, double lng, double alt, cv::Mat &xNormalizationCoeff, cv::Mat &yNormalizationCoeff)
 {
     // This function calculates the normalization coefficient matrix
     double x, y;
     LatLonToUTMXY(lat, lng, 0, x, y);
 
-    double v1_1 = fov[0].x-fov[1].x, v1_2 = fov[0].y-fov[1].y, v2_1 = fov[2].x-fov[1].x, v2_2 = fov[2].y-fov[1].y;
+    double v1_1 = fov[0].location.x-fov[1].location.x, v1_2 = fov[0].location.y-fov[1].location.y, v2_1 = fov[2].location.x-fov[1].location.x, v2_2 = fov[2].location.y-fov[1].location.y;
     double v1dotv2 = v1_1*v2_1 + v1_2*v2_2;
     double alpha = (PI/2) - acos(v1dotv2/(sqrt(pow(v1_1,2)+pow(v1_2,2))*sqrt(pow(v2_1,2)+pow(v2_2,2))));
-//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "md-v1: %s", "one2");
     int rows = old_frame.rows, cols = old_frame.cols;
     for (int i=0; i<rows; i++) {
-        double rowFirstX = fov[0].x + i*(fov[3].x - fov[0].x)/rows;
-        double rowFirstY = fov[0].y + i*(fov[3].y - fov[0].y)/rows;
-        double rowLastX = fov[1].x + i*(fov[2].x - fov[1].x)/rows;
-        double rowLastY = fov[1].y + i*(fov[2].y - fov[1].y)/rows;
+        double rowFirstX = fov[0].location.x + i*(fov[3].location.x - fov[0].location.x)/rows;
+        double rowFirstY = fov[0].location.y + i*(fov[3].location.y - fov[0].location.y)/rows;
+        double rowLastX = fov[1].location.x + i*(fov[2].location.x - fov[1].location.x)/rows;
+        double rowLastY = fov[1].location.y + i*(fov[2].location.y - fov[1].location.y)/rows;
         for (int j=0; j<cols; j++) {
             double X = rowFirstX + j*(rowLastX - rowFirstX)/cols;
             double Y = rowFirstY + j*(rowLastY - rowFirstY)/cols;
@@ -92,19 +90,25 @@ void MotionDetector::calcNormCoeffMat(const std::vector<Location> &fov, double l
     }
 }
 
-void MotionDetector::generateMovingRects(cv::Mat &output, std::vector<cv::Rect> &rects)
+void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::vector<Object> &objects)
 {
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
     findContours(output, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_TC89_KCOS, cv::Point(0, 0) );
 
-    rects.clear();
+    objects.clear();
     double area, areaRatio, imArea = output.rows * output.cols;
     for (auto & contour : contours) {
         area = cv::contourArea(contour);
         areaRatio = area / imArea;
         if (areaRatio < objectSizeUpLimit && areaRatio > objectSizeLowLimit)
-            rects.push_back(cv::boundingRect(contour));
+        {
+            Object obj;
+            obj.box = cv::boundingRect(contour);
+            obj.picture = input(obj.box);
+            obj.type = Object::MOVING;
+            objects.push_back(obj);
+        }
     }
 }
 
