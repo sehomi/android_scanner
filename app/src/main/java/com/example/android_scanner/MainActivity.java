@@ -473,7 +473,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             locMarker.position(per);
                                             locMarker.anchor(0.5f,0.5f);
                                             locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.red_circle_icon));
-                                            locMarker.title("Person");
+//                                            locMarker.title("Person");
                                             Marker mm = googleMap.addMarker(locMarker);
                                             AllMarkers.add(mm);
                                             Log.v(TAG, "as person");
@@ -542,6 +542,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         googleMap = ggleMap;
         googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+
+        ObjectInfoWindow oiw = new ObjectInfoWindow(this);
+        googleMap.setInfoWindowAdapter(oiw);
     }
 
     /**
