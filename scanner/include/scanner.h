@@ -41,7 +41,7 @@ class Scanner{
     int max_dist, zone;
     bool initialInfoSet = false, isSouth = false, useElev = false;
     Grid<NasaGridSquare> *grid;
-    std::vector<Location> objectPoses;
+    std::vector<Object> objectPoses;
     std::vector<Object> fovPoses;
     std::vector<Marker> markers;
     Location userLocation = {.x = -1.0, .y = -1.0}, firstLocation = {.x = -1.0, .y = -1.0};
@@ -50,7 +50,7 @@ class Scanner{
     void camToMap(std::vector<Object>&, const ImageSet&);
     void toDirectionVector(std::vector<Rect>&, std::vector<Eigen::VectorXd>&);
     bool scaleVector(Eigen::VectorXd, Eigen::VectorXd&, double);
-    void associate(std::vector<Location>&);
+    void associate(std::vector<Object>&);
     void gpsToUtm(double, double, double&, double&);
     void eulerToRotationMat(double, double, double, Eigen::Matrix3d&);
     void calcDirVec(float, float, Eigen::VectorXd&);
@@ -72,6 +72,9 @@ public:
     bool scan(ImageSet&, Mat&, Mat&, std::vector<Object>&, double);
     bool calcFov(std::vector<Object>&);
     bool calcFov(std::vector<Object>&, ImageSet&);
+    void setReferenceLoc(double, double, bool );
+    double elev();
+    double elev(ImuSet &);
 };
 
 

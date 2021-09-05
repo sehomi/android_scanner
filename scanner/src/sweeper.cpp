@@ -7,15 +7,15 @@
 using namespace std;
 using namespace SweeperGeometry;
 
-void Sweeper::update(std::vector<Location> & fov_loc, std::vector<Location> & output) {
+void Sweeper::update(std::vector<Object> & fov_loc, std::vector<Object> & output) {
 
     polygon new_poly;
 
     for (int i = 0; i < fov_loc.size(); i++) {
-        Location ver = fov_loc.at(i);
+        Location ver = fov_loc.at(i).location;
         boost::geometry::append(new_poly, boost::geometry::make<boost2dPoint>(ver.lng, ver.lat));
     }
-    Location last = fov_loc[fov_loc.size() - 1];
+    Location last = fov_loc[fov_loc.size() - 1].location;
     boost::geometry::append(new_poly, boost::geometry::make<boost2dPoint>(last.lng, last.lat));
     boost::geometry::correct(new_poly);
 
@@ -28,7 +28,7 @@ void Sweeper::update(std::vector<Location> & fov_loc, std::vector<Location> & ou
 
     std::vector<polygon> out_polygons;
     boost::geometry::union_(sweeped_area, new_poly, out_polygons);
-    output = std::vector<Location>();
+    output = std::vector<Object>();
 
     for (int i = 0; i < out_polygons.size(); i++) {
 
@@ -45,7 +45,7 @@ void Sweeper::update(std::vector<Location> & fov_loc, std::vector<Location> & ou
             temp_loc.lng = boost::geometry::get<0>(*it);
             temp_loc.lat = boost::geometry::get<1>(*it);
 
-            output.push_back(temp_loc);
+            output.push_back({.type = Object::SWEPT, .location = temp_loc});
         }
     }
 }

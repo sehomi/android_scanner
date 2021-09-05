@@ -13,7 +13,7 @@
 #include <boost/foreach.hpp>
 
 // TODO: included for "Location" structure. all typedefs must be moved to an external base header file.
-#include "Logger.h"
+#include "Detector.h"
 
 namespace SweeperGeometry{
 
@@ -24,12 +24,11 @@ namespace SweeperGeometry{
 
     public:
 
-        void update(std::vector<Location> &, std::vector<Location> &);
+        void update(std::vector<Object> &, std::vector<Object> &);
 
     private:
 
         static Location p0;
-        std::vector<Location> sweeped_area_loc;
         polygon sweeped_area;
         bool isFirstPolygon = true;
 

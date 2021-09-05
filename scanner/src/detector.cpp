@@ -178,6 +178,12 @@ void Detector::drawDetections(cv::Mat &dst, std::vector<Object> &objects)
 {
     for(auto & object : objects)
     {
-        rectangle(dst, object.box, cv::Scalar(0,0,255), 3, 1);
+        cv::Scalar color;
+        if(object.type == Object::PERSON)
+            color = cv::Scalar(0,0,255);
+        else if (object.type == Object::CAR)
+            color = cv::Scalar(42,42,165);
+
+        rectangle(dst, object.box, color, 3, 1);
     }
 }

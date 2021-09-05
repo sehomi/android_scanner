@@ -102,7 +102,7 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, Mat &movings_img, std::
 //        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----", "object height: %s", std::to_string(obj.picture.rows).c_str());
 //    }
 
-    associate(object_poses);
+    associate(objects);
     return true;
 }
 
@@ -149,7 +149,7 @@ bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_i
 
     camToMap(objects, imgSt);
 
-//    associate(object_poses);
+//    associate(objectPoses);
 
     return true;
 }
@@ -170,17 +170,17 @@ void Scanner::camToMap(std::vector<Object> &objects, const ImageSet& is)
     calcDistances(objects);
 }
 
-void Scanner::calcDistances(std::vector<Object> &objects)
-{
+void Scanner::calcDistances(std::vector<Object> &objects) {
     double refX, refY;
 
     refX = (userLocation.zone != 0 ? userLocation.x : firstLocation.x);
     refY = (userLocation.zone != 0 ? userLocation.y : firstLocation.y);
 
-    for (auto & object : objects)
-    {
-        object.distance = sqrt(pow((refX - object.location.x),2) + pow((refY - object.location.y),2));
+    for (auto &object : objects) {
+        object.distance = sqrt(
+                pow((refX - object.location.x), 2) + pow((refY - object.location.y), 2));
     }
+}
 
 void Scanner::eulerToRotationMat(double roll, double pitch, double azimuth, Eigen::Matrix3d &output)
 {
@@ -244,20 +244,24 @@ void Scanner::calcDirVec(float x, float y, Eigen::VectorXd &z)
     z = w*(1/w.norm());
 }
 
-void Scanner::associate(std::vector<Location> &object_pos)
+void Scanner::associate(std::vector<Object> &objects)
 {
-    for(auto & object : object_pos)
+    for(auto & object : objects)
     {
         bool found = false;
         for (int k = 0; k < objectPoses.size(); k++)
         {
-            double dist = sqrt(((objectPoses[k].x-object.x)*(objectPoses[k].x-object.x))+((objectPoses[k].y-object.y)*(objectPoses[k].y-object.y)));
-            if (dist < 2)
+            if(objectPoses[k].type != object.type) continue;
+
+            double dist = sqrt(((objectPoses[k].location.x-object.location.x)*(objectPoses[k].location.x-object.location.x))+
+                    ((objectPoses[k].location.y-object.location.y)*(objectPoses[k].location.y-object.location.y)));
+            if (dist < 3)
             {
                 objectPoses[k] = object;
-                markers[k].action = Marker::REMAIN;
+                objectPoses[k].action = Object::REMAIN;
+//                markers[k].action = Marker::REMAIN;
 //                markers[k].type = Marker::CAR or Marker::PERSON or ...
-                markers[k].pos = object;
+//                markers[k].pos = object;
                 found = true;
             }
         }
@@ -265,14 +269,14 @@ void Scanner::associate(std::vector<Location> &object_pos)
         {
             objectPoses.push_back(object);
             Marker mk;
-            mk.action = Marker::DRAW;
+//            mk.action = Marker::DRAW;
 //            mk.type = Marker::CAR or Marker::PERSON or ...
-            mk.pos = object;
+//            mk.pos = object;
             markers.push_back(mk);
         }
     }
 
-    object_pos = objectPoses;
+    objects = objectPoses;
 }
 
 // TODO: fov calculation is not necessary when on the ground or in horizontal fov case
@@ -306,7 +310,7 @@ bool Scanner::calcFov(std::vector<Object> &objects)
 
     std::vector<Object> swept_area;
 //    TODO: Uncomment this after fixing sweeper to match "Object" structure:
-    sweeper->update(poses_gps, swept_area);
+    sweeper->update(objects, swept_area);
 //// Note: Add the swept_area to the fov objects vector like below. In the "putIntoArray" function, the objects will be recognized using object.type attribute
     objects.insert(objects.end(), swept_area.begin(), swept_area.end());
 
@@ -339,7 +343,7 @@ bool Scanner::calcFov(std::vector<Object> &objects, ImageSet &imgSt)
     fovPoses = objects;
 
     std::vector<Object> swept_area;
-    sweeper->update(poses_gps, swept_area);
+    sweeper->update(objects, swept_area);
     objects.insert(objects.end(), swept_area.begin(), swept_area.end());
 
     return true;
@@ -374,25 +378,15 @@ bool Scanner::elevDiff(double newLat, double newLon, double &diff)
     Grid<NasaGridSquare>::cache_limit = 20;
     grid = new Grid<NasaGridSquare>();
 
-    if (!useElev){
-        diff = 0;
-        return true;
-    }
-
-    if (!locationInitialized){
-        initLoc.lat = newLat;
-        initLoc.lng = newLon;
-        gpsToUtm(newLat, newLon, initLoc.x, initLoc.y);
-
-        locationInitialized = true;
+    if (!useElev or !initialInfoSet){
         diff = 0;
         return true;
     }
 
     double newElev = (double) grid->height((float)newLon,(float)newLat);
-    double initElev = (double) grid->height((float)initLoc.lng,(float)initLoc.lat);
+    double initElev = (double) grid->height((float)firstLocation.lng,(float)firstLocation.lat);
 
-    __android_log_print(ANDROID_LOG_VERBOSE, "imageToMap", " %f %f %f %f %f %f", (float)newLon,(float)newLat, (float)initLoc.lng,(float)initLoc.lat, (float)newElev, (float)initElev );
+    __android_log_print(ANDROID_LOG_VERBOSE, "imageToMap", " %f %f %f %f %f %f", (float)newLon,(float)newLat, (float)firstLocation.lng,(float)firstLocation.lat, (float)newElev, (float)initElev );
 
     if (newElev == -32768 || initElev == -32768) {
         diff = 0;
@@ -459,6 +453,9 @@ void Scanner::setReferenceLoc(double lat, double lng, bool isUserLoc)
 {
     if (isUserLoc)
         userLocation.zone = LatLonToUTMXY(lat, lng, 0, userLocation.x, userLocation.y);
-    else
+    else {
+        firstLocation.lat = lat;
+        firstLocation.zone = zone;
         firstLocation.zone = LatLonToUTMXY(lat, lng, 0, firstLocation.x, firstLocation.y);
+    }
 }

@@ -18,7 +18,8 @@ enum DetectionMethod {
 
 struct Object
 {
-//	enum {DRAW, REMAIN, DELETE} action;
+	// TODO: integrate actions into objects visualization
+	enum {DRAW, REMAIN, DELETE} action;
 	enum {PERSON, CAR, FOV, SWEPT, MOVING} type;
 	cv::Rect box;
 	cv::Mat picture;

@@ -148,6 +148,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         public double elev = 0.0;
     };
 
+    private class MarkerInfo
+    {
+        public double lat = 0.0;
+        public double lng = 0.0;
+        public double type = 0.0;
+        public double dist = 0.0;
+    };
+
+
     private imageSet imgSet = new imageSet();
 
     double orn_time;
@@ -158,6 +167,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     Polygon sweep_polygon = null;
     GoogleMap googleMap = null;
     List<Marker> AllMarkers = new ArrayList<Marker>();
+    List<MarkerInfo> AllMarkersInfo = new ArrayList<MarkerInfo>();
 
 //    boolean readMode = false;
 
@@ -455,11 +465,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         mLocationMarker.remove();
                                     }
                                     AllMarkers.clear();
+                                    AllMarkersInfo.clear();
 
-                                    if (fov_polygon != null){
+                                    if (fov_polygon != null)
                                         fov_polygon.remove();
+                                    if (sweep_polygon != null)
                                         sweep_polygon.remove();
-                                    }
 
                                     PolygonOptions fov_polygon_opt = new PolygonOptions();
                                     PolygonOptions sweep_polygon_opt = new PolygonOptions();
@@ -467,7 +478,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     for(int i=0; i<fov.length; i++) {
 //                                        Log.v(TAG, String.valueOf(fov[i][0]) + " " + String.valueOf(fov[i][1]) + " " + String.valueOf(fov[i][3]));
                                         // TODO: A new marker must be assigned to moving objects (in which fov[i][3] == 4) in read-log mode
-                                        if (fov[i][3] == 0 || fov[i][3] == 4) {
+                                        if (fov[i][3] == 0) {
+//                                        if (fov[i][3] == 0 || fov[i][3] == 4) {
                                             LatLng per = new LatLng(fov[i][0], fov[i][1]);
                                             MarkerOptions locMarker = new MarkerOptions();
                                             locMarker.position(per);
@@ -476,11 +488,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //                                            locMarker.title("Person");
                                             Marker mm = googleMap.addMarker(locMarker);
                                             AllMarkers.add(mm);
+                                            MarkerInfo mi = new MarkerInfo();
+                                            mi.lat = fov[i][0]; mi.lng = fov[i][1]; mi.type = fov[i][3]; mi.dist = fov[i][4];
+                                            AllMarkersInfo.add(mi);
                                             Log.v(TAG, "as person");
                                         }
                                         else if(fov[i][3] == 1)
                                         {
+                                            LatLng per = new LatLng(fov[i][0], fov[i][1]);
+                                            MarkerOptions locMarker = new MarkerOptions();
+                                            locMarker.position(per);
+                                            locMarker.anchor(0.5f,0.5f);
+                                            locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.brown_rect_icon));
+//                                            locMarker.title("Person");
+                                            Marker mm = googleMap.addMarker(locMarker);
 
+                                            AllMarkers.add(mm);
+                                            MarkerInfo mi = new MarkerInfo();
+                                            mi.lat = fov[i][0]; mi.lng = fov[i][1]; mi.type = fov[i][3]; mi.dist = fov[i][4];
+                                            AllMarkersInfo.add(mi);
+                                            Log.v(TAG, "as car");
                                         }
                                         else if(fov[i][3] == 2)
                                         {
@@ -496,7 +523,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //                                    sweep_polygon_opt.add(new LatLng(fov[4][0], fov[4][1]));
 
                                     sweep_polygon_opt.fillColor(Color.argb(150, 100, 100, 100));
-                                    sweep_polygon_opt.strokeColor(Color.argb(255, 70, 70, 70));
+                                    sweep_polygon_opt.strokeColor(Color.argb(255, 255, 255, 255));
                                     fov_polygon_opt.fillColor(Color.argb(100, 255, 255, 255));
                                     fov_polygon_opt.strokeColor(Color.BLACK);
 
@@ -543,8 +570,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         googleMap = ggleMap;
         googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
 
-        ObjectInfoWindow oiw = new ObjectInfoWindow(this);
-        googleMap.setInfoWindowAdapter(oiw);
+//        ObjectInfoWindow oiw = new ObjectInfoWindow(this);
+//        googleMap.setInfoWindowAdapter(oiw);
     }
 
     /**

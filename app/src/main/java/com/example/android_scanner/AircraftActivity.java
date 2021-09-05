@@ -640,6 +640,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     public native double[][] scan(Bitmap detections, Bitmap movings_img, int detMode);
     public native void setImage(Bitmap bitmap, double time);
     public native void setLocation(double lat, double lng, double alt, double time);
+    public native void setUserLocation(double lat, double lng);
     public native double[][] setOrientation(double roll, double pitch, double azimuth, double time, GroundLocation elev);
 
 
