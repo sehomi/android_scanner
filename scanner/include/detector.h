@@ -19,13 +19,15 @@ enum DetectionMethod {
 struct Object
 {
 	// TODO: integrate actions into objects visualization
-	enum {DRAW, REMAIN, DELETE} action;
+	enum Action{REMAIN, ADD, UPDATE};
+	Action action = REMAIN;
 	enum {PERSON, CAR, FOV, SWEPT, MOVING} type;
 	cv::Rect box;
 	cv::Mat picture;
 	double distance = -1;
 	cv::Point2f center = cv::Point(0,0);
 	bool show = true;
+	int lastIdx = -1;
 	Location location;
 };
 

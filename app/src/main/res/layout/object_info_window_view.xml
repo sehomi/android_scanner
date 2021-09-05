@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#99FDFDFD">
 
     <ImageView
         android:id="@+id/imageView"
@@ -22,7 +23,7 @@
         tools:layout_editor_absoluteY="67dp">
 
         <TextView
-            android:id="@+id/textView17"
+            android:id="@+id/objTypeTxt"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="0.25"
@@ -45,14 +46,14 @@
                 android:layout_height="match_parent"
                 android:layout_weight="0.5"
                 android:gravity="center"
-                android:text="Latitude :"
+                android:text="Lat :"
                 android:textAlignment="center"
                 android:textColor="#000000"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/textView23"
+                android:id="@+id/latitudeTxt"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="0.5"
@@ -74,14 +75,14 @@
                 android:layout_height="match_parent"
                 android:layout_weight="0.5"
                 android:gravity="center"
-                android:text="Longitude :"
+                android:text="Lng:"
                 android:textAlignment="center"
                 android:textColor="#000000"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/textView25"
+                android:id="@+id/longitudeTxt"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="0.5"
@@ -103,14 +104,14 @@
                 android:layout_height="match_parent"
                 android:layout_weight="0.5"
                 android:gravity="center"
-                android:text="Distance (m) :"
+                android:text="Dist (m) :"
                 android:textAlignment="center"
                 android:textColor="#000000"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/textView27"
+                android:id="@+id/distanceTxt"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="0.5"

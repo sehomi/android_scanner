@@ -246,6 +246,14 @@ void Scanner::calcDirVec(float x, float y, Eigen::VectorXd &z)
 
 void Scanner::associate(std::vector<Object> &objects)
 {
+    for (int k = 0; k < objectPoses.size(); k++)
+    {
+        if(objectPoses[k].action == Object::UPDATE || objectPoses[k].action == Object::ADD)
+            objectPoses[k].action = Object::REMAIN;
+    }
+
+    std::vector<Object> newObjs;
+
     for(auto & object : objects)
     {
         bool found = false;
@@ -258,24 +266,19 @@ void Scanner::associate(std::vector<Object> &objects)
             if (dist < 3)
             {
                 objectPoses[k] = object;
-                objectPoses[k].action = Object::REMAIN;
-//                markers[k].action = Marker::REMAIN;
-//                markers[k].type = Marker::CAR or Marker::PERSON or ...
-//                markers[k].pos = object;
+                objectPoses[k].action = Object::UPDATE;
+                objectPoses[k].lastIdx = k;
                 found = true;
             }
         }
         if (!found)
         {
-            objectPoses.push_back(object);
-            Marker mk;
-//            mk.action = Marker::DRAW;
-//            mk.type = Marker::CAR or Marker::PERSON or ...
-//            mk.pos = object;
-            markers.push_back(mk);
+            newObjs.push_back(object);
+            newObjs.at(newObjs.size()-1).action = Object::ADD;
         }
     }
 
+    objectPoses.insert(objectPoses.end(), newObjs.begin(), newObjs.end());
     objects = objectPoses;
 }
 

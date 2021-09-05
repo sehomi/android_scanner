@@ -122,7 +122,7 @@ void createBitmap(JNIEnv* env, int w, int h, jobject &java_bitmap)
 
 jobjectArray putIntoArray(JNIEnv* env, std::vector<Object> objects)
 {
-    const int colsNum = 5;
+    const int colsNum = 7;
     jclass cls = env->FindClass("[D");
     jdoubleArray iniVal = env->NewDoubleArray(colsNum);
     jobjectArray outer = env->NewObjectArray(objects.size(), cls, iniVal);
@@ -133,7 +133,7 @@ jobjectArray putIntoArray(JNIEnv* env, std::vector<Object> objects)
 
         Object det = objects.at(i);
         int type = det.type;
-        double posa[colsNum] = {det.location.lat, det.location.lng, det.location.alt, (double) type, det.distance};
+        double posa[colsNum] = {det.location.lat, det.location.lng, det.location.alt, (double) type, det.distance, (double) det.action, (double) det.lastIdx};
 
         env->SetDoubleArrayRegion(inner, 0, colsNum, posa);
         env->SetObjectArrayElement(outer, i, inner);
