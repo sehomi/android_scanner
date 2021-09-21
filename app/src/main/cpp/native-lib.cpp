@@ -3,7 +3,6 @@
 #include "android/bitmap.h"
 #include <opencv2/opencv.hpp>
 #include "scanner.h"
-#include "Logger.h"
 #include <android/log.h>
 
 // TODO: declare JNI function in a base class like CameraApplication
@@ -30,7 +29,7 @@ void bitmapToMat(JNIEnv *env, jobject bitmap, Mat& dst, jboolean needUnPremultip
             if(needUnPremultiplyAlpha) {
                 cvtColor(tmp, dst, COLOR_mRGBA2RGBA);
             }
-            else{
+            else {
                 tmp.copyTo(dst);
             }
         } else {

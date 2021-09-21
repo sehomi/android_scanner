@@ -19,6 +19,21 @@
 #include "UTM.h"
 #include "motionDetector.h"
 
+/** \defgroup Scanner_Module Scanner module
+*
+*  * The "Scanner module" is the calculation core of the app.
+*  It includes the following classes:
+*  -  Scanner,
+*  -  Detector,
+*  -  Logger,
+*  -  SweeperGeometry::Sweeper,
+*  -  MotionDetector
+*
+*  \code
+*  #include "scanner.h"
+*  \endcode
+*/
+
 using namespace cv;
 
 struct Marker
@@ -27,7 +42,27 @@ struct Marker
     Location pos;
 };
 
-
+/**
+* \scanner_module \ingroup Scanner_Module
+*
+* \class Scanner
+*
+* \brief Manages the procedure of detecting objects and motions, and generates an online map
+*
+* - This class handles the following tasks:
+*     -# Having camera info and IMU data, maps the camera FOV borders on the online map
+*     -# As camera moves, calculates the area swept by camera FOV since beginning, using "sweeper" class member
+*     -# Synchronizes the multi-thread sensor data (GPS, IMU, Camera) using "Logger" class member
+*     -# Detects the desired objects (persons, cars, ...) using "detector" class member
+*     -# Detects moving objects using "motionDetector" class member
+*     -# Calculates each object's position on map based on its position in the image
+*     -# Updates the existing map objects based on the last camera image
+*
+* - Call the function calcFov() to map the most recent FOV borders as well as previously swept area
+* - Call the function scan() to detect objects OR motion, and then map the desired objects on the online map
+*
+* \sa class Sweeper, class Logger, class Detector, class MotionDetector
+*/
 class Scanner{
 
     float res, RAD, hva;
@@ -41,7 +76,6 @@ class Scanner{
 
 
     void camToMap(std::vector<Object>&, const ImageSet&);
-    void toDirectionVector(std::vector<Rect>&, std::vector<Eigen::VectorXd>&);
     bool scaleVector(Eigen::VectorXd, Eigen::VectorXd&, double);
     void associate(const std::vector<Location>&);
     void gpsToUtm(double, double, double&, double&);
