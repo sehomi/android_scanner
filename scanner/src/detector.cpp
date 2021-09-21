@@ -77,8 +77,8 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
             double cnf;
 
             cv::minMaxLoc(scores, 0, &cnf, 0, &classIdPoint);
-//            coco.names: person, bicycle, car, motorbike, aeroplane, bus, train, truck, ...
-            if (cnf > this->confidence && (classIdPoint.x == 0 || classIdPoint.x == 2 || classIdPoint.x == 3 || classIdPoint.x == 5 || classIdPoint.x == 7))
+            //coco.names: person, bicycle, car, motorbike, aeroplane, bus, train, truck, ...
+            if ((float)cnf > this->confidence && (classIdPoint.x == 0 || classIdPoint.x == 2 || classIdPoint.x == 3 || classIdPoint.x == 5 || classIdPoint.x == 7))
             {
                 int centerX = (int)(data[0] * frame.cols);
                 int centerY = (int)(data[1] * frame.rows);
@@ -87,8 +87,9 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
                 int left = centerX - width / 2;
                 int top = centerY - height / 2;
 
-                confidences.push_back((float)confidence);
-
+                confidences.push_back((float)cnf);
+//                boxes.push_back(cv::Rect(left, top, width, height));
+//                bboxes.push_back(cv::Rect(left, top, width, height));
                 Object obj;
                 obj.box = cv::Rect(left, top, width, height);
                 obj.picture = frame(obj.box);
@@ -177,6 +178,12 @@ void Detector::drawDetections(cv::Mat &dst, std::vector<Object> &objects)
 {
     for(auto & object : objects)
     {
-        rectangle(dst, object.box, cv::Scalar(0,0,255), 3, 1);
+        cv::Scalar color;
+        if(object.type == Object::PERSON)
+            color = cv::Scalar(0,0,255);
+        else if (object.type == Object::CAR)
+            color = cv::Scalar(42,42,165);
+
+        rectangle(dst, object.box, color, 3, 1);
     }
 }

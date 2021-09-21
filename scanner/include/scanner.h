@@ -13,6 +13,10 @@
 #include <android/log.h>
 #include <math.h>
 
+#include "grid.h"
+#include "nasagridsquare.h"
+#include "utils.h"
+
 #include "detector.h"
 #include "Logger.h"
 #include "sweeper.h"
@@ -67,9 +71,12 @@ class Scanner{
 
     float res, RAD, hva;
     float f, cx, cy;
+    double lastProcessStamp = -1; double lastProcessImgSetStamp = -1;
+    std::string assets_dir;
     int max_dist, zone;
-    bool initialInfoSet = false, isSouth = false;
-    std::vector<Location> objectPoses;
+    bool initialInfoSet = false, isSouth = false, useElev = false;
+    Grid<NasaGridSquare> *grid;
+    std::vector<Object> objectPoses;
     std::vector<Object> fovPoses;
     std::vector<Marker> markers;
     Location userLocation = {.x = -1.0, .y = -1.0}, firstLocation = {.x = -1.0, .y = -1.0};
@@ -77,12 +84,13 @@ class Scanner{
 
     void camToMap(std::vector<Object>&, const ImageSet&);
     bool scaleVector(Eigen::VectorXd, Eigen::VectorXd&, double);
-    void associate(const std::vector<Location>&);
+    void associate(std::vector<Object>&);
     void gpsToUtm(double, double, double&, double&);
     void eulerToRotationMat(double, double, double, Eigen::Matrix3d&);
     void calcDirVec(float, float, Eigen::VectorXd&);
     void utmToGps(std::vector<Object>&);
     void setInitialInfo(ImageSet&);
+    bool elevDiff(double, double, double&);
     void imageToMap(double, double, double, double, double, double, std::vector<Object>&);
     void calcDistances(std::vector<Object>&);
 
@@ -93,13 +101,14 @@ public:
     SweeperGeometry::Sweeper *sweeper;
     MotionDetector *motionDetector;
 
-
-    Scanner(std::string, std::string, DetectionMethod, bool, float, int);
-    void setReferenceLoc(double, double, bool);
+    Scanner(std::string, std::string, DetectionMethod, int, float, int);
     bool scan(std::vector<Object>&, Mat&, Mat&, int, bool);
-    bool scan(ImageSet&, Mat&, Mat&, std::vector<Object>&);
+    bool scan(ImageSet&, Mat&, Mat&, std::vector<Object>&, double);
     bool calcFov(std::vector<Object>&);
     bool calcFov(std::vector<Object>&, ImageSet&);
+    void setReferenceLoc(double, double, bool );
+    double elev();
+    double elev(ImuSet &);
 };
 
 

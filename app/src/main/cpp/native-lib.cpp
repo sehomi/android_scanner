@@ -107,9 +107,21 @@ void matToBitmap(JNIEnv* env, Mat src, jobject bitmap, jboolean needPremultiplyA
     }
 }
 
+void createBitmap(JNIEnv* env, int w, int h, jobject &java_bitmap)
+{
+    jclass java_bitmap_class = (jclass)env->FindClass("android/graphics/Bitmap");
+    jmethodID mid = env->GetStaticMethodID(java_bitmap_class, "createBitmap", "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
+    const wchar_t config_name[] = L"ARGB_8888";
+    jstring j_config_name = env->NewString((const jchar*)config_name, wcslen(config_name));
+    jclass bcfg_class = env->FindClass("android/graphics/Bitmap$Config");
+    jobject java_bitmap_config = env->CallStaticObjectMethod(bcfg_class, env->GetStaticMethodID(bcfg_class, "valueOf", "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;"), env->NewStringUTF("ARGB_8888"));
+    //    jobject java_bitmap_config = env->CallStaticObjectMethod(bcfg_class, midValueOf, env->NewStringUTF("ARGB_8888"));
+    java_bitmap = env->CallStaticObjectMethod(java_bitmap_class, mid, w, h, java_bitmap_config);
+}
+
 jobjectArray putIntoArray(JNIEnv* env, std::vector<Object> objects)
 {
-    const int colsNum = 5;
+    const int colsNum = 7;
     jclass cls = env->FindClass("[D");
     jdoubleArray iniVal = env->NewDoubleArray(colsNum);
     jobjectArray outer = env->NewObjectArray(objects.size(), cls, iniVal);
@@ -120,7 +132,7 @@ jobjectArray putIntoArray(JNIEnv* env, std::vector<Object> objects)
 
         Object det = objects.at(i);
         int type = det.type;
-        double posa[colsNum] = {det.location.lat, det.location.lng, det.location.alt, (double) type, det.distance};
+        double posa[colsNum] = {det.location.lat, det.location.lng, det.location.alt, (double) type, det.distance, (double) det.action, (double) det.lastIdx};
 
         env->SetDoubleArrayRegion(inner, 0, colsNum, posa);
         env->SetObjectArrayElement(outer, i, inner);
@@ -128,6 +140,22 @@ jobjectArray putIntoArray(JNIEnv* env, std::vector<Object> objects)
     }
     return outer;
 }
+
+void putIntoBitmapArray(JNIEnv* env, std::vector<Object> &fov_poses, jobjectArray &ret)
+{
+    jclass cls = env->FindClass("android/graphics/Bitmap");
+    ret = env->NewObjectArray( fov_poses.size(), cls, NULL);
+
+    for (int i=0; i<fov_poses.size(); i++){
+        jobject bitmap;
+        createBitmap(env, fov_poses.at(i).picture.cols, fov_poses.at(i).picture.rows, bitmap);
+        matToBitmap(env, fov_poses.at(i).picture, bitmap, false);
+
+        env->SetObjectArrayElement(ret, i, bitmap);
+    }
+
+}
+
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_example_android_1scanner_MainActivity_stringFromJNI(
@@ -138,8 +166,10 @@ Java_com_example_android_1scanner_MainActivity_stringFromJNI(
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets, jstring logs, jboolean log_mode, jint method, jfloat hva)
-{
+Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets, jstring logs, jint log_mode, jint method, jfloat hva) {
+
+    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------111");
+
     jboolean isCopy;
     const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
     std::string assets_str = std::string(convertedValue);
@@ -148,7 +178,7 @@ Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobjec
     const char *convertedValuel = (env)->GetStringUTFChars(logs, &isCopyl);
     std::string logs_str = std::string(convertedValuel);
 
-    sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, (bool) log_mode, hva, 300);
+    sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, (int) log_mode, hva, 300);
 
     return;
 }
@@ -200,22 +230,25 @@ Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobje
     }
 }
 
+std::vector<Object> objects;
+
 extern "C" JNIEXPORT jobjectArray JNICALL
-Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_this, jobject bitmap, jobject processedBitmap, jobject movingsBitmap)
+Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_this, jobject bitmap, jobject processedBitmap, jobject movingsBitmap, jdouble stamp, jobject outElev)
 {
     ImageSet imgSt;
     ImuSet imuSt;
     jobjectArray fov_poses_array = NULL;
-    std::vector<Object> objects, fov_objects;
+    std::vector<Object> fov_objects; objects.clear();
 
-    // TODO: get readlog mode from connection activity
+//    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1");
     if (!sc->logger->getImageSetFromLogger(imgSt, imuSt))
         return NULL;
 
     Mat movings;
     Mat dst = imgSt.image.clone();
 
-    sc->scan(imgSt, dst, movings, objects);
+    if ( !sc->scan(imgSt, dst, movings, objects, stamp) )
+        return NULL;
 
     Mat src = imgSt.image.clone();
     cvtColor(src, src, COLOR_BGR2RGB);
@@ -232,15 +265,41 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
     if (sc->calcFov(fov_objects, imgSt))
     {
         fov_objects.insert(fov_objects.end(), objects.begin(), objects.end());
-        return putIntoArray(env, fov_objects);
+        fov_poses_array = putIntoArray(env, fov_objects);
     }
-    else
-        return NULL;
+
+    jclass clazz = env->GetObjectClass(outElev);
+    jfieldID param1Field = env->GetFieldID(clazz, "elev", "D");
+    env->SetDoubleField(outElev, param1Field, sc->elev(imuSt));
+
+    return fov_poses_array;
+}
+
+extern "C" JNIEXPORT jobjectArray JNICALL
+        Java_com_example_android_1scanner_MainActivity_getImages(JNIEnv* env, jobject p_this)
+{
+//    jobjectArray objImages;
+//    putIntoBitmapArray(env, object_poses, objImages);
+
+    if (objects.size()==0) return NULL;
+
+    jclass cls = env->FindClass("android/graphics/Bitmap");
+    jobjectArray ret = env->NewObjectArray( objects.size(), cls, NULL);
+
+    for (int i=0; i<objects.size(); i++){
+        jobject bitmap;
+        createBitmap(env, objects.at(i).picture.cols, objects.at(i).picture.rows, bitmap);
+        matToBitmap(env, objects.at(i).picture, bitmap, false);
+
+        env->SetObjectArrayElement(ret, i, bitmap);
+    }
+
+    return ret;
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jobject thiz, jstring assets, jstring logs, jboolean log_mode, jfloat hva, jint method) {
+Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jobject thiz, jstring assets, jstring logs, jint log_mode, jfloat hva, jint method) {
     jboolean isCopy;
     const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
     std::string assets_str = std::string(convertedValue);
@@ -249,7 +308,7 @@ Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jo
     const char *convertedValuel = (env)->GetStringUTFChars(logs, &isCopyl);
     std::string logs_str = std::string(convertedValuel);
 
-    sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, (bool) log_mode, hva, 300);
+    sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, (int) log_mode, hva, 300);
 
     return;
 }
@@ -277,11 +336,15 @@ Java_com_example_android_1scanner_AircraftActivity_setUserLocation(JNIEnv* env, 
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL
-Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time)
+Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time, jobject outElev)
 {
     std::vector<Location> fov_poses, sweeped_area;
     std::vector<Object> fov_objects;
     jobjectArray fov_poses_array = NULL;
+
+    jclass clazz = env->GetObjectClass(outElev);
+    jfieldID param1Field = env->GetFieldID(clazz, "elev", "D");
+    env->SetDoubleField(outElev, param1Field, sc->elev());
 
     //// fov_objects includes both fov points and swept area
     if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_objects))
@@ -290,7 +353,10 @@ Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, j
         return fov_poses_array;
     }
     else
+    {
         return  NULL;
+    }
+
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL

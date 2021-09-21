@@ -5,39 +5,35 @@
 #include <iostream>
 #include <vector>
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/geometry/io/wkt/wkt.hpp>
+
+#include <boost/foreach.hpp>
+
 // TODO: included for "Location" structure. all typedefs must be moved to an external base header file.
-#include "Logger.h"
+#include "Detector.h"
 
 namespace SweeperGeometry{
 
-    struct Point
-    {
-        double x;
-        double y;
-    };
+    typedef boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double> > polygon;
+    typedef boost::geometry::model::d2::point_xy<double> boost2dPoint;
 
     class Sweeper {
 
     public:
 
-        void update(std::vector<Location> &, std::vector<Location> &);
+        void update(std::vector<Object> &, std::vector<Object> &);
 
     private:
 
         static Location p0;
-        std::vector<Location> sweeped_area_loc;
-        std::vector<Point> polygon;
+        polygon sweeped_area;
+        bool isFirstPolygon = true;
 
-        bool onSegment(Point p, Point q, Point r);
-        int orientation(Point p, Point q, Point r);
-        bool doIntersect(Point p1, Point q1, Point p2, Point q2);
-        bool isInside(Point p);
-        void swap(Location &p1, Location &p2);
-        static double dist(Location p1, Location p2);
-        static int compare(const void *vp1, const void *vp2);
-        static int orientation(Location p, Location q, Location r);
-        void sortToClosedPath(std::vector<Location> &);
-        void refineLocations(std::vector<Point> &, std::vector<Location> &);
+        static double dist(double, double, double, double);
+        void refineLocations(polygon &);
 
     };
 }

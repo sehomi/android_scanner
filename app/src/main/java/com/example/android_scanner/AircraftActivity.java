@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.TextureView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
 import android.widget.Toast;
@@ -66,6 +67,13 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         System.loadLibrary("native-lib");
     }
 
+    private class GroundLocation
+    {
+        public double lat = 0.0;
+        public double lng = 0.0;
+        public double elev = 0.0;
+    };
+
     private ActivityAircraftBinding binding;
     Polygon fov_polygon = null;
     Polygon sweep_polygon = null;
@@ -100,7 +108,9 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
         initUI();
         Log.v(TAG, "-------///3");
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         TinyDancer.create()
                 .show(this);
@@ -113,8 +123,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         srcBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.mountain);
         dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
         Log.v(TAG, "-------///4");
-        createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getBooleanExtra("Log Mode", false), (float) 66.0, getIntent().getIntExtra("Algorithm", 0));
-//        createScanner(getIntent().getStringExtra("Assets"), "", getIntent().getBooleanExtra("Log Mode", false), (float) 66.0, getIntent().getIntExtra("Algorithm", 0));
+        createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getIntExtra("Log Mode", 2), (float) 66.0, getIntent().getIntExtra("Algorithm", 0));
 
         // Example of a call to a native method
         ImageView iv = binding.imageView2;
@@ -470,14 +479,27 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     double gpitch = gimbalState.getAttitudeInDegrees().getPitch();
 //                    double gyaw = gimbalState.getAttitudeInDegrees().getYaw() + gimbalState.getYawRelativeToAircraftHeading();
                     double gyaw = aircraftYaw;
+                    GroundLocation elev = new GroundLocation();
 
-                    double[][] fov = setOrientation(groll, gpitch, gyaw, curr_time);
+                    double[][] fov = setOrientation(groll, gpitch, gyaw, curr_time, elev);
                     visualize(fov, null, null, true);
                     Log.e(TAG, "onResume");
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             binding.textView3.setText("\ngimbal roll: "+String.valueOf(groll)+"\ngimbal pitch: "+String.valueOf(gpitch)+"\ngimbal yaw: "+String.valueOf(gyaw));
+
+                            binding.textView11.setText(String.valueOf(elev.elev));
+                            if (elev.elev == 0) {
+                                binding.textView11.setTextColor(Color.BLACK);
+                            }
+                            else if (elev.elev == -32768){
+                                binding.textView11.setTextColor(Color.RED);
+                                binding.textView11.setText("No File");
+                            }
+                            else{
+                                binding.textView11.setTextColor(Color.GREEN);
+                            }
                         }
                     });
                 }
@@ -513,7 +535,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(markers[0][0], markers[0][1]), 18));
                         else{
                             fov_polygon.remove();
-//                            sweep_polygon.remove();
+                            sweep_polygon.remove();
                         }
                     }
                     else
@@ -525,13 +547,13 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     }
 
                     PolygonOptions fov_polygon_opt = new PolygonOptions();
-//                    PolygonOptions sweep_polygon_opt = new PolygonOptions();
+                    PolygonOptions sweep_polygon_opt = new PolygonOptions();
 
                     for (double[] marker : markers) {
                         Log.v(TAG, String.valueOf(marker[0]) + " " + String.valueOf(marker[1]) + " " + String.valueOf(marker[3]));
                         // TODO: A new marker must be assigned to moving objects (in which marker[3] == 4)
-                        if (marker[3] == 0 || marker[3] == 4)
-                        {
+                        if (marker[3] == 0 || marker[3] == 4) {
+
                             LatLng per = new LatLng(marker[0], marker[1]);
                             MarkerOptions locMarker = new MarkerOptions();
                             locMarker.position(per);
@@ -541,35 +563,34 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                             Marker mm = googleMap.addMarker(locMarker);
                             AllMarkers.add(mm);
                             Log.v(TAG, "as person");
-                        }
-                        else if (marker[3] == 1)
-                        {
+                        } else if (marker[3] == 1) {
                             Log.v(TAG, "as car");
-                        }
-                        else if (marker[3] == 2)
-                        {
+                        } else if (marker[3] == 2) {
                             Log.v(TAG, "as fov");
                             fov_polygon_opt.add(new LatLng(marker[0], marker[1]));
-                        }
-                        else if (marker[3] == 3)
-                        {
-//                            Log.v(TAG, "as sweeped");
-//                            sweep_polygon_opt.add(new LatLng(marker[0], marker[1]));
+                        } else if (marker[3] == 3) {
+                            Log.v(TAG, "as sweeped");
+                            sweep_polygon_opt.add(new LatLng(marker[0], marker[1]));
                         }
                     }
 
                     if (fovCall)
                     {
                         fov_polygon_opt.add(new LatLng(markers[0][0], markers[0][1]));
-                        fov_polygon_opt.strokeColor(Color.BLUE);
-
-                        // TODO: Uncomment these after fixing sweeper to match "Object" structure
 //                        sweep_polygon_opt.add(new LatLng(markers[4][0], markers[4][1]));
-//                        sweep_polygon_opt.fillColor(Color.argb(150, 255, 0, 0));
-//                        sweep_polygon_opt.strokeColor(Color.argb(255, 150, 150, 150));
 
-//                        sweep_polygon = googleMap.addPolygon(sweep_polygon_opt);
-                        fov_polygon = googleMap.addPolygon(fov_polygon_opt);
+                        sweep_polygon_opt.fillColor(Color.argb(150, 100, 100, 100));
+                        sweep_polygon_opt.strokeColor(Color.argb(255, 70, 70, 70));
+                        fov_polygon_opt.fillColor(Color.argb(100, 255, 255, 255));
+                        fov_polygon_opt.strokeColor(Color.BLACK);
+
+                        if (sweep_polygon_opt.getPoints().size() > 0) {
+                            sweep_polygon = googleMap.addPolygon(sweep_polygon_opt);
+                        }
+
+                        if (fov_polygon_opt.getPoints().size() > 0) {
+                            fov_polygon = googleMap.addPolygon(fov_polygon_opt);
+                        }
                     }
 
                 }
@@ -615,11 +636,12 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    public native void createScanner(String assets, String logs, boolean log_mode, float hva, int method);
+    public native void createScanner(String assets, String logs, int log_mode, float hva, int method);
     public native double[][] scan(Bitmap detections, Bitmap movings_img, int detMode);
     public native void setImage(Bitmap bitmap, double time);
     public native void setLocation(double lat, double lng, double alt, double time);
-    public native double[][] setOrientation(double roll, double pitch, double azimuth, double time);
     public native void setUserLocation(double lat, double lng);
+    public native double[][] setOrientation(double roll, double pitch, double azimuth, double time, GroundLocation elev);
+
 
 }

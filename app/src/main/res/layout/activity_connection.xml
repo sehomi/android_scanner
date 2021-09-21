@@ -108,7 +108,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginBottom="64dp"
+        android:layout_marginBottom="32dp"
         android:text="TextView"
         app:layout_constraintBottom_toTopOf="@+id/text_connection_status"
         app:layout_constraintStart_toStartOf="parent" />
@@ -119,7 +119,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="32dp"
+        android:layout_marginBottom="16dp"
         android:checkedButton="@id/yolov3TinyButton"
         android:orientation="horizontal"
         app:layout_constraintBottom_toTopOf="@+id/progressBar2"
@@ -157,19 +157,49 @@
         app:layout_constraintBottom_toTopOf="@+id/radioGroup2"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <Switch
-        android:id="@+id/switch1"
+    <RadioGroup
+        android:id="@+id/radioGroup"
         android:layout_width="0dp"
-        android:layout_height="30dp"
+        android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="32dp"
-        android:checked="false"
-        android:text="Log Mode:"
-        android:textSize="18sp"
-        android:textStyle="bold"
+        android:layout_marginBottom="16dp"
+        android:checkedButton="@id/noneButton"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toTopOf="@+id/textView5"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <RadioButton
+            android:id="@+id/writeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Write    " />
+
+        <RadioButton
+            android:id="@+id/readButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Read     " />
+
+        <RadioButton
+            android:id="@+id/noneButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="None" />
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/textView8"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:text="Log Mode:"
+        android:textColor="#000000"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/radioGroup"
         app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

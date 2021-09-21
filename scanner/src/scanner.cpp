@@ -3,49 +3,50 @@
 //
 
 #include "scanner.h"
+#include "sweeper.h"
 
-
-/** \brief Constructor; passes the required file directories and initializes some class parameters
-*
-* \param [in]     assetsDir   The directory of the asset files
-* \param [in]     logsDir     The directory in which the synchronized sensor data is saved - if desired
-* \param [in]     dm          Refers to the desired detection algorithm. 0 if it is "yolov3", 1 if it is
-*                             "tiny yolo", and 2 if it is "MobileNet SSD"
-* \param [in]     log_mode    If false, it is the normal functionality. Otherwise, offline data is read from log
-* \param [in]     hva_        the camera horizontal view angle
-* \param [in]     maxDist     Refers to the maximum distance at which the objects are mapped in the online map
-*/
-Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, bool log_mode, float hva_, int maxdist)
+Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm, int log_mode, float hva_, int maxdist)
 {
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------1-1");
     hva = hva_;
     max_dist = maxdist;
+//    RAD = PI/180.0;
 
     if (dm == MN_SSD)
-        detector = new Detector(assetsDir, DetectionMethod::MN_SSD, 0.4, 0.4);
+        detector = new Detector(assetsDir, DetectionMethod::MN_SSD, 0.1, 0.4);
     else if (dm == YOLO_V3)
-        detector = new Detector(assetsDir, DetectionMethod::YOLO_V3, 0.4, 0.4);
+        detector = new Detector(assetsDir, DetectionMethod::YOLO_V3, 0.1, 0.4);
     else if (dm == YOLO_TINY)
-        detector = new Detector(assetsDir, DetectionMethod::YOLO_TINY, 0.4, 0.4);
+        detector = new Detector(assetsDir, DetectionMethod::YOLO_TINY, 0.1, 0.4);
 
-    logger = new Logger(logsDir, log_mode, true, "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/");
+//    beta = 60.0;                // Assumption: the pitch down angle is fixed - May be changed in a set-function
+
+//    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_07_08_20_05_38/";
+//    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_18_52_14/";
+//    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_18_59_38/";
+    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_19_10_35/";
+
+    if (log_mode == 0)
+        logger = new Logger(logsDir, true, false, logFolder);
+    else if (log_mode == 1)
+        logger = new Logger(logsDir, false, true, logFolder);
+    else
+        logger = new Logger(logsDir, false, false, logFolder);
+
     sweeper = new SweeperGeometry::Sweeper();
     motionDetector = new MotionDetector(hva_);
+
+    assets_dir = assetsDir;
+//    FloodUtils::setdir(assetsDir.c_str());
+//    Grid<NasaGridSquare>::cache_limit = 20;
+//    grid = new Grid<NasaGridSquare>();
+
 }
 
-/** \brief Sets the initial information related to camera as the first image is received
-*
-* \param [out]  imgSt   An ImageSet instance containing first camera image synchronized with IMU and GPS data
-*
-* This function sets the focal length (f) and x-axis and y-axis optical center of camera (cx and cy respectively)
-* simply assuming that the camera focal point is exactly placed in front of image center. Usually this assumption
-* is not true. However the little error is negligible
-*/
 void Scanner::setInitialInfo(ImageSet &imgSt)
 {
     int width = imgSt.image.size().width;
     int height = imgSt.image.size().height;
-
-    // TODO: Set the true cx, cy and f based on camera params instead of this simplification
     f = (float) (0.5 * width * (1.0 / tan((hva/2.0)*PI/180)));
     cx = (float) width/2;
     cy = (float) height/2;
@@ -53,10 +54,27 @@ void Scanner::setInitialInfo(ImageSet &imgSt)
     setReferenceLoc(imgSt.lat, imgSt.lng, false);
 }
 
-bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, Mat &movings_img, std::vector<Object> &objects)
+bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, Mat &movings_img, std::vector<Object> &objects, double stamp)
 {
     if (!logger->readFromLog)
         return false;
+
+    if (lastProcessStamp == -1){
+        lastProcessStamp = stamp;
+        lastProcessImgSetStamp = imgSt.time;
+    }
+    else{
+        double diff1 = stamp - lastProcessStamp;
+        double diff2 = imgSt.time - lastProcessImgSetStamp;
+
+        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "diff %f %f %f %f", (float)diff1, (float)diff2, (float)stamp, (float)imgSt.time);
+
+        if (diff2 < diff1)
+            return false;
+
+        lastProcessStamp = stamp;
+        lastProcessImgSetStamp = imgSt.time;
+    }
 
     std::vector<Object> moving_objects;
 
@@ -77,22 +95,17 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, Mat &movings_img, std::
     objects.insert(objects.end(), moving_objects.begin(), moving_objects.end());
     camToMap(objects, imgSt);
 
+//    for (auto & obj : objects)
+//    {
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----", "object type: %s", std::to_string(obj.type).c_str());
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----", "object width: %s", std::to_string(obj.picture.cols).c_str());
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----", "object height: %s", std::to_string(obj.picture.rows).c_str());
+//    }
+
+    associate(objects);
     return true;
 }
 
-/** \brief The main function which detects motion and objects, and maps them into the online map
-*
-* \param [out]  objects     std::vector<Objects>; A list containing last location, last picture,
-*                           and some other data for each detected object
-* \param [out]  detections  cv::Mat; An image with detected objects highlighted within
-* \param [out]  movings_img cv::Mat; An image with moving objects highlighted within
-* \param [in]   det_mode    Integer; If 1, the function detects moving objects. Otherwise, objects
-*                           such as persons, car, etc. are detected
-*
-* \returns      true if the required data is provided and so the outputs are achieved successfully
-*
-* This function is called with sensor data received and synchronized previously
-*/
 bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_img, int det_mode = 0, bool rgba = false)
 {
     if (logger->readFromLog)
@@ -136,23 +149,16 @@ bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_i
 
     camToMap(objects, imgSt);
 
-//    associate(object_poses);
+//    associate(objectPoses);
 
     return true;
 }
 
-/** \brief Calculates the corresponding map location for a couple of image bounding boxes, given at input
-*
-* \param [in,out]   objects     A list containing which contains the related bounding box in image for each
-*                               object
-* \param [in]       is          An ImageSet instance containing the image in which objects are detected along
-*                               with corresponding IMU and GPS data
-*
-* This function is mainly responsible for mapping detected objects (moving or custom) for which a bounding
-* box exists within the corresponding image
-*/
+
 void Scanner::camToMap(std::vector<Object> &objects, const ImageSet& is)
 {
+    std::vector<bool> show_permissions;
+
     for (auto & object : objects)
     {
         // TODO: center attribute must be initialized in the detector
@@ -164,38 +170,25 @@ void Scanner::camToMap(std::vector<Object> &objects, const ImageSet& is)
     calcDistances(objects);
 }
 
-/** \brief Calculates the distance from each of input objects to a reference point
-*
-* \param [in,out]   objects     A list containing which contains the related bounding box in image for each
-*                               object
-* \param [in]       is          An ImageSet instance containing the image in which objects are detected along
-*                               with corresponding IMU and GPS data
-*
-* If the user location is available, the distance to user location is calculated. Otherwise, the distance is
-* calculated with respect to the drone initial location
-*/
-void Scanner::calcDistances(std::vector<Object> &objects)
-{
+void Scanner::calcDistances(std::vector<Object> &objects) {
     double refX, refY;
+
     refX = (userLocation.zone != 0 ? userLocation.x : firstLocation.x);
     refY = (userLocation.zone != 0 ? userLocation.y : firstLocation.y);
 
-    for (auto & object : objects)
-    {
-        object.distance = sqrt(pow((refX - object.location.x),2) + pow((refY - object.location.y),2));
+    for (auto &object : objects) {
+        object.distance = sqrt(
+                pow((refX - object.location.x), 2) + pow((refY - object.location.y), 2));
     }
 }
 
-/** \brief Generates a rotation matrix from 3 given euler angles
-*
-* \param [in]  roll     Euler roll angle
-* \param [in]  pitch    Euler pitch angle
-* \param [in]  azimuth  Euler azimuth angle
-* \param [out] output   Output rotation matrix
-*/
 void Scanner::eulerToRotationMat(double roll, double pitch, double azimuth, Eigen::Matrix3d &output)
 {
     Eigen::Quaternion<double> q;
+
+//        q = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX())
+//             * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())
+//             * Eigen::AngleAxisd(azimuth, Eigen::Vector3d::UnitZ());
 
     q = Eigen::AngleAxisd(azimuth, Eigen::Vector3d::UnitZ())
          * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())
@@ -203,28 +196,15 @@ void Scanner::eulerToRotationMat(double roll, double pitch, double azimuth, Eige
 
     Eigen::Matrix3d dcm_body_to_inertia = q.matrix();
 
-    output = dcm_body_to_inertia;
+    output = dcm_body_to_inertia;// * dcm_cam_to_body;
 }
 
-/** \brief Converts a given GPS location to a UTM location
-*
-* \param [in]  lat  GPS latitude
-* \param [in]  lng  GPS longitude
-* \param [out] x    UTM x coordinate
-* \param [out] y    UTM y coordinate
-*/
 void Scanner::gpsToUtm(double lat, double lng, double &x, double &y)
 {
     zone = LatLonToUTMXY(lat, lng, 0, x, y);
     isSouth = (lat < 0);
 }
 
-/** \brief Scales the input vector such that ...
-*
-* \param [in]  v        ...
-* \param [in]  output   ...
-* \param [out] z        ...
-*/
 bool Scanner::scaleVector(Eigen::VectorXd v, Eigen::VectorXd &output, double z)
 {
     if (v[2] > 0)
@@ -240,11 +220,20 @@ bool Scanner::scaleVector(Eigen::VectorXd v, Eigen::VectorXd &output, double z)
     return false;
 }
 
-/** \brief Scales the input vector such that ...
-*
-* \param [in]  objects  ...
-* \param [in]  output   ...
-*/
+void Scanner::toDirectionVector(std::vector<Rect> &objects, std::vector<Eigen::VectorXd> &output)
+{
+    std::vector<float> dirVec;
+    std::vector<Point2d> center;
+    output.clear();
+
+    for(auto & object : objects)
+    {
+        Eigen::VectorXd w(3);
+        calcDirVec(object.x + float(object.width)/2, object.y + float (object.height)/2, w);
+        output.push_back(w);
+    }
+}
+
 void Scanner::calcDirVec(float x, float y, Eigen::VectorXd &z)
 {
     Eigen::VectorXd w(3);
@@ -255,44 +244,45 @@ void Scanner::calcDirVec(float x, float y, Eigen::VectorXd &z)
     z = w*(1/w.norm());
 }
 
-void Scanner::associate(const std::vector<Location> &object_pos)
+void Scanner::associate(std::vector<Object> &objects)
 {
-    for(auto & object : object_pos)
+    for (int k = 0; k < objectPoses.size(); k++)
+    {
+        if(objectPoses[k].action == Object::UPDATE || objectPoses[k].action == Object::ADD)
+            objectPoses[k].action = Object::REMAIN;
+    }
+
+    std::vector<Object> newObjs;
+
+    for(auto & object : objects)
     {
         bool found = false;
         for (int k = 0; k < objectPoses.size(); k++)
         {
-            double dist = sqrt(((objectPoses[k].x-object.x)*(objectPoses[k].x-object.x))+((objectPoses[k].y-object.y)*(objectPoses[k].y-object.y)));
-            if (dist < 10)
+            if(objectPoses[k].type != object.type) continue;
+
+            double dist = sqrt(((objectPoses[k].location.x-object.location.x)*(objectPoses[k].location.x-object.location.x))+
+                    ((objectPoses[k].location.y-object.location.y)*(objectPoses[k].location.y-object.location.y)));
+            if (dist < 3)
             {
                 objectPoses[k] = object;
-                markers[k].action = Marker::REMAIN;
-//                markers[k].type = Marker::CAR or Marker::PERSON or ...
-                markers[k].pos = object;
+                objectPoses[k].action = Object::UPDATE;
+                objectPoses[k].lastIdx = k;
                 found = true;
             }
         }
         if (!found)
         {
-            objectPoses.push_back(object);
-            Marker mk;
-            mk.action = Marker::DRAW;
-//            mk.type = Marker::CAR or Marker::PERSON or ...
-            mk.pos = object;
-            markers.push_back(mk);
+            newObjs.push_back(object);
+            newObjs.at(newObjs.size()-1).action = Object::ADD;
         }
     }
+
+    objectPoses.insert(objectPoses.end(), newObjs.begin(), newObjs.end());
+    objects = objectPoses;
 }
 
-/** \brief It maps the calculated camera FOV into the online map and updates the swept area
-*
-* \param [out]  objects     std::vector<Objects>; A list containing the location for points representing
-*                           four camera FOV corners
-*
-* \returns      true if the required data is provided and so the outputs are achieved successfully
-*
-* This function is called with camera info prepared previously
-*/
+// TODO: fov calculation is not necessary when on the ground or in horizontal fov case
 bool Scanner::calcFov(std::vector<Object> &objects)
 {
     if(logger->readFromLog)
@@ -323,7 +313,7 @@ bool Scanner::calcFov(std::vector<Object> &objects)
 
     std::vector<Object> swept_area;
 //    TODO: Uncomment this after fixing sweeper to match "Object" structure:
-//    sweeper->update(poses_gps, swept_area);
+    sweeper->update(objects, swept_area);
 //// Note: Add the swept_area to the fov objects vector like below. In the "putIntoArray" function, the objects will be recognized using object.type attribute
     objects.insert(objects.end(), swept_area.begin(), swept_area.end());
 
@@ -356,28 +346,62 @@ bool Scanner::calcFov(std::vector<Object> &objects, ImageSet &imgSt)
     fovPoses = objects;
 
     std::vector<Object> swept_area;
-//    sweeper->update(poses_gps, swept_area);
+    sweeper->update(objects, swept_area);
     objects.insert(objects.end(), swept_area.begin(), swept_area.end());
 
     return true;
 }
 
-/** \brief converts image points into map points
-*
-* \param [in]  roll     Camera roll angle at the moment in which image is captured
-* \param [in]  pitch    Camera pitch angle at the moment in which image is captured
-* \param [in]  azimuth  Camera azimuth angle at the moment in which image is captured
-* \param [in]  lat      Camera location latitude at the moment in which image is captured
-* \param [in]  lng      Camera location longitude at the moment in which image is captured
-* \param [in]  alt      Camera location altitude at the moment in which image is captured
-* \param [in,out] objects  A set of Object instances containing each image point coordinates. The calculated
-*                       corresponding map location is written on each objects as well
-*
-* Given a set of points in image coordinates along with camera orientation and location at the moment in
-* which image is captures, this function assigns a location on map to each given point. This function can
-* be called for image points referring to various objects such as camera FOV corners, swept areas, detected
-* objects centers and moving objects centers
-*/
+double Scanner::elev(ImuSet &imuSt)
+{
+    FloodUtils::setdir(assets_dir.c_str());
+    Grid<NasaGridSquare>::cache_limit = 20;
+    grid = new Grid<NasaGridSquare>();
+
+    return (double) grid->height((float)imuSt.lng,(float)imuSt.lat);
+}
+
+double Scanner::elev()
+{
+    FloodUtils::setdir(assets_dir.c_str());
+    Grid<NasaGridSquare>::cache_limit = 20;
+    grid = new Grid<NasaGridSquare>();
+
+    ImuSet imuSt;
+    if (!logger->getImuSet(imuSt)) {
+        return 0.0;
+    }
+
+    return (double) grid->height((float)imuSt.lng,(float)imuSt.lat);
+}
+
+bool Scanner::elevDiff(double newLat, double newLon, double &diff)
+{
+    FloodUtils::setdir(assets_dir.c_str());
+    Grid<NasaGridSquare>::cache_limit = 20;
+    grid = new Grid<NasaGridSquare>();
+
+    if (!useElev or !initialInfoSet){
+        diff = 0;
+        return true;
+    }
+
+    double newElev = (double) grid->height((float)newLon,(float)newLat);
+    double initElev = (double) grid->height((float)firstLocation.lng,(float)firstLocation.lat);
+
+    __android_log_print(ANDROID_LOG_VERBOSE, "imageToMap", " %f %f %f %f %f %f", (float)newLon,(float)newLat, (float)firstLocation.lng,(float)firstLocation.lat, (float)newElev, (float)initElev );
+
+    if (newElev == -32768 || initElev == -32768) {
+        diff = 0;
+        return false;
+    }
+    else
+    {
+        diff = newElev - initElev;
+        return true;
+    }
+}
+
 void Scanner::imageToMap(double roll, double pitch, double azimuth, double lat, double lng, double alt, std::vector<Object> &objects)
 {
     double x, y;
@@ -385,7 +409,9 @@ void Scanner::imageToMap(double roll, double pitch, double azimuth, double lat, 
     Eigen::Matrix3d camToInertia;
 
     gpsToUtm(lat, lng, x, y);
-    pos << y, x, -alt;
+    double diff = 0;
+    bool res = elevDiff(lat,lng,diff);
+    pos << y, x, -(alt+diff);
 
     eulerToRotationMat(roll, pitch, azimuth, camToInertia);
 
@@ -396,23 +422,25 @@ void Scanner::imageToMap(double roll, double pitch, double azimuth, double lat, 
         w_cam << w_[2], w_[0], w_[1];
         v = camToInertia * w_cam;
 
+        // TODO: This method must be applied ... not the above mess
+//        v = camToInertia.transpose() * imToCam.transpose() * w_;
+
+//        std::stringstream ss;
+//        ss << v;
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner----2", "v: %s", ss.str().c_str());
+
         object.show = scaleVector(v, scaled_v, pos[2]);
 
         object.location.x = (scaled_v[1] + pos[1]);
         object.location.y = scaled_v[0] + pos[0];
         object.location.alt = -(scaled_v[2] + pos[2]);
+
+//      TODO : The scanned places must be saved - An overall fov must be generated simultaneously
     }
 
     utmToGps(objects);
 }
 
-/** \brief Converts a given UTM location to a GPS location
-*
-* \param [out]  lat  GPS latitude
-* \param [out]  lng  GPS longitude
-* \param [in]   x    UTM x coordinate
-* \param [in]   y    UTM y coordinate
-*/
 void Scanner::utmToGps(std::vector<Object> &objs)
 {
     for (auto & obj : objs)
@@ -424,17 +452,13 @@ void Scanner::utmToGps(std::vector<Object> &objs)
     }
 }
 
-/** \brief Is used to set user's location simultaneously or set the drone's initial location
-*
-* \param [in]     lat       The latitude to set
-* \param [in]     lng       The longitude to set
-* \param [in]     isUserLoc If true, function sets the input latitude and longitude as user's location.
-*                           If false, it sets the input as drone's initial location
-*/
 void Scanner::setReferenceLoc(double lat, double lng, bool isUserLoc)
 {
     if (isUserLoc)
         userLocation.zone = LatLonToUTMXY(lat, lng, 0, userLocation.x, userLocation.y);
-    else
+    else {
+        firstLocation.lat = lat;
+        firstLocation.zone = zone;
         firstLocation.zone = LatLonToUTMXY(lat, lng, 0, firstLocation.x, firstLocation.y);
+    }
 }
