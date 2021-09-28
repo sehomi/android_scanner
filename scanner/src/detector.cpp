@@ -216,6 +216,9 @@ void Detector::drawDetections(cv::Mat &dst, std::vector<Object> &objects)
 {
     for(auto & object : objects)
     {
+        if (object.action == Object::REMAIN)
+            continue;
+
         cv::Scalar color;
         if(object.type == Object::PERSON)
             color = cv::Scalar(0,0,255);

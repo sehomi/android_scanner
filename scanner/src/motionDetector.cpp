@@ -86,7 +86,7 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
 */
 void MotionDetector::visualize(const cv::Mat &flow, const cv::Mat &xNormalizationCoeff, const cv::Mat &yNormalizationCoeff, cv::Mat &output)
 {
-    cv::Mat flow_parts[2], flow_parts_d[2], magnitude, angle;
+    cv::Mat flow_parts[2], flow_parts_d[2], /*magnitude,*/ angle;
     cv::split(flow, flow_parts);
     flow_parts[0].convertTo(flow_parts_d[0], CV_64F);
     flow_parts[1].convertTo(flow_parts_d[1], CV_64F);
@@ -96,9 +96,9 @@ void MotionDetector::visualize(const cv::Mat &flow, const cv::Mat &xNormalizatio
     metricFlowX = flow_parts_d[0].mul(xNormalizationCoeff);
     metricFlowY = flow_parts_d[1].mul(yNormalizationCoeff);
 
-    cv::cartToPolar(metricFlowX, metricFlowY, magnitude, angle, true);
-    cv::threshold(magnitude, output, minimumDetectionSpeed, 255, THRESH_BINARY);
-    output.convertTo(output, CV_8U);
+    cv::cartToPolar(metricFlowX, metricFlowY, output, angle, true);
+
+    metricNormalize(output);
 }
 
 /** \brief Calculates the the required coefficient to convert pixel speed into metric speed for each pixel
@@ -154,7 +154,12 @@ void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::v
 {
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
-    findContours(output, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_TC89_KCOS, cv::Point(0, 0) );
+    Mat otpt;
+
+    cv::threshold(output, otpt, minimumDetectionSpeed, 255, THRESH_BINARY);
+    output.convertTo(output, CV_8U);
+    otpt.convertTo(otpt, CV_8U);
+    findContours(otpt, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_TC89_KCOS, cv::Point(0, 0) );
 
     objects.clear();
     double area, areaRatio, imArea = output.rows * output.cols;
@@ -170,5 +175,27 @@ void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::v
             objects.push_back(obj);
         }
     }
+}
+
+/** \brief Generates a speed map from a metric speed image
+*
+* \param [in]   in  The input image with metric speed of the corresponding point
+*
+* This function is called when an image with metric speed in each pixel is generated. It changes the picture
+* in such a way that the fully white pixels (value: 255) indicate points with predetermined maximum object
+* speed or more. The fully black pixels (value: 0) indicate points with zero speed
+*/
+void MotionDetector::metricNormalize(Mat &in)
+{
+    int rows = in.rows, cols = in.cols;
+
+    for (int i=0; i<rows; i++) {
+        for (int j=0; j<cols; j++) {
+            if (in.at<double>(i,j) > objMaxSpeed)
+                in.at<double>(i,j) = objMaxSpeed;
+        }
+    }
+//    cv::normalize(in, in, 0, 255, NORM_MINMAX, CV_8UC1);
+    in = (255.0/objMaxSpeed) * in;
 }
 

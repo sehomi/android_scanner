@@ -178,7 +178,7 @@ Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobjec
     const char *convertedValuel = (env)->GetStringUTFChars(logs, &isCopyl);
     std::string logs_str = std::string(convertedValuel);
 
-    sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, (int) log_mode, hva, 300);
+    sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, (int) log_mode, hva, 50);
 
     return;
 }
@@ -308,7 +308,7 @@ Java_com_example_android_1scanner_AircraftActivity_createScanner(JNIEnv *env, jo
     const char *convertedValuel = (env)->GetStringUTFChars(logs, &isCopyl);
     std::string logs_str = std::string(convertedValuel);
 
-    sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, (int) log_mode, hva, 300);
+    sc = new Scanner(assets_str, logs_str, (DetectionMethod)method, (int) log_mode, hva, 50);
 
     return;
 }
@@ -362,7 +362,7 @@ Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, j
 extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_example_android_1scanner_AircraftActivity_scan(JNIEnv* env, jobject p_this, jobject detections, jobject movings_img, jint detMode)
 {
-    std::vector<Object> objects;
+//    std::vector<Object> objects;
 
     Mat det, movings;
     bitmapToMat(env, detections, det, false);
@@ -385,4 +385,26 @@ Java_com_example_android_1scanner_AircraftActivity_scan(JNIEnv* env, jobject p_t
     matToBitmap(env, movings, movings_img, false);
 
     return putIntoArray(env, objects);
+}
+
+extern "C" JNIEXPORT jobjectArray JNICALL
+Java_com_example_android_1scanner_AircraftActivity_getImages(JNIEnv* env, jobject p_this)
+{
+//    jobjectArray objImages;
+//    putIntoBitmapArray(env, object_poses, objImages);
+
+    if (objects.size()==0) return NULL;
+
+    jclass cls = env->FindClass("android/graphics/Bitmap");
+    jobjectArray ret = env->NewObjectArray( objects.size(), cls, NULL);
+
+    for (int i=0; i<objects.size(); i++){
+        jobject bitmap;
+        createBitmap(env, objects.at(i).picture.cols, objects.at(i).picture.rows, bitmap);
+        matToBitmap(env, objects.at(i).picture, bitmap, false);
+
+        env->SetObjectArrayElement(ret, i, bitmap);
+    }
+
+    return ret;
 }
