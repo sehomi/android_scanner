@@ -105,12 +105,12 @@ struct ImuSet
   * unique ImageSet structure instance. It also does this task for synchronizing GPS and IMU data without
   * image.
   * - This class handles the following tasks:
-  *     -#  Buffers IMU data and GPS data as they are received
-  *     -#  In one functionality, for each image, finds the nearest IMU and GPS data in terms of time
-  *         to receive
-  *     -#  In another functionality, for each IMU data, finds the nearest GPS data in terms of time
-  *         to receive
-  *     -#  If desired, saves the synchronized data in a specific directory within device memory
+  *     -# Buffers IMU data and GPS data as they are received
+  *     -# In one functionality, for each image, finds the nearest IMU and GPS data in terms of time
+  *     to receive
+  *     -# In another functionality, for each IMU data, finds the nearest GPS data in terms of time to
+  *     receive
+  *     -# If desired, saves the synchronized data in a specific directory within device memory
   *
   * Call the function getImageSet() to get an ImageSet instance with synchronized image, IMU data and GPS
   * data

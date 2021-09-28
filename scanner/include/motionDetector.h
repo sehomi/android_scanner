@@ -49,24 +49,7 @@ class MotionDetector{
 
 public:
 
-    /** \brief Constructor; Initializes class parameters for further calculations
-    *
-    * \param [in]   hva_    Float; Camera horizontal view angle. Required for metric normalization
-    */
     MotionDetector(float);
-
-    /** \brief The main function which detects moving objects within the input image
-    *
-    * \param [in]   imgSt   ImageSet; The ImageSet structure instance containing camera image in which
-    *                       moving objects must be detected, along with corresponding GPS location
-    * \param [out]  outputs std::vector<Object>; A list of "Object" structure instances each including
-    * 				        obtained information about a corresponding moving object
-    * \param [in]   fov     std::vector<Object>; A list of four "Object" structure instances each including
-    * 				        a GPS location corresponding to one of the camera view corners
-    *
-    * This function can be called whenever the camera image is available AND camera is in a fixed position.
-    * The visual motion detection method is based on dense optical flow
-    */
     void detect(ImageSet&, cv::Mat&, std::vector<Object>&, const std::vector<Object>&);
 };
 

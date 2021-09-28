@@ -3,6 +3,15 @@
 #include <android/log.h>
 #include <cstdlib>
 
+/** \brief Constructor; passes the required file directories, sets the desired detection method and
+* initializes some class parameters
+*
+* \param [in]     assetsDir The directory of the asset files
+* \param [in]     dm        Refers to the desired detection algorithm. 0 if it is "Yolo-v3", 1 if it is
+*                           "Tiny Yolo", 2 if it is "MobileNet SSD"
+* \param [in]     conf		Determines the amount of "confidence" parameter used by detectors to threshold
+*							the detected objects based on assurance rate of detection accuracy
+*/
 Detector::Detector(std::string assetsDir, DetectionMethod dm, float conf, float nms)
 {
     this->detectionMethod = dm;
@@ -39,6 +48,14 @@ Detector::Detector(std::string assetsDir, DetectionMethod dm, float conf, float 
     this->assets_dir = assetsDir;
 }
 
+/** \brief The main function which detects existing objects within the input image
+*
+* \param [in]   frame  	    cv::Mat; The camera image in which objects must be detected
+* \param [out]  objects     std::vector<Object>; A list of "Object" structure objects each including
+* 					        obtained information about each detected object
+*
+* This function can be called whenever the camera image is available
+*/
 void Detector::detect(cv::Mat &frame, std::vector<Object> &objects)
 {
     cv::Mat blob;
@@ -49,7 +66,6 @@ void Detector::detect(cv::Mat &frame, std::vector<Object> &objects)
         this->net.setInput(blob);
         std::vector<cv::Mat> outs;
         this->net.forward(outs, getOutputsNames(net));
-//        yolov3PostProcess(frame, outs, objects, ids);
         yolov3PostProcess(frame, outs, objects);
     }
     else if (this->detectionMethod == MN_SSD)
@@ -57,11 +73,21 @@ void Detector::detect(cv::Mat &frame, std::vector<Object> &objects)
         cv::dnn::blobFromImage(frame, blob, 0.007843, cv::Size(300, 300), cv::Scalar(127.5, 127.5, 127.5), false);
         this->net.setInput(blob);
         cv::Mat prob = this->net.forward();
-//        ssdPostProcess(frame, prob, objects, ids);
         ssdPostProcess(frame, prob, objects);
     }
 }
 
+/** \brief Extracts the detected objects by yolo algorithms into a list of Object instances, based on detection confidence
+*
+* \param [in]   frame  	    The camera image in which objects have been detected
+* \param [out]  outs        The output of the detector algorithm; A list of matrices containing information
+*                           about each detected object
+* \param [out]  objects     A list of Object instances each containing the obtained data about a detected
+*                           object
+*
+* This function can be called whenever the camera image is available. It is called if the user chooses the
+* YOLO-V3 or YOLO-TINY algorithm to detect objects
+*/
 void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& outs, std::vector<Object> &objects)
 {
     std::vector<float> confidences;
@@ -88,8 +114,6 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
                 int top = centerY - height / 2;
 
                 confidences.push_back((float)cnf);
-//                boxes.push_back(cv::Rect(left, top, width, height));
-//                bboxes.push_back(cv::Rect(left, top, width, height));
                 Object obj;
                 obj.box = cv::Rect(left, top, width, height);
                 obj.picture = frame(obj.box);
@@ -101,23 +125,19 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
             }
         }
     }
-
-    // TODO: Fixing NMS
-//    std::vector<int> indices;
-//     cv::dnn::NMSBoxes(boxes, confidences, this->confidence, this->nmsThreshold, indices);
-//     for (size_t i = 0; i < indices.size(); ++i)
-//     {
-//     	int idx = indices[i];
-//     	cv::Rect box = boxes[idx];
-//     	bboxes.push_back(box);
-////         __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", "  Adding NMS boxes");
-//
-//     }
-
-//    __android_log_print(ANDROID_LOG_VERBOSE, "Android Scanner: ", "  Detector Boxes: %d, NMS Boxes: %d", boxes.size(), bboxes.size());
-
 }
 
+/** \brief Extracts the detected objects by ssd algorithm into a list of Object instances, based on detection confidence
+*
+* \param [in]   frame  	    The camera image in which objects have been detected
+* \param [out]  outs        The output of the detector algorithm; A list of matrices containing information
+*                           about each detected object
+* \param [out]  objects     A list of Object instances each containing the obtained data about a detected
+*                           object
+*
+* This function can be called whenever the camera image is available. It is called if the user chooses the
+* MobileNet-SSD algorithm to detect objects
+*/
 void Detector::ssdPostProcess(cv::Mat& frame, cv::Mat &outs, std::vector<Object> &objects)
 {
     cv::Mat detectionMat(outs.size[2], outs.size[3], CV_32F, outs.ptr<float>());
@@ -155,6 +175,15 @@ void Detector::ssdPostProcess(cv::Mat& frame, cv::Mat &outs, std::vector<Object>
     }
 }
 
+/** \brief Gets the names of the yolo output layers
+*
+* \param [in]   net     The network object for which the output layer names are to be determined
+*
+* \returns      A list of names corresponding to yolo output layers
+*
+* This function is called during a call to yolo network forward pass, to get the result of the output
+* layers
+*/
 std::vector<cv::String> Detector::getOutputsNames(const cv::dnn::Net& net)
 {
     static std::vector<cv::String> names;
@@ -174,6 +203,15 @@ std::vector<cv::String> Detector::getOutputsNames(const cv::dnn::Net& net)
     return names;
 }
 
+/** \brief Draws bounding boxes around the detected objects on the input image
+*
+* \param [in,out] 	frame  		cv::Mat; The camera image in which detected objects are to be drawn. It
+* 								must be exactly the same as the detect() function input
+* \param [in]  	    objects 	std::vector<Object>; A list of detected objects that are to be drawn
+*
+* This function MUST be called after detect() function call with the same input frame for which detect()
+* function is called
+*/
 void Detector::drawDetections(cv::Mat &dst, std::vector<Object> &objects)
 {
     for(auto & object : objects)

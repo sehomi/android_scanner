@@ -40,11 +40,6 @@
 
 using namespace cv;
 
-struct Marker
-{
-    enum {DRAW, REMAIN, DELETE} action;
-    Location pos;
-};
 
 /**
 * \scanner_module \ingroup Scanner_Module
@@ -78,7 +73,6 @@ class Scanner{
     Grid<NasaGridSquare> *grid;
     std::vector<Object> objectPoses;
     std::vector<Object> fovPoses;
-    std::vector<Marker> markers;
     Location userLocation = {.x = -1.0, .y = -1.0}, firstLocation = {.x = -1.0, .y = -1.0};
 
 

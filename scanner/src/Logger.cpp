@@ -88,7 +88,7 @@ void Logger::writeImageSet(const ImageSet &imgSet)
     logFile.close();
 }
 
-/** \brief Reads a data sequence incuding image, IMU and GPS data from pre-logged directory
+/** \brief Reads a data sequence including image, IMU and GPS data from pre-logged directory
 *
 * \param [in]   imData  A comma delimited text line containing IMU and GPS data
 * \param [out]  image   The output image read from log

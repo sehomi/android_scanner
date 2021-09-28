@@ -5,17 +5,41 @@
 #include "motionDetector.h"
 
 
+/** \brief Constructor; sets the required initial parameter(s)
+*
+* \param [in]   hva_    Camera horizontal view angle
+*/
 MotionDetector::MotionDetector(float hva_)
 {
     hva = hva_;
 }
 
+/** \brief Calculates and sets the camera focal length
+*
+* \param [out]  w   Image width in pixels
+*
+* This function sets the focal length (f) simply assuming that the camera focal point is exactly placed
+* in front of image center. Usually this assumption is not true. However the little error is negligible
+*/
 void MotionDetector::setFocalLength(int w)
 {
     fl = (float) (0.5 * w * (1.0 / tan((hva/2.0)*PI/180)));
     focalLengthSet = true;
 }
 
+/** \brief The main function which detects the moving objects within image
+*
+* \param [in]   imgSt   The ImageSet structure instance containing camera image in which moving objects
+*                       must be detected, along with corresponding GPS location
+* \param [out]  output  A gray image with detected moving objects highlighted with respect to their speed
+* \param [out]  objects A list of Object instances each including obtained information about a moving object
+* \param [in]   fov     A list of four Object instances each including a GPS location corresponding to one
+* 				        of the camera view corners
+*
+* This function can be called whenever the camera image is available AND camera is in a fixed position.
+* It is called with an image synchronized with GPS and IMU data previously. Besides, the camera FOV points
+* must be mapped into the online map. The visual motion detection method is based on dense optical flow
+*/
 void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object> &objects, const std::vector<Object> &fov)
 {
     if (old_frame.empty())
@@ -47,6 +71,19 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
     generateMovingRects(imgSt.image, output, objects);
 }
 
+/** \brief Visualizes the metric speeds in a gray image
+*
+* \param [in]   flow                An two-channel image with each pixel representative for horizontal or
+*                                   vertical speed within image
+* \param [in]   xNormalizationCoeff The matrix with each pixel containing the proper coefficient to transform
+*                                   the horizontal pixel speed into a metric speed in the same direction
+* \param [in]   yNormalizationCoeff The matrix with each pixel containing the proper coefficient to transform
+*                                   the vertical pixel speed into a metric speed in the same direction
+* \param [in]   output              The output image with visualized moving objects
+*
+* This function is called with two generated normalization coefficient matrices for both horizontal and
+* vertical directions. In the output image, the brighter a pixel is, the faster the corresponding point moves
+*/
 void MotionDetector::visualize(const cv::Mat &flow, const cv::Mat &xNormalizationCoeff, const cv::Mat &yNormalizationCoeff, cv::Mat &output)
 {
     cv::Mat flow_parts[2], flow_parts_d[2], magnitude, angle;
@@ -64,9 +101,24 @@ void MotionDetector::visualize(const cv::Mat &flow, const cv::Mat &xNormalizatio
     output.convertTo(output, CV_8U);
 }
 
+/** \brief Calculates the the required coefficient to convert pixel speed into metric speed for each pixel
+*
+* \param [in]   fov                     A list of four "Object" structure instances each including a GPS
+* 				                        location corresponding to one of the camera view corners
+* \param [in]   lat                     Camera location latitude at the moment in which image is captured
+* \param [in]   lng                     Camera location longitude at the moment in which image is captured
+* \param [in]   alt                     Camera location altitude at the moment in which image is captured
+* \param [out]  xNormalizationCoeff     The matrix with each pixel containing the proper coefficient to transform
+*                                       the horizontal pixel speed into a metric speed in the same direction
+* \param [out]  yNormalizationCoeff     The matrix with each pixel containing the proper coefficient to transform
+*                                       the vertical pixel speed into a metric speed in the same direction
+*
+* This function is called when the corresponding location for each camera FOV point is determined. It
+* calculates the normalization coefficient matrix, the matrix in which each pixel contains the required
+* value to multiply by the corresponding pixel speed, thus providing the metric speed of that point
+*/
 void MotionDetector::calcNormCoeffMat(const std::vector<Object> &fov, double lat, double lng, double alt, cv::Mat &xNormalizationCoeff, cv::Mat &yNormalizationCoeff)
 {
-    // This function calculates the normalization coefficient matrix
     double x, y;
     LatLonToUTMXY(lat, lng, 0, x, y);
 
@@ -90,6 +142,14 @@ void MotionDetector::calcNormCoeffMat(const std::vector<Object> &fov, double lat
     }
 }
 
+/** \brief Extracts a list of Object instances from an image of moving objects and highlights each object
+*
+* \param [in]   input       The input image with visualized moving objects
+* \param [out]  output      The output image with highlighted moving objects within
+* \param [out]  objects     A list containing data for each detected moving object
+*
+* This function is called when the gray image of moving objects is generated.
+*/
 void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::vector<Object> &objects)
 {
     std::vector<std::vector<cv::Point>> contours;
