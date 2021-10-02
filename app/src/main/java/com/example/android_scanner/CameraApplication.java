@@ -13,8 +13,10 @@ import androidx.core.content.ContextCompat;
 
 import dji.common.error.DJIError;
 import dji.common.error.DJISDKError;
+import dji.sdk.airlink.AirLink;
 import dji.sdk.base.BaseComponent;
 import dji.sdk.base.BaseProduct;
+import dji.sdk.battery.Battery;
 import dji.sdk.camera.Camera;
 import dji.sdk.flightcontroller.FlightController;
 import dji.sdk.gimbal.Gimbal;
@@ -98,6 +100,32 @@ public class CameraApplication extends Application{
         }
 
         return gimbal;
+    }
+
+    public static synchronized Battery getBatteryInstance() {
+
+        if (getProductInstance() == null) return null;
+
+        Battery battery = null;
+
+        if (getProductInstance() instanceof Aircraft){
+            battery = ((Aircraft) getProductInstance()).getBattery();
+        }
+
+        return battery;
+    }
+
+    public static synchronized AirLink getLinkInstance() {
+
+        if (getProductInstance() == null) return null;
+
+        AirLink link = null;
+
+        if (getProductInstance() instanceof Aircraft){
+            link = ((Aircraft) getProductInstance()).getAirLink();
+        }
+
+        return link;
     }
 
     @Override

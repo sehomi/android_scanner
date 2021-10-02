@@ -363,6 +363,7 @@ extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_example_android_1scanner_AircraftActivity_scan(JNIEnv* env, jobject p_this, jobject detections, jobject movings_img, jint detMode)
 {
 //    std::vector<Object> objects;
+    objects.clear();
 
     Mat det, movings;
     bitmapToMat(env, detections, det, false);
@@ -375,6 +376,7 @@ Java_com_example_android_1scanner_AircraftActivity_scan(JNIEnv* env, jobject p_t
     {
         putText(det, "SENSOR DATA NOT PROVIDED", cv::Point(50,200),cv::FONT_HERSHEY_DUPLEX,4,cv::Scalar(0,0,255),3,false);
         putText(movings, "SENSOR DATA NOT PROVIDED", cv::Point(50,200),cv::FONT_HERSHEY_DUPLEX,4,cv::Scalar(0,0,255),3,false);
+        __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1543");
         return NULL;
     }
 

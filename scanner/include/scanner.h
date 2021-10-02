@@ -74,6 +74,7 @@ class Scanner{
     std::vector<Object> objectPoses;
     std::vector<Object> fovPoses;
     Location userLocation = {.x = -1.0, .y = -1.0}, firstLocation = {.x = -1.0, .y = -1.0};
+    double lastFovTime = -1, fovDelay = 1.0;
 
 
     void camToMap(std::vector<Object>&, const ImageSet&);

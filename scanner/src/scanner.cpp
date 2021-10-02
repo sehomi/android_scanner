@@ -141,6 +141,8 @@ bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_i
     if (logger->readFromLog)
         return false;
 
+    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner scanner mode ", "%s", std::to_string(det_mode).c_str());
+
     ImageSet imgSt;
 
     if (!logger->getImageSet(imgSt))
@@ -159,27 +161,37 @@ bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_i
 
     if (det_mode == 1)
     {
+        __android_log_print(ANDROID_LOG_VERBOSE, "scan nn1 fov size:", "%s", std::to_string(fovPoses.size()).c_str());
         motionDetector->detect(imgSt, movings_img, objects, fovPoses);
+        __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn2");
+
     }
     else
         {
-        if (rgba) {
+            __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn3");
+            if (rgba) {
             Mat img;
             cvtColor(imgSt.image, img, COLOR_RGBA2BGR);
             cvtColor(detections, detections, COLOR_RGBA2BGR);
             detector->detect(img, objects);
         }
-        else
-            detector->detect(imgSt.image, objects);
+        else {
+                __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn4");
+                detector->detect(imgSt.image, objects);
+            }
 
         detector->drawDetections(detections, objects);
+            __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn5");
 
         movings_img = cv::Mat::zeros(imgSt.image.rows, imgSt.image.cols, CV_8UC3);
-    }
+            __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn6");
+
+        }
 
     camToMap(objects, imgSt);
 
-    associate(objectPoses);
+    associate(objects);
+    __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn7");
 
     return true;
 }
@@ -371,9 +383,10 @@ bool Scanner::calcFov(std::vector<Object> &objects)
         return false;
 
     ImuSet imuSt;
-    if (!logger->getImuSet(imuSt)) {
+    if (!logger->getImuSet(imuSt) || abs(imuSt.time-lastFovTime)<fovDelay) {
         return false;
     }
+    lastFovTime = imuSt.time;
 
     std::vector<bool> sps;
     int w, h;
@@ -392,6 +405,8 @@ bool Scanner::calcFov(std::vector<Object> &objects)
 
     imageToMap(imuSt.roll, imuSt.pitch, imuSt.azimuth, imuSt.lat, imuSt.lng, imuSt.alt, objects);
 
+    fovPoses.clear();
+    fovPoses = objects;
 
     std::vector<Object> swept_area;
 //    TODO: Uncomment this after fixing sweeper to match "Object" structure:

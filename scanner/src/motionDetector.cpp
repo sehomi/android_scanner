@@ -44,15 +44,22 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
 {
     if (old_frame.empty())
     {
+        __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md1");
+
         cv::cvtColor(imgSt.image, old_frame, cv::COLOR_RGB2GRAY);
         output = cv::Mat::zeros(imgSt.image.rows, imgSt.image.cols, CV_8UC3);
+        __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md2");
 
         if (!focalLengthSet){
+            __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md3");
+
             setFocalLength(imgSt.image.rows);
         }
+        __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md4");
 
         return;
     }
+    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md5");
 
     cv::Mat frame = imgSt.image.clone();
 
@@ -61,14 +68,21 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
 
     cv::calcOpticalFlowFarneback(old_frame, new_frame, flow,  0.5, 3, 15, 3, 5, 1.2, 0);
     cv::cvtColor(frame, old_frame, cv::COLOR_RGB2GRAY);
+    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md6");
 
     cv::Mat xNormalizationCoeff(old_frame.size(), CV_64FC1), yNormalizationCoeff(old_frame.size(), CV_64FC1);
     // TODO: Using aircraft velocity data, this function must be called once every time the camera is fixed to detect motions, not real-time!
+    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md7");
+
     calcNormCoeffMat(fov, imgSt.lat, imgSt.lng, imgSt.alt, xNormalizationCoeff, yNormalizationCoeff);
+    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md8");
 
     visualize(flow, xNormalizationCoeff, yNormalizationCoeff, output);
+    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md9");
 
     generateMovingRects(imgSt.image, output, objects);
+    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md10");
+
 }
 
 /** \brief Visualizes the metric speeds in a gray image
@@ -156,7 +170,7 @@ void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::v
     std::vector<cv::Vec4i> hierarchy;
     Mat otpt;
 
-    cv::threshold(output, otpt, minimumDetectionSpeed, 255, THRESH_BINARY);
+    cv::threshold(output, otpt, (minimumDetectionSpeed/objMaxSpeed)*255.0, 255, THRESH_BINARY);
     output.convertTo(output, CV_8U);
     otpt.convertTo(otpt, CV_8U);
     findContours(otpt, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_TC89_KCOS, cv::Point(0, 0) );
@@ -169,12 +183,33 @@ void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::v
         if (areaRatio < objectSizeUpLimit && areaRatio > objectSizeLowLimit)
         {
             Object obj;
+            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop ", "1");
             obj.box = cv::boundingRect(contour);
+            saturateBox(input.cols, input.rows, obj.box);
+            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop box.width", "%s", std::to_string(obj.box.width).c_str());
+            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop box.height", "%s", std::to_string(obj.box.height).c_str());
+            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop box.x", "%s", std::to_string(obj.box.x).c_str());
+            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop box.y", "%s", std::to_string(obj.box.y).c_str());
+            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop frame.rows", "%s", std::to_string(input.rows).c_str());
+            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop frame.cols", "%s", std::to_string(input.cols).c_str());
+
             obj.picture = input(obj.box);
+            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop ", "3");
             obj.type = Object::MOVING;
             objects.push_back(obj);
+            rectangle(output, obj.box, cv::Scalar(255,255,0), 3, 1);
+            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop ", "4");
+
         }
     }
+}
+
+void MotionDetector::saturateBox(int w, int h, cv::Rect &box)
+{
+    box.x = max(0, box.x);
+    box.y = max(0, box.y);
+    box.width = min(w-box.x-1, box.width);
+    box.height = min(h-box.y-1, box.height);
 }
 
 /** \brief Generates a speed map from a metric speed image
