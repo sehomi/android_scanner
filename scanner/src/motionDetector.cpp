@@ -40,9 +40,14 @@ void MotionDetector::setFocalLength(int w)
 * It is called with an image synchronized with GPS and IMU data previously. Besides, the camera FOV points
 * must be mapped into the online map. The visual motion detection method is based on dense optical flow
 */
-void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object> &objects, const std::vector<Object> &fov)
+void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object> &objects, const std::vector<Object> &fov, bool actv)
 {
-    if (old_frame.empty())
+    if (!actv) {
+        active = false;
+        output = cv::Mat::zeros(imgSt.image.rows, imgSt.image.cols, CV_8UC3);
+        return;
+    }
+    if (old_frame.empty() || !active)
     {
         __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md1");
 
@@ -57,6 +62,7 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
         }
         __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md4");
 
+        active = true;
         return;
     }
     __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md5");

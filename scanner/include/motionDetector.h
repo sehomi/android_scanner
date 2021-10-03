@@ -39,8 +39,8 @@
 class MotionDetector{
 
     cv::Mat old_frame;
-    float hva, fl = 0.0, minimumDetectionSpeed = 1.0, objectSizeUpLimit = 0.25, objectSizeLowLimit = 0.001;
-    bool focalLengthSet = false;
+    float hva, fl = 0.0, minimumDetectionSpeed = 0.5, objectSizeUpLimit = 0.25, objectSizeLowLimit = 0.001;
+    bool focalLengthSet = false, active = false;
     float objMaxSpeed = 4.0;
 
     void visualize(const cv::Mat&, const cv::Mat&, const cv::Mat&, cv::Mat&);
@@ -53,7 +53,7 @@ class MotionDetector{
 public:
 
     MotionDetector(float);
-    void detect(ImageSet&, cv::Mat&, std::vector<Object>&, const std::vector<Object>&);
+    void detect(ImageSet&, cv::Mat&, std::vector<Object>&, const std::vector<Object>&, bool);
 };
 
 #endif //ANDROID_SCANNER_MOTIONDETECTOR_H

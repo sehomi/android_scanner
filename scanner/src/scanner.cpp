@@ -104,7 +104,7 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, Mat &movings_img, std::
         initialInfoSet = true;
     }
 
-    motionDetector->detect(imgSt, movings_img, moving_objects, fovPoses);
+    motionDetector->detect(imgSt, movings_img, moving_objects, fovPoses, true);
 
     detector->detect(imgSt.image, objects);
     detector->drawDetections(detections_img, objects);
@@ -136,7 +136,7 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, Mat &movings_img, std::
 *
 * This function is called with sensor data received and synchronized previously
 */
-bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_img, int det_mode = 0, bool rgba = false)
+bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_img, int det_mode = 0, bool rgba = false, bool isFix = false)
 {
     if (logger->readFromLog)
         return false;
@@ -162,9 +162,8 @@ bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_i
     if (det_mode == 1)
     {
         __android_log_print(ANDROID_LOG_VERBOSE, "scan nn1 fov size:", "%s", std::to_string(fovPoses.size()).c_str());
-        motionDetector->detect(imgSt, movings_img, objects, fovPoses);
+        motionDetector->detect(imgSt, movings_img, objects, fovPoses, isFix);
         __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn2");
-
     }
     else
         {

@@ -97,7 +97,7 @@ public:
     MotionDetector *motionDetector;
 
     Scanner(std::string, std::string, DetectionMethod, int, float, int);
-    bool scan(std::vector<Object>&, Mat&, Mat&, int, bool);
+    bool scan(std::vector<Object>&, Mat&, Mat&, int, bool, bool);
     bool scan(ImageSet&, Mat&, Mat&, std::vector<Object>&, double);
     bool calcFov(std::vector<Object>&);
     bool calcFov(std::vector<Object>&, ImageSet&);

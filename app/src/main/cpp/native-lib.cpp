@@ -191,7 +191,7 @@ Java_com_example_android_1scanner_MainActivity_scan(JNIEnv* env, jobject p_this,
     bitmapToMat(env, detections, det, false);
     cvtColor(det, det, COLOR_RGBA2BGR);
 
-    if (!sc->scan(objects, det, movings, 0, true))
+    if (!sc->scan(objects, det, movings, 0, true, true))
         {
         putText(det, "SENSOR DATA NOT PROVIDED", cv::Point(50,200),cv::FONT_HERSHEY_DUPLEX,4,cv::Scalar(0,0,255),3,false);
     }
@@ -360,7 +360,7 @@ Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, j
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL
-Java_com_example_android_1scanner_AircraftActivity_scan(JNIEnv* env, jobject p_this, jobject detections, jobject movings_img, jint detMode)
+Java_com_example_android_1scanner_AircraftActivity_scan(JNIEnv* env, jobject p_this, jobject detections, jobject movings_img, jint detMode, jboolean isFix)
 {
 //    std::vector<Object> objects;
     objects.clear();
@@ -372,11 +372,11 @@ Java_com_example_android_1scanner_AircraftActivity_scan(JNIEnv* env, jobject p_t
     bitmapToMat(env, movings_img, movings, false);
     cvtColor(movings, movings, COLOR_RGBA2BGR);
 
-    if (!sc->scan(objects, det, movings, (int) detMode, false))
+    if (!sc->scan(objects, det, movings, (int) detMode, false, isFix))
     {
         putText(det, "SENSOR DATA NOT PROVIDED", cv::Point(50,200),cv::FONT_HERSHEY_DUPLEX,4,cv::Scalar(0,0,255),3,false);
         putText(movings, "SENSOR DATA NOT PROVIDED", cv::Point(50,200),cv::FONT_HERSHEY_DUPLEX,4,cv::Scalar(0,0,255),3,false);
-        __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1543");
+//        __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1543");
         return NULL;
     }
 

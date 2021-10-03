@@ -313,17 +313,21 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         if (r_group.getCheckedRadioButtonId() == R.id.objDetMode)
         {
             Log.e(TAG, "object detection set");
-            object_poses = scan(bitmap1, bitmap2, 0);
+            object_poses = scan(bitmap1, bitmap2, 0, false);
         }
         else {
-            Log.e(TAG, "motion detection set");
+            Log.e(TAG, "motion detection set 1: *-*- "+String.valueOf(abs(movementTime-img_time)));
+            Log.e(TAG, "motion detection set 2: *-*- "+String.valueOf(abs(motionDetectionDelay)));
+
             if ((!isMoving && !isRotating) && abs(movementTime-img_time)>motionDetectionDelay)
             {
-                object_poses = scan(bitmap1, bitmap2, 1);
+                object_poses = scan(bitmap1, bitmap2, 1, true);
+//                Log.e(TAG, "motion - stable");
             }
-            else
+            if (isMoving || isRotating)
             {
                 movementTime = img_time;
+//                Log.e(TAG, "motion - is moving");
             }
         }
         Log.e(TAG, "---- ter before getimages");
@@ -399,25 +403,6 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         r_group = (RadioGroup) findViewById(R.id.detectionMode);
     }
 
-//    public void onRgClick(View v)
-//    {
-//        switch (v.getId()) {
-//
-//            case R.id.btn_open: {
-//
-//                if (r_group.getCheckedRadioButtonId() == R.id.objDetMode){
-//                    detMode = "OBJECT_DETECTION";
-//                }
-//                else if (r_group.getCheckedRadioButtonId() == R.id.motDetMode){
-//                    detMode = "MOTION_DETECTION";
-//                }
-//                break;
-//            }
-//            default:
-//                break;
-//        }
-//    }
-
     private void initState() {
         FlightController flightController = CameraApplication.getFlightControllerInstance();
         Gimbal gimbal = CameraApplication.getGimbalInstance();
@@ -440,19 +425,18 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 //                    String fms = flightControllerState.getFlightModeString();
                     int sat_cnt = flightControllerState.getSatelliteCount();
                     int goHomeHeight = flightControllerState.getGoHomeHeight();
-//                    int
+//                    flightControllerState
 
                     float velX = flightControllerState.getVelocityX();
-                    float velY = flightControllerState.getVelocityX();
-                    float velZ = flightControllerState.getVelocityX();
+                    float velY = flightControllerState.getVelocityY();
+                    float velZ = flightControllerState.getVelocityZ();
                     isMoving = abs(velX)>velLimit || abs(velY)>velLimit || abs(velZ)>velLimit;
+                    Log.e(TAG, "velocity z: --- "+String.valueOf(velZ));
+                    Log.e(TAG, "velocity z: --- "+String.valueOf(velY));
                     double vel = sqrt((velX*velX)+(velY*velY)+(velZ*velZ));
                     LocationCoordinate2D hom_loc = flightControllerState.getHomeLocation();
                     double home_lat = hom_loc.getLatitude();
                     double home_lon = hom_loc.getLongitude();
-//                    hom_loc.
-//                    double
-//                    setAircraftVelocity(velX, velY, velZ);
 
                     double roll = attitude.roll;
                     double pitch = attitude.pitch;
@@ -460,20 +444,20 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     aircraftYaw = yaw;
 //                    double[][] fov = setOrientation(roll, pitch, yaw, curr_time);
 
+                    LocationCoordinate3D location = flightControllerState.getAircraftLocation();
+                    double lat = location.getLatitude();
+                    double lon = location.getLongitude();
+                    float alt = location.getAltitude();
+
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             binding.textView.setText("\nroll: "+String.valueOf(roll)+"\npitch: "+String.valueOf(pitch)+"\nyaw: "+String.valueOf(yaw));
                             binding.numSatState.setText(String.valueOf(sat_cnt));
-                            binding.heightState.setText(String.valueOf(goHomeHeight) + " m");
+                            binding.heightState.setText(String.valueOf(alt) + " m");
                             binding.speedState.setText(String.format("%.2f",vel) + " m/s");
                         }
                     });
-
-                    LocationCoordinate3D location = flightControllerState.getAircraftLocation();
-                    double lat = location.getLatitude();
-                    double lon = location.getLongitude();
-                    float alt = location.getAltitude();
 
                     setLocation(lat, lon, alt, curr_time);
 
@@ -841,7 +825,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
      * which is packaged with this application.
      */
     public native void createScanner(String assets, String logs, int log_mode, float hva, int method);
-    public native double[][] scan(Bitmap detections, Bitmap movings_img, int detMode);
+    public native double[][] scan(Bitmap detections, Bitmap movings_img, int detMode, boolean isFix);
     public native void setImage(Bitmap bitmap, double time);
     public native void setLocation(double lat, double lng, double alt, double time);
     public native void setUserLocation(double lat, double lng);
