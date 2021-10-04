@@ -65,6 +65,9 @@ struct Object
     cv::Point2f center = cv::Point(0,0);	/**< Center of the area related to the object in the image */
     bool show = true;							/**< The object's permission to be drawn on map */
     Location location;							/**< The object's corresponding location */
+    double xSpeed = 0.0;
+	double ySpeed = 0.0;
+	double direction = 0.0;
 };
 
 /**

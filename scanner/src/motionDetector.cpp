@@ -80,14 +80,15 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
     // TODO: Using aircraft velocity data, this function must be called once every time the camera is fixed to detect motions, not real-time!
     __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md7");
 
-    calcNormCoeffMat(fov, imgSt.lat, imgSt.lng, imgSt.alt, xNormalizationCoeff, yNormalizationCoeff);
+    double alpha;
+    calcNormCoeffMat(fov, imgSt.lat, imgSt.lng, imgSt.alt, xNormalizationCoeff, yNormalizationCoeff, alpha);
     __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md8");
 
-    visualize(flow, xNormalizationCoeff, yNormalizationCoeff, output);
+    visualize(flow, xNormalizationCoeff, yNormalizationCoeff, output, imgSt.image, objects, fov, alpha);
     __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md9");
 
-    generateMovingRects(imgSt.image, output, objects);
-    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md10");
+//    generateMovingRects(imgSt.image, output, objects);
+//    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md10");
 
 }
 
@@ -104,7 +105,7 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
 * This function is called with two generated normalization coefficient matrices for both horizontal and
 * vertical directions. In the output image, the brighter a pixel is, the faster the corresponding point moves
 */
-void MotionDetector::visualize(const cv::Mat &flow, const cv::Mat &xNormalizationCoeff, const cv::Mat &yNormalizationCoeff, cv::Mat &output)
+void MotionDetector::visualize(const cv::Mat &flow, const cv::Mat &xNormalizationCoeff, const cv::Mat &yNormalizationCoeff, cv::Mat &output, cv::Mat &image, std::vector<Object> &objects, const std::vector<Object> &fov, double alpha)
 {
     cv::Mat flow_parts[2], flow_parts_d[2], /*magnitude,*/ angle;
     cv::split(flow, flow_parts);
@@ -119,6 +120,34 @@ void MotionDetector::visualize(const cv::Mat &flow, const cv::Mat &xNormalizatio
     cv::cartToPolar(metricFlowX, metricFlowY, output, angle, true);
 
     metricNormalize(output);
+
+    generateMovingRects(image, output, objects, metricFlowX, metricFlowY, fov, alpha);
+
+//    calcObjectsVelocities(objects);
+}
+
+void MotionDetector::calcObjectsVelocities(Object &obj, const std::vector<Object> &fov, double alpha, double xSpeed, double ySpeed)
+{
+    alpha = abs(alpha);
+
+    double v1_1 = fov[2].location.x-fov[3].location.x, v1_2 = fov[2].location.y-fov[3].location.y;
+//    double v2_1 = 1.0, v2_2 = 1.0;
+
+    int w = old_frame.cols, h = old_frame.rows;
+//    for(auto & obj : objs)
+//    {
+    double beta = (-2*alpha*obj.center.x/w)+alpha, vx, vy;
+    obj.xSpeed = xSpeed + sin(beta)*ySpeed;
+    obj.ySpeed = ySpeed*cos(beta);
+    obj.direction = calcTwoLinesAngle(obj.xSpeed, obj.ySpeed, v1_1, v1_2) - PI/2;
+
+//    }
+}
+
+double MotionDetector::calcTwoLinesAngle(double v1_1, double v1_2, double v2_1, double v2_2)
+{
+    double v1dotv2 = v1_1*v2_1 + v1_2*v2_2;
+    return acos(v1dotv2/(sqrt(pow(v1_1,2)+pow(v1_2,2))*sqrt(pow(v2_1,2)+pow(v2_2,2))));
 }
 
 /** \brief Calculates the the required coefficient to convert pixel speed into metric speed for each pixel
@@ -137,14 +166,15 @@ void MotionDetector::visualize(const cv::Mat &flow, const cv::Mat &xNormalizatio
 * calculates the normalization coefficient matrix, the matrix in which each pixel contains the required
 * value to multiply by the corresponding pixel speed, thus providing the metric speed of that point
 */
-void MotionDetector::calcNormCoeffMat(const std::vector<Object> &fov, double lat, double lng, double alt, cv::Mat &xNormalizationCoeff, cv::Mat &yNormalizationCoeff)
+void MotionDetector::calcNormCoeffMat(const std::vector<Object> &fov, double lat, double lng, double alt, cv::Mat &xNormalizationCoeff, cv::Mat &yNormalizationCoeff, double &alpha)
 {
     double x, y;
     LatLonToUTMXY(lat, lng, 0, x, y);
 
     double v1_1 = fov[0].location.x-fov[1].location.x, v1_2 = fov[0].location.y-fov[1].location.y, v2_1 = fov[2].location.x-fov[1].location.x, v2_2 = fov[2].location.y-fov[1].location.y;
-    double v1dotv2 = v1_1*v2_1 + v1_2*v2_2;
-    double alpha = (PI/2) - acos(v1dotv2/(sqrt(pow(v1_1,2)+pow(v1_2,2))*sqrt(pow(v2_1,2)+pow(v2_2,2))));
+    alpha = abs((PI/2) - calcTwoLinesAngle(v1_1, v1_2, v2_1, v2_2));
+    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector c alpha ", "%s", std::to_string(alpha).c_str());
+
     int rows = old_frame.rows, cols = old_frame.cols;
     for (int i=0; i<rows; i++) {
         double rowFirstX = fov[0].location.x + i*(fov[3].location.x - fov[0].location.x)/rows;
@@ -155,7 +185,7 @@ void MotionDetector::calcNormCoeffMat(const std::vector<Object> &fov, double lat
             double X = rowFirstX + j*(rowLastX - rowFirstX)/cols;
             double Y = rowFirstY + j*(rowLastY - rowFirstY)/cols;
             double h = sqrt(pow(((double)j-((double)cols/2)),2) + pow(((double)i-((double)rows/2)),2) + pow(fl,2));
-            double xCoeff = sqrt(pow(x-X, 1)+pow(y-Y, 2)+pow(alt,2))/h;
+            double xCoeff = sqrt(pow(x-X, 2)+pow(y-Y, 2)+pow(alt,2))/h;
             xNormalizationCoeff.at<double>(i,j) = xCoeff;
             yNormalizationCoeff.at<double>(i,j) = xCoeff/cos(((double)j/((double)cols/2))*alpha);
         }
@@ -168,9 +198,9 @@ void MotionDetector::calcNormCoeffMat(const std::vector<Object> &fov, double lat
 * \param [out]  output      The output image with highlighted moving objects within
 * \param [out]  objects     A list containing data for each detected moving object
 *
-* This function is called when the gray image of moving objects is generated.
+* This function is called when the gray image of moving objects is generated
 */
-void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::vector<Object> &objects)
+void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::vector<Object> &objects, const cv::Mat &mfx, const cv::Mat &mfy, const std::vector<Object> &fov, double alpha)
 {
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
@@ -189,23 +219,29 @@ void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::v
         if (areaRatio < objectSizeUpLimit && areaRatio > objectSizeLowLimit)
         {
             Object obj;
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop ", "1");
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop ", "1");
             obj.box = cv::boundingRect(contour);
             saturateBox(input.cols, input.rows, obj.box);
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop box.width", "%s", std::to_string(obj.box.width).c_str());
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop box.height", "%s", std::to_string(obj.box.height).c_str());
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop box.x", "%s", std::to_string(obj.box.x).c_str());
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop box.y", "%s", std::to_string(obj.box.y).c_str());
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop frame.rows", "%s", std::to_string(input.rows).c_str());
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop frame.cols", "%s", std::to_string(input.cols).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop box.width", "%s", std::to_string(obj.box.width).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop box.height", "%s", std::to_string(obj.box.height).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop box.x", "%s", std::to_string(obj.box.x).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop box.y", "%s", std::to_string(obj.box.y).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop frame.rows", "%s", std::to_string(input.rows).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop frame.cols", "%s", std::to_string(input.cols).c_str());
 
             obj.picture = input(obj.box);
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop ", "3");
+            double xSpeed = cv::mean(mfx(obj.box))[0];
+            double ySpeed = cv::mean(mfy(obj.box))[0];
+            calcObjectsVelocities(obj, fov, alpha, xSpeed, ySpeed);
+            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop frame.cols", "%s", std::to_string(obj.direction).c_str());
+
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop ", "3");
+//
+            obj.center = cv::Point((obj.box.x + obj.box.width/2),(obj.box.y + obj.box.height/2));
             obj.type = Object::MOVING;
             objects.push_back(obj);
             rectangle(output, obj.box, cv::Scalar(255,255,0), 3, 1);
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop ", "4");
-
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop ", "4");
         }
     }
 }

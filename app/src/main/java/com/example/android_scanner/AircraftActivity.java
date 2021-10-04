@@ -324,6 +324,9 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                 object_poses = scan(bitmap1, bitmap2, 1, true);
 //                Log.e(TAG, "motion - stable");
             }
+            else {
+                object_poses = scan(bitmap1, bitmap2, 1, false);
+            }
             if (isMoving || isRotating)
             {
                 movementTime = img_time;
@@ -736,22 +739,51 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                         }
                         else if (marker[3] == 4)
                         {
-                            Log.e(TAG, "---- ter 10");
-
-                            if (marker[5] == 0) continue;
+                            LatLng mov = new LatLng(marker[0], marker[1]);
+                            MarkerOptions locMarker = new MarkerOptions();
+                            locMarker.position(mov);
+//                            Log.e(TAG, "---- ter 4");
+//
+                            locMarker.anchor(0.5f,0.5f);
+                            locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.yellow_arrow));
+                            locMarker.rotation((float) (marker[7]+aircraftYaw));
+//                                            locMarker.title("Person");
+//                            Log.e(TAG, "---- ter 5");
+//
+                            Marker mm = googleMap.addMarker(locMarker);
+//                            Log.e(TAG, "---- ter 6");
+//
+                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "moving", marker[0], marker[1], marker[4]));
+//                            Log.e(TAG, "---- ter 7");
+//
                             if (marker[5] == 1)
                             {
-                                newMarkers.add(null);
+                                newMarkers.add(mm);
                             }
                             else if (marker[5] == 2)
                             {
+                                Log.e(TAG, "---- ter 8");
                                 int idx = (int)marker[6];
-//                                                AllMarkers.get(idx).remove();
-                                AllMarkers.set(idx, null);
+                                AllMarkers.get(idx).remove();
+                                AllMarkers.set(idx, mm);
+                                Log.e(TAG, "---- ter 9");
                             }
-                            Log.e(TAG, "---- ter 11");
+//                            Log.e(TAG, "---- ter 10");
+
+//                            if (marker[5] == 0) continue;
+//                            if (marker[5] == 1)
+//                            {
+//                                newMarkers.add(mm);
+//                            }
+//                            else if (marker[5] == 2)
+//                            {
+//                                int idx = (int)marker[6];
+//                                AllMarkers.get(idx).remove();
+//                                AllMarkers.set(idx, null);
+//                            }
+//                            Log.e(TAG, "---- ter 11");
                         }
-                        Log.e(TAG, "---- ter 12");
+//                        Log.e(TAG, "---- ter 12");
                     }
 
                     if (fovCall)
