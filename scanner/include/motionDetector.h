@@ -39,9 +39,9 @@
 class MotionDetector{
 
     cv::Mat old_frame;
-    float hva, fl = 0.0, minimumDetectionSpeed = 0.5, objectSizeUpLimit = 0.25, objectSizeLowLimit = 0.001;
+    float hva, fl = 0.0, minimumDetectionSpeed = 1.0, objectSizeUpLimit = 0.25, objectSizeLowLimit = 0.002;
     bool focalLengthSet = false, active = false;
-    float objMaxSpeed = 4.0;
+    float objMaxSpeed = 3.0;
 
     void visualize(const cv::Mat&, const cv::Mat&, const cv::Mat&, cv::Mat&, cv::Mat&, std::vector<Object>&, const std::vector<Object>&, double);
     void setFocalLength(int);

@@ -139,7 +139,7 @@ void MotionDetector::calcObjectsVelocities(Object &obj, const std::vector<Object
     double beta = (-2*alpha*obj.center.x/w)+alpha, vx, vy;
     obj.xSpeed = xSpeed + sin(beta)*ySpeed;
     obj.ySpeed = ySpeed*cos(beta);
-    obj.direction = calcTwoLinesAngle(obj.xSpeed, obj.ySpeed, v1_1, v1_2) - PI/2;
+    obj.direction = (calcTwoLinesAngle(obj.xSpeed, obj.ySpeed, v1_1, v1_2) - PI/2)*180/PI;
 
 //    }
 }
@@ -233,7 +233,7 @@ void MotionDetector::generateMovingRects(cv::Mat &input, cv::Mat &output, std::v
             double xSpeed = cv::mean(mfx(obj.box))[0];
             double ySpeed = cv::mean(mfy(obj.box))[0];
             calcObjectsVelocities(obj, fov, alpha, xSpeed, ySpeed);
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop frame.cols", "%s", std::to_string(obj.direction).c_str());
+            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector direction", "%s", std::to_string(obj.direction).c_str());
 
 //            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop ", "3");
 //

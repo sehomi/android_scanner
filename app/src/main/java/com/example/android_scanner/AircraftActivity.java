@@ -424,6 +424,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                         curr_time = ins.getEpochSecond() + (ins.getNano()/1e9);
                     }
 
+//                    flightControllerState.getAttitude()
                     Attitude attitude = flightControllerState.getAttitude();
 //                    String fms = flightControllerState.getFlightModeString();
                     int sat_cnt = flightControllerState.getSatelliteCount();
@@ -444,6 +445,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     double roll = attitude.roll;
                     double pitch = attitude.pitch;
                     double yaw = attitude.yaw;
+//                    Log.e(TAG, "rdf z: --- "+String.valueOf(yaw));
                     aircraftYaw = yaw;
 //                    double[][] fov = setOrientation(roll, pitch, yaw, curr_time);
 
@@ -739,6 +741,9 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                         }
                         else if (marker[3] == 4)
                         {
+                            if (marker[5] == 0)
+                                continue;
+
                             LatLng mov = new LatLng(marker[0], marker[1]);
                             MarkerOptions locMarker = new MarkerOptions();
                             locMarker.position(mov);

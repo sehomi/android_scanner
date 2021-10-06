@@ -409,9 +409,9 @@ bool Scanner::calcFov(std::vector<Object> &objects)
     fovPoses = objects;
 
     std::vector<Object> swept_area;
-//    TODO: Uncomment this after fixing sweeper to match "Object" structure:
+
     sweeper->update(objects, swept_area);
-//// Note: Add the swept_area to the fov objects vector like below. In the "putIntoArray" function, the objects will be recognized using object.type attribute
+
     objects.insert(objects.end(), swept_area.begin(), swept_area.end());
 
     return true;
