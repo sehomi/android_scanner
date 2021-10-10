@@ -45,7 +45,9 @@ public class ObjectInfoWindow extends LinearLayout implements GoogleMap.InfoWind
 
         InfoWindowData data = (InfoWindowData) marker.getTag();
 
-        imageView.setImageBitmap(data.img);
+        Bitmap btm = Bitmap.createScaledBitmap(data.img, 200, data.img.getHeight()*100/data.img.getWidth(), false);
+
+        imageView.setImageBitmap(btm);
         objTypeTxt.setText(data.type);
         latTxt.setText(String.format("%.7f",data.lat));
         lngTxt.setText(String.format("%.7f",data.lng));

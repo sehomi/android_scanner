@@ -127,6 +127,10 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
                 __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop frame.cols", "%s", std::to_string(frame.cols).c_str());
 
                 obj.picture = frame(obj.box);
+
+                cv::Rect rct = scaleRect(obj.box.x, obj.box.y, obj.box.width, obj.box.height, 2);
+                saturateBox(frame.cols, frame.rows, rct);
+                obj.picture = frame(rct);
                 __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop ", "3");
 
                 if (classIdPoint.x == 0)
@@ -140,6 +144,14 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
     }
 }
 
+cv::Rect Detector::scaleRect(int x, int y, int w, int h, float ratio)
+{
+    int new_w = w * ratio;
+    int new_h = h * ratio;
+    int new_x = x - (new_w-w)/2;
+    int new_y = y - (new_h-h)/2;
+    return cv::Rect(new_x, new_y, new_w, new_h);
+}
 
 void Detector::saturateBox(int w, int h, cv::Rect &box)
 {
@@ -195,7 +207,10 @@ void Detector::ssdPostProcess(cv::Mat& frame, cv::Mat &outs, std::vector<Object>
             __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop frame.rows", "%s", std::to_string(frame.rows).c_str());
             __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop frame.cols", "%s", std::to_string(frame.cols).c_str());
 
-            obj.picture = frame(obj.box);
+            cv::Rect rct = scaleRect(obj.box.x, obj.box.y, obj.box.width, obj.box.height, 2);
+            saturateBox(frame.cols, frame.rows, rct);
+            obj.picture = frame(rct);
+//            obj.picture = frame(obj.box);
             __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop ", "2");
 
             if (idx == 15)

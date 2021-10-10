@@ -440,7 +440,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         GroundLocation elev = new GroundLocation();
 
                         // TODO: action should be considered for markers
-                        double[][] fov = readLog(bitmap, processedBitmap, movingsBitmap, stamp, elev);
+                        double yawInDeg = 0.0;
+                        double[][] fov = readLog(bitmap, processedBitmap, movingsBitmap, stamp, elev, yawInDeg);
                         Bitmap[] objImages = getImages();
 
                         if (objImages != null)
@@ -490,7 +491,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.red_circle_icon));
 //                                            locMarker.title("Person");
                                             Marker mm = googleMap.addMarker(locMarker);
-                                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "person", fov[i][0], fov[i][1], fov[i][4]));
+//                                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "person", fov[i][0], fov[i][1], fov[i][4]));
+                                            mm.setTag(new InfoWindowData(objImages[i] , "person", fov[i][0], fov[i][1], fov[i][4]));
                                             if (fov[i][5] == 1)
                                             {
                                                 newMarkers.add(mm);
@@ -544,16 +546,30 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         {
                                             objCount++;
 
-                                            if (fov[i][5] == 0) continue;
+                                            if (fov[i][5] == 0)
+                                                continue;
+
+                                            LatLng mov = new LatLng(fov[i][0], fov[i][1]);
+                                            MarkerOptions locMarker = new MarkerOptions();
+                                            locMarker.position(mov);
+
+                                            locMarker.anchor(0.5f,0.5f);
+                                            locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.yellow_arrow));
+                                            locMarker.rotation((float) -(fov[i][7]) + (float) yawInDeg);
+//                                            Log.v(TAG, "mainactivity direction: "+String.valueOf(fov[i][7]));
+                                            Marker mm = googleMap.addMarker(locMarker);
+
+                                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "moving", fov[i][0], fov[i][1], fov[i][4]));
+
                                             if (fov[i][5] == 1)
                                             {
-                                                newMarkers.add(null);
+                                                newMarkers.add(mm);
                                             }
                                             else if (fov[i][5] == 2)
                                             {
                                                 int idx = (int)fov[i][6];
-//                                                AllMarkers.get(idx).remove();
-                                                AllMarkers.set(idx, null);
+                                                AllMarkers.get(idx).remove();
+                                                AllMarkers.set(idx, mm);
                                             }
                                         }
                                     }
@@ -627,7 +643,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public native void setLocation(double lat, double lng, double alt, double time);
 //    public native boolean setOrientation(double roll, double pitch, double azimuth, double time, Double[][] oa);
     public native double[][] setOrientation(double roll, double pitch, double azithmu, double time);
-    public native double[][] readLog(Bitmap bitmap, Bitmap processedBitmap, Bitmap movingsBitmap, double stamp, GroundLocation elev);
+    public native double[][] readLog(Bitmap bitmap, Bitmap processedBitmap, Bitmap movingsBitmap, double stamp, GroundLocation elev, double yaw);
     public native Bitmap[] getImages();
 
     @Override

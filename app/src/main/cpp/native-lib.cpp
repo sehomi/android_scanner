@@ -230,15 +230,18 @@ Java_com_example_android_1scanner_MainActivity_setOrientation(JNIEnv* env, jobje
     }
 }
 
-std::vector<Object> objects;
+//std::vector<Object> objects;
+std::vector<Object> fov_objects;
 
 extern "C" JNIEXPORT jobjectArray JNICALL
-Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_this, jobject bitmap, jobject processedBitmap, jobject movingsBitmap, jdouble stamp, jobject outElev)
+Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_this, jobject bitmap, jobject processedBitmap, jobject movingsBitmap, jdouble stamp, jobject outElev, jdouble yaw)
 {
     ImageSet imgSt;
     ImuSet imuSt;
     jobjectArray fov_poses_array = NULL;
-    std::vector<Object> fov_objects; objects.clear();
+    std::vector<Object> objects;
+    fov_objects.clear();
+//    objects.clear();
 
 //    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1");
     if (!sc->logger->getImageSetFromLogger(imgSt, imuSt))
@@ -249,6 +252,8 @@ Java_com_example_android_1scanner_MainActivity_readLog(JNIEnv* env, jobject p_th
 
     if ( !sc->scan(imgSt, dst, movings, objects, stamp) )
         return NULL;
+
+    yaw = imgSt.azimuth * 180 / PI;
 
     Mat src = imgSt.image.clone();
     cvtColor(src, src, COLOR_BGR2RGB);
@@ -280,18 +285,43 @@ extern "C" JNIEXPORT jobjectArray JNICALL
 {
 //    jobjectArray objImages;
 //    putIntoBitmapArray(env, object_poses, objImages);
+    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1541");
 
-    if (objects.size()==0) return NULL;
+    if (fov_objects.size()==0) return NULL;
 
     jclass cls = env->FindClass("android/graphics/Bitmap");
-    jobjectArray ret = env->NewObjectArray( objects.size(), cls, NULL);
+    jobjectArray ret = env->NewObjectArray( fov_objects.size(), cls, NULL);
+    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1543");
 
-    for (int i=0; i<objects.size(); i++){
+    for (int i=0; i<fov_objects.size(); i++){
         jobject bitmap;
-        createBitmap(env, objects.at(i).picture.cols, objects.at(i).picture.rows, bitmap);
-        matToBitmap(env, objects.at(i).picture, bitmap, false);
+//        createBitmap(env, fov_objects.at(i).picture.cols, fov_objects.at(i).picture.rows, bitmap);
+        __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1544");
+
+        if (!fov_objects.at(i).picture.empty())
+        {
+            __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1545");
+
+            createBitmap(env, fov_objects.at(i).picture.cols, fov_objects.at(i).picture.rows, bitmap);
+            matToBitmap(env, fov_objects.at(i).picture, bitmap, false);
+
+            __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1546");
+
+        }
+        else
+        {
+            __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1547");
+
+            createBitmap(env, 10, 10, bitmap);
+            matToBitmap(env, cv::Mat::zeros(10, 10, CV_8UC3), bitmap, false);
+            __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1548");
+
+        }
+        __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1549");
 
         env->SetObjectArrayElement(ret, i, bitmap);
+        __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1550");
+
     }
 
     return ret;
@@ -358,6 +388,8 @@ Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, j
     }
 
 }
+
+std::vector<Object> objects;
 
 extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_example_android_1scanner_AircraftActivity_scan(JNIEnv* env, jobject p_this, jobject detections, jobject movings_img, jint detMode, jboolean isFix)

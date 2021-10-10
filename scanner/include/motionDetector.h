@@ -46,11 +46,11 @@ class MotionDetector{
     void visualize(const cv::Mat&, const cv::Mat&, const cv::Mat&, cv::Mat&, cv::Mat&, std::vector<Object>&, const std::vector<Object>&, double);
     void setFocalLength(int);
     void calcNormCoeffMat(const std::vector<Object>&, double, double, double, cv::Mat&, cv::Mat&, double&);
-    void generateMovingRects(cv::Mat&, cv::Mat&, std::vector<Object>&, const cv::Mat&, const cv::Mat&, const std::vector<Object>&, double);
+    void generateMovingRects(cv::Mat&, cv::Mat&, std::vector<Object>&, const cv::Mat&, const cv::Mat&, const std::vector<Object>&, double, cv::Mat&);           //mm//
     void metricNormalize(Mat &);
     void saturateBox(int, int, cv::Rect&);
     void calcObjectsVelocities(Object&, const std::vector<Object>&, double, double, double);
-    double calcTwoLinesAngle(double, double, double, double);
+    double calcTwoVectorsAngle(double, double, double, double);
 
 public:
 

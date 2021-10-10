@@ -751,7 +751,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 //
                             locMarker.anchor(0.5f,0.5f);
                             locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.yellow_arrow));
-                            locMarker.rotation((float) (marker[7]+aircraftYaw));
+                            locMarker.rotation((float) (aircraftYaw - marker[7]));
 //                                            locMarker.title("Person");
 //                            Log.e(TAG, "---- ter 5");
 //
@@ -852,7 +852,6 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
             @Override
             public void run() {
                 Toast.makeText(getApplicationContext(), toastMsg, Toast.LENGTH_LONG).show();
-
             }
         });
     }

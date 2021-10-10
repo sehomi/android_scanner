@@ -32,7 +32,10 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 //    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_18_52_14/";
 //    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_18_59_38/";
 //    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_08_18_19_10_35/";
-    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_10_04_18_11_02/";
+//    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_10_04_18_11_02/";
+//    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_10_10_16_15_56/";
+//    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_10_10_16_19_25/";
+    std::string logFolder = "/storage/emulated/0/LogFolder/Folder/";
 
     if (log_mode == 0)
         logger = new Logger(logsDir, true, false, logFolder);

@@ -96,7 +96,6 @@ public:
     Detector(std::string, DetectionMethod, float, float);
     void detect(cv::Mat&, std::vector<Object>&);
 	void drawDetections(cv::Mat &, std::vector<Object> &);
-    void saturateBox(int, int, cv::Rect&);
 
 private:
 	cv::dnn::Net net;
@@ -110,6 +109,9 @@ private:
 	void yolov3PostProcess(cv::Mat&, const std::vector<cv::Mat> &, std::vector<Object> &);
 	void ssdPostProcess(cv::Mat&, cv::Mat &, std::vector<Object> &);
 	std::vector<cv::String> getOutputsNames(const cv::dnn::Net& net);
+	cv::Rect scaleRect(int, int, int, int, float);
+	void saturateBox(int, int, cv::Rect&);
+
 };
 
 #endif //ANDROID_SCANNER_DETECTOR_H
