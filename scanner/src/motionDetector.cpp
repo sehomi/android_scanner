@@ -49,23 +49,23 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
     }
     if (old_frame.empty() || !active)
     {
-        __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md1");
+//        __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md1");
 
         cv::cvtColor(imgSt.image, old_frame, cv::COLOR_RGB2GRAY);
         output = cv::Mat::zeros(imgSt.image.rows, imgSt.image.cols, CV_8UC3);
-        __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md2");
+//        __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md2");
 
         if (!focalLengthSet){
-            __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md3");
+//            __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md3");
 
             setFocalLength(imgSt.image.rows);
         }
-        __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md4");
+//        __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md4");
 
         active = true;
         return;
     }
-    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md5");
+//    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md5");
 
     cv::Mat frame = imgSt.image.clone();
 
@@ -74,18 +74,18 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
 
     cv::calcOpticalFlowFarneback(old_frame, new_frame, flow,  0.5, 3, 15, 3, 5, 1.2, 0);
     cv::cvtColor(frame, old_frame, cv::COLOR_RGB2GRAY);
-    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md6");
+//    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md6");
 
     cv::Mat xNormalizationCoeff(old_frame.size(), CV_64FC1), yNormalizationCoeff(old_frame.size(), CV_64FC1);
     // TODO: Using aircraft velocity data, this function must be called once every time the camera is fixed to detect motions, not real-time!
-    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md7");
+//    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md7");
 
     double alpha;
     calcNormCoeffMat(fov, imgSt.lat, imgSt.lng, imgSt.alt, xNormalizationCoeff, yNormalizationCoeff, alpha);
-    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md8");
+//    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md8");
 
     visualize(flow, xNormalizationCoeff, yNormalizationCoeff, output, imgSt.image, objects, fov, alpha);
-    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md9");
+//    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md9");
 
 //    generateMovingRects(imgSt.image, output, objects);
 //    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md10");
@@ -108,7 +108,8 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
 void MotionDetector::visualize(const cv::Mat &flow,
                                const cv::Mat &xNormalizationCoeff,
                                const cv::Mat &yNormalizationCoeff,
-                               cv::Mat &otpt,                           //mm//
+//                               cv::Mat &otpt,                           //mm//
+                               cv::Mat &output,                           //mm//
                                cv::Mat &image,
                                std::vector<Object> &objects,
                                const std::vector<Object> &fov,
@@ -124,12 +125,13 @@ void MotionDetector::visualize(const cv::Mat &flow,
     metricFlowX = flow_parts_d[0].mul(xNormalizationCoeff);
     metricFlowY = flow_parts_d[1].mul(yNormalizationCoeff);
 
-    Mat output; //mm//
+//    Mat output; //mm//
     cv::cartToPolar(metricFlowX, metricFlowY, output, angle, true);
 
     metricNormalize(output);
 
-    generateMovingRects(image, output, objects, metricFlowX, metricFlowY, fov, alpha, otpt);    //mm//
+//    generateMovingRects(image, output, objects, metricFlowX, metricFlowY, fov, alpha, otpt);    //mm//
+    generateMovingRects(image, output, objects, metricFlowX, metricFlowY, fov, alpha);    //mm//
 
 //    calcObjectsVelocities(objects);
 }
@@ -138,31 +140,34 @@ void MotionDetector::calcObjectsVelocities(Object &obj, const std::vector<Object
 {
     alpha = abs(alpha);
 
-    double v1_1 = fov[2].location.x-fov[3].location.x, v1_2 = fov[2].location.y-fov[3].location.y;
-//    double v2_1 = 1.0, v2_2 = 1.0;
+//    double v1_1 = fov[2].location.x-fov[3].location.x, v1_2 = fov[2].location.y-fov[3].location.y;
+    double v1_1 = 1.0, v1_2 = 0.0;
 
     int w = old_frame.cols;//, h = old_frame.rows;
 //    for(auto & obj : objs)
 //    {
     double beta = (-2*alpha*obj.center.x/w) + alpha;//, vx, vy;
-    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector x", "%s", std::to_string(obj.center.x).c_str());
-    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector al", "%s", std::to_string(alpha).c_str());
-    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector w", "%s", std::to_string(w).c_str());
-    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector beta", "%s", std::to_string(beta).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector x", "%s", std::to_string(obj.center.x).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector al", "%s", std::to_string(alpha).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector w", "%s", std::to_string(w).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector beta", "%s", std::to_string(beta).c_str());
 
     obj.xSpeed = xSpeed + sin(beta)*ySpeed;
     obj.ySpeed = ySpeed*cos(beta);
-    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector obj.ySpeed", "%s", std::to_string(obj.ySpeed).c_str());
-    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector obj.xSpeed", "%s", std::to_string(obj.xSpeed).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector obj.ySpeed", "%s", std::to_string(obj.ySpeed).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector obj.xSpeed", "%s", std::to_string(obj.xSpeed).c_str());
 
-    obj.direction = (calcTwoVectorsAngle(obj.xSpeed, obj.ySpeed, v1_1, v1_2) - PI/2)*180/PI;
+    obj.direction = (calcTwoVectorsAngle(obj.xSpeed, obj.ySpeed, v1_1, v1_2) + PI/2)*180/PI;
 
 }
 
 double MotionDetector::calcTwoVectorsAngle(double v1_1, double v1_2, double v2_1, double v2_2)
 {
     double v1dotv2 = v1_1*v2_1 + v1_2*v2_2;
-    return acos(v1dotv2/(sqrt(pow(v1_1,2)+pow(v1_2,2))*sqrt(pow(v2_1,2)+pow(v2_2,2))));
+    double dir = acos(v1dotv2/(sqrt(pow(v1_1,2)+pow(v1_2,2))*sqrt(pow(v2_1,2)+pow(v2_2,2))));
+    if (v1_2 < 0)
+        dir = -dir;
+    return dir;
 }
 
 /** \brief Calculates the the required coefficient to convert pixel speed into metric speed for each pixel
@@ -187,8 +192,8 @@ void MotionDetector::calcNormCoeffMat(const std::vector<Object> &fov, double lat
     LatLonToUTMXY(lat, lng, 0, x, y);
 
     double v1_1 = fov[0].location.x-fov[1].location.x, v1_2 = fov[0].location.y-fov[1].location.y, v2_1 = fov[2].location.x-fov[1].location.x, v2_2 = fov[2].location.y-fov[1].location.y;
-    alpha = abs((PI/2) - calcTwoVectorsAngle(v1_1, v1_2, v2_1, v2_2));
-    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector c alpha ", "%s", std::to_string(alpha).c_str());
+    alpha = (PI/2) - abs(calcTwoVectorsAngle(v1_1, v1_2, v2_1, v2_2));
+//    __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector c alpha ", "%s", std::to_string(alpha).c_str());
 
     int rows = old_frame.rows, cols = old_frame.cols;
     for (int i=0; i<rows; i++) {
@@ -221,12 +226,12 @@ void MotionDetector::generateMovingRects(cv::Mat &input,
                                          const cv::Mat &mfx,
                                          const cv::Mat &mfy,
                                          const std::vector<Object> &fov,
-                                         double alpha,
-                                         cv::Mat & otpt)                //mm//
+                                         double alpha)
+//                                         cv::Mat & otpt)                //mm//
 {
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
-//    Mat otpt;                                                     //mm//
+    Mat otpt;                                                     //mm//
 
     cv::threshold(output, otpt, (minimumDetectionSpeed/objMaxSpeed)*255.0, 255, THRESH_BINARY);
     output.convertTo(output, CV_8U);
@@ -251,23 +256,35 @@ void MotionDetector::generateMovingRects(cv::Mat &input,
 //            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop frame.rows", "%s", std::to_string(input.rows).c_str());
 //            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop frame.cols", "%s", std::to_string(input.cols).c_str());
 
-            obj.picture = input(obj.box);
+            cv::Rect rct = scaleRect(obj.box.x, obj.box.y, obj.box.width, obj.box.height, 1.5);
+            saturateBox(input.cols, input.rows, rct);
+            obj.picture = input(rct);
+//            obj.picture = input(obj.box);
             obj.center = cv::Point((obj.box.x + obj.box.width/2),(obj.box.y + obj.box.height/2));
 
             double xSpeed = cv::mean(mfx(obj.box))[0];
             double ySpeed = cv::mean(mfy(obj.box))[0];
             calcObjectsVelocities(obj, fov, alpha, xSpeed, ySpeed);
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector direction", "%s", std::to_string(obj.direction).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector direction", "%s", std::to_string(obj.direction).c_str());
 
 //            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop ", "3");
 //
             obj.type = Object::MOVING;
             objects.push_back(obj);
             rectangle(output, obj.box, cv::Scalar(255,255,0), 3, 1);
-            rectangle(otpt, obj.box, cv::Scalar(255,255,0), 3, 1);                  //mm//
+//            rectangle(otpt, obj.box, cv::Scalar(255,255,0), 3, 1);                  //mm//
 //            __android_log_print(ANDROID_LOG_VERBOSE, "--- motion detector crop ", "4");
         }
     }
+}
+
+cv::Rect MotionDetector::scaleRect(int x, int y, int w, int h, float ratio)
+{
+    int new_w = w * ratio;
+    int new_h = h * ratio;
+    int new_x = x - (new_w-w)/2;
+    int new_y = y - (new_h-h)/2;
+    return cv::Rect(new_x, new_y, new_w, new_h);
 }
 
 void MotionDetector::saturateBox(int w, int h, cv::Rect &box)

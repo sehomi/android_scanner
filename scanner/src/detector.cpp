@@ -115,30 +115,30 @@ void Detector::yolov3PostProcess(cv::Mat& frame, const std::vector<cv::Mat>& out
 
                 confidences.push_back((float)cnf);
                 Object obj;
-                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop 1", "");
+//                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop 1", "");
 
                 obj.box = cv::Rect(left, top, width, height);
                 saturateBox(frame.cols, frame.rows, obj.box);
-                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop box.width", "%s", std::to_string(obj.box.width).c_str());
-                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop box.height", "%s", std::to_string(obj.box.height).c_str());
-                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop box.x", "%s", std::to_string(obj.box.x).c_str());
-                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop box.y", "%s", std::to_string(obj.box.y).c_str());
-                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop frame.rows", "%s", std::to_string(frame.rows).c_str());
-                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop frame.cols", "%s", std::to_string(frame.cols).c_str());
+//                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop box.width", "%s", std::to_string(obj.box.width).c_str());
+//                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop box.height", "%s", std::to_string(obj.box.height).c_str());
+//                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop box.x", "%s", std::to_string(obj.box.x).c_str());
+//                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop box.y", "%s", std::to_string(obj.box.y).c_str());
+//                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop frame.rows", "%s", std::to_string(frame.rows).c_str());
+//                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop frame.cols", "%s", std::to_string(frame.cols).c_str());
 
-                obj.picture = frame(obj.box);
+//                obj.picture = frame(obj.box);
 
                 cv::Rect rct = scaleRect(obj.box.x, obj.box.y, obj.box.width, obj.box.height, 2);
                 saturateBox(frame.cols, frame.rows, rct);
                 obj.picture = frame(rct);
-                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop ", "3");
+//                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop ", "3");
 
                 if (classIdPoint.x == 0)
                     obj.type = Object::PERSON;
                 else
                     obj.type = Object::CAR;
                 objects.push_back(obj);
-                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop ", "4");
+//                __android_log_print(ANDROID_LOG_VERBOSE, "--- yolo detector crop ", "4");
             }
         }
     }
@@ -199,26 +199,26 @@ void Detector::ssdPostProcess(cv::Mat& frame, cv::Mat &outs, std::vector<Object>
             Object obj;
             obj.box = box;
             saturateBox(frame.cols, frame.rows, obj.box);
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop ", "1");
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop box.width", "%s", std::to_string(obj.box.width).c_str());
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop box.height", "%s", std::to_string(obj.box.height).c_str());
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop box.x", "%s", std::to_string(obj.box.x).c_str());
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop box.y", "%s", std::to_string(obj.box.y).c_str());
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop frame.rows", "%s", std::to_string(frame.rows).c_str());
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop frame.cols", "%s", std::to_string(frame.cols).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop ", "1");
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop box.width", "%s", std::to_string(obj.box.width).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop box.height", "%s", std::to_string(obj.box.height).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop box.x", "%s", std::to_string(obj.box.x).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop box.y", "%s", std::to_string(obj.box.y).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop frame.rows", "%s", std::to_string(frame.rows).c_str());
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop frame.cols", "%s", std::to_string(frame.cols).c_str());
 
             cv::Rect rct = scaleRect(obj.box.x, obj.box.y, obj.box.width, obj.box.height, 2);
             saturateBox(frame.cols, frame.rows, rct);
             obj.picture = frame(rct);
 //            obj.picture = frame(obj.box);
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop ", "2");
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop ", "2");
 
             if (idx == 15)
                 obj.type = Object::PERSON;
             else
                 obj.type = Object::CAR;
             objects.push_back(obj);
-            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop ", "3");
+//            __android_log_print(ANDROID_LOG_VERBOSE, "--- ssd detector crop ", "3");
 
         }
     }

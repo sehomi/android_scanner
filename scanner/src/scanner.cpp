@@ -35,7 +35,8 @@ Scanner::Scanner(std::string assetsDir, std::string logsDir, DetectionMethod dm,
 //    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_10_04_18_11_02/";
 //    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_10_10_16_15_56/";
 //    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_10_10_16_19_25/";
-    std::string logFolder = "/storage/emulated/0/LogFolder/Folder/";
+    std::string logFolder = "/storage/emulated/0/LogFolder/log_2021_10_11_15_38_15/";
+//    std::string logFolder = "/storage/emulated/0/LogFolder/Folder/";
 
     if (log_mode == 0)
         logger = new Logger(logsDir, true, false, logFolder);
@@ -88,7 +89,7 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, Mat &movings_img, std::
         double diff1 = stamp - lastProcessStamp;
         double diff2 = imgSt.time - lastProcessImgSetStamp;
 
-        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "diff %f %f %f %f", (float)diff1, (float)diff2, (float)stamp, (float)imgSt.time);
+//        __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "diff %f %f %f %f", (float)diff1, (float)diff2, (float)stamp, (float)imgSt.time);
 
         if (diff2 < diff1)
             return false;
@@ -110,8 +111,8 @@ bool Scanner::scan(ImageSet &imgSt, Mat &detections_img, Mat &movings_img, std::
 
     motionDetector->detect(imgSt, movings_img, moving_objects, fovPoses, true);
 
-    detector->detect(imgSt.image, objects);
-    detector->drawDetections(detections_img, objects);
+//    detector->detect(imgSt.image, objects);
+//    detector->drawDetections(detections_img, objects);
 
     objects.insert(objects.end(), moving_objects.begin(), moving_objects.end());
     camToMap(objects, imgSt);
@@ -145,13 +146,13 @@ bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_i
     if (logger->readFromLog)
         return false;
 
-    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner scanner mode ", "%s", std::to_string(det_mode).c_str());
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner scanner mode ", "%s", std::to_string(det_mode).c_str());
 
     ImageSet imgSt;
 
     if (!logger->getImageSet(imgSt))
     {
-        __android_log_print(ANDROID_LOG_ERROR, "android_scanner", "Logger did not provide image set for scanner");
+//        __android_log_print(ANDROID_LOG_ERROR, "android_scanner", "Logger did not provide image set for scanner");
         return false;
     }
 
@@ -165,13 +166,13 @@ bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_i
 
     if (det_mode == 1)
     {
-        __android_log_print(ANDROID_LOG_VERBOSE, "scan nn1 fov size:", "%s", std::to_string(fovPoses.size()).c_str());
+//        __android_log_print(ANDROID_LOG_VERBOSE, "scan nn1 fov size:", "%s", std::to_string(fovPoses.size()).c_str());
         motionDetector->detect(imgSt, movings_img, objects, fovPoses, isFix);
-        __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn2");
+//        __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn2");
     }
     else
         {
-            __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn3");
+//            __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn3");
             if (rgba) {
             Mat img;
             cvtColor(imgSt.image, img, COLOR_RGBA2BGR);
@@ -179,22 +180,22 @@ bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_i
             detector->detect(img, objects);
         }
         else {
-                __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn4");
+//                __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn4");
                 detector->detect(imgSt.image, objects);
             }
 
         detector->drawDetections(detections, objects);
-            __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn5");
+//            __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn5");
 
         movings_img = cv::Mat::zeros(imgSt.image.rows, imgSt.image.cols, CV_8UC3);
-            __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn6");
+//            __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn6");
 
         }
 
     camToMap(objects, imgSt);
 
     associate(objects);
-    __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn7");
+//    __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn7");
 
     return true;
 }
@@ -487,7 +488,7 @@ bool Scanner::elevDiff(double newLat, double newLon, double &diff)
     double newElev = (double) grid->height((float)newLon,(float)newLat);
     double initElev = (double) grid->height((float)firstLocation.lng,(float)firstLocation.lat);
 
-    __android_log_print(ANDROID_LOG_VERBOSE, "imageToMap", " %f %f %f %f %f %f", (float)newLon,(float)newLat, (float)firstLocation.lng,(float)firstLocation.lat, (float)newElev, (float)initElev );
+//    __android_log_print(ANDROID_LOG_VERBOSE, "imageToMap", " %f %f %f %f %f %f", (float)newLon,(float)newLat, (float)firstLocation.lng,(float)firstLocation.lat, (float)newElev, (float)initElev );
 
     if (newElev == -32768 || initElev == -32768) {
         diff = 0;

@@ -123,16 +123,18 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     double img_time = 0.0;
     double motionDetectionDelay = 1.0;
 
+    Bitmap[] objImages = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.v(TAG, "-------///1");
+//        Log.v(TAG, "-------///1");
         super.onCreate(savedInstanceState);
-        Log.v(TAG, "-------///2");
+//        Log.v(TAG, "-------///2");
         binding = ActivityAircraftBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         initUI();
-        Log.v(TAG, "-------///3");
+//        Log.v(TAG, "-------///3");
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -147,7 +149,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
         srcBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.mountain);
         dstBitmap = srcBitmap.copy(srcBitmap.getConfig(), true);
-        Log.v(TAG, "-------///4");
+//        Log.v(TAG, "-------///4");
         createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getIntExtra("Log Mode", 2), (float) 66.0, getIntent().getIntExtra("Algorithm", 0));
 
         // Example of a call to a native method
@@ -168,7 +170,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         if (binding.cameraPreview != null) {
             binding.cameraPreview.setSurfaceTextureListener(this);
         }
-        Log.v(TAG, "-------///5");
+//        Log.v(TAG, "-------///5");
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         LocationListener locationListener = new MyLocationListener();
 
@@ -252,9 +254,9 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                 Instant ins = Instant.now() ;
             }
             String longitude = "Longitude: " + loc.getLongitude();
-            Log.v(TAG, longitude);
+//            Log.v(TAG, longitude);
             String latitude = "Latitude: " + loc.getLatitude();
-            Log.v(TAG, latitude);
+//            Log.v(TAG, latitude);
 
             String s = longitude + "\n" + latitude ;
 
@@ -312,12 +314,12 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         double[][] object_poses = null;
         if (r_group.getCheckedRadioButtonId() == R.id.objDetMode)
         {
-            Log.e(TAG, "object detection set");
+//            Log.e(TAG, "object detection set");
             object_poses = scan(bitmap1, bitmap2, 0, false);
         }
         else {
-            Log.e(TAG, "motion detection set 1: *-*- "+String.valueOf(abs(movementTime-img_time)));
-            Log.e(TAG, "motion detection set 2: *-*- "+String.valueOf(abs(motionDetectionDelay)));
+//            Log.e(TAG, "motion detection set 1: *-*- "+String.valueOf(abs(movementTime-img_time)));
+//            Log.e(TAG, "motion detection set 2: *-*- "+String.valueOf(abs(motionDetectionDelay)));
 
             if ((!isMoving && !isRotating) && abs(movementTime-img_time)>motionDetectionDelay)
             {
@@ -333,9 +335,9 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 //                Log.e(TAG, "motion - is moving");
             }
         }
-        Log.e(TAG, "---- ter before getimages");
-//        Bitmap[] objImages = getImages();
-        Log.e(TAG, "---- ter before visualize obj call");
+//        Log.e(TAG, "---- ter before getimages");
+        objImages = getImages();
+//        Log.e(TAG, "---- ter before visualize obj call");
         visualize(object_poses, bitmap2, bitmap1, false);
 
         this.runOnUiThread(new Runnable() {
@@ -435,8 +437,8 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     float velY = flightControllerState.getVelocityY();
                     float velZ = flightControllerState.getVelocityZ();
                     isMoving = abs(velX)>velLimit || abs(velY)>velLimit || abs(velZ)>velLimit;
-                    Log.e(TAG, "velocity z: --- "+String.valueOf(velZ));
-                    Log.e(TAG, "velocity z: --- "+String.valueOf(velY));
+//                    Log.e(TAG, "velocity z: --- "+String.valueOf(velZ));
+//                    Log.e(TAG, "velocity z: --- "+String.valueOf(velY));
                     double vel = sqrt((velX*velX)+(velY*velY)+(velZ*velZ));
                     LocationCoordinate2D hom_loc = flightControllerState.getHomeLocation();
                     double home_lat = hom_loc.getLatitude();
@@ -551,7 +553,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     gyaw_old = gyaw;
 
 
-                    Log.e(TAG, "---- ter before visualize fov call");
+//                    Log.e(TAG, "---- ter before visualize fov call");
                     visualize(fov, null, null, true);
 //                    Log.e(TAG, "onResume");
                     runOnUiThread(new Runnable() {
@@ -634,11 +636,11 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                 if (!fovCall) {
                     binding.motionImageView.setImageBitmap(movingsBitmap);
                     binding.imageView2.setImageBitmap(processedBitmap);
-                    Log.v(TAG, "vis -- obj call");
+//                    Log.v(TAG, "vis -- obj call");
                 }
                 else
                 {
-                    Log.v(TAG, "vis -- fov call");
+//                    Log.v(TAG, "vis -- fov call");
                 }
 
                 if (markers != null && googleMap != null) {
@@ -660,39 +662,41 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 //                        }
 //                        AllMarkers.clear();
 //                    }
-                    Log.e(TAG, "---- ter 1.5");
+//                    Log.e(TAG, "---- ter 1.5");
 
                     PolygonOptions fov_polygon_opt = new PolygonOptions();
                     PolygonOptions sweep_polygon_opt = new PolygonOptions();
 
                     List<Marker> newMarkers = new ArrayList<Marker>();
-                    Log.e(TAG, "---- ter 1.75");
+//                    Log.e(TAG, "---- ter 1.75");
 
+                    int i = -1;
                     for (double[] marker : markers) {
-
+                        i += 1;
                         if (marker[3] == 0)
                         {
-                            Log.e(TAG, "---- ter 2");
+//                            Log.e(TAG, "---- ter 2");
 
                             if (marker[5] == 0) {
-                                Log.e(TAG, "---- ter 3");
+//                                Log.e(TAG, "---- ter 3");
                                 continue;
                             }
                             LatLng per = new LatLng(marker[0], marker[1]);
                             MarkerOptions locMarker = new MarkerOptions();
                             locMarker.position(per);
-                            Log.e(TAG, "---- ter 4");
+//                            Log.e(TAG, "---- ter 4");
 
                             locMarker.anchor(0.5f,0.5f);
                             locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.red_circle_icon));
 //                                            locMarker.title("Person");
-                            Log.e(TAG, "---- ter 5");
+//                            Log.e(TAG, "---- ter 5");
 
                             Marker mm = googleMap.addMarker(locMarker);
-                            Log.e(TAG, "---- ter 6");
+//                            Log.e(TAG, "---- ter 6");
 
-                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "person", marker[0], marker[1], marker[4]));
-                            Log.e(TAG, "---- ter 7");
+//                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "person", marker[0], marker[1], marker[4]));
+                            mm.setTag(new InfoWindowData(objImages[i] , "person", marker[0], marker[1], marker[4]));
+//                            Log.e(TAG, "---- ter 7");
 
                             if (marker[5] == 1)
                             {
@@ -700,11 +704,11 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                             }
                             else if (marker[5] == 2)
                             {
-                                Log.e(TAG, "---- ter 8");
+//                                Log.e(TAG, "---- ter 8");
                                 int idx = (int)marker[6];
                                 AllMarkers.get(idx).remove();
                                 AllMarkers.set(idx, mm);
-                                Log.e(TAG, "---- ter 9");
+//                                Log.e(TAG, "---- ter 9");
                             }
                         }
                         else if (marker[3] == 1)
@@ -718,7 +722,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                             locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.brown_rect_icon));
 //                                            locMarker.title("Person");
                             Marker mm = googleMap.addMarker(locMarker);
-                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "car", marker[0], marker[1], marker[4]));
+                            mm.setTag(new InfoWindowData(objImages[i] , "car", marker[0], marker[1], marker[4]));
 
                             if (marker[5] == 1)
                             {
@@ -751,14 +755,14 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 //
                             locMarker.anchor(0.5f,0.5f);
                             locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.yellow_arrow));
-                            locMarker.rotation((float) (aircraftYaw - marker[7]));
+                            locMarker.rotation((float) (aircraftYaw + marker[7]));
 //                                            locMarker.title("Person");
 //                            Log.e(TAG, "---- ter 5");
 //
                             Marker mm = googleMap.addMarker(locMarker);
 //                            Log.e(TAG, "---- ter 6");
 //
-                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "moving", marker[0], marker[1], marker[4]));
+                            mm.setTag(new InfoWindowData(objImages[i] , "moving", marker[0], marker[1], marker[4]));
 //                            Log.e(TAG, "---- ter 7");
 //
                             if (marker[5] == 1)
@@ -767,11 +771,11 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                             }
                             else if (marker[5] == 2)
                             {
-                                Log.e(TAG, "---- ter 8");
+//                                Log.e(TAG, "---- ter 8");
                                 int idx = (int)marker[6];
                                 AllMarkers.get(idx).remove();
                                 AllMarkers.set(idx, mm);
-                                Log.e(TAG, "---- ter 9");
+//                                Log.e(TAG, "---- ter 9");
                             }
 //                            Log.e(TAG, "---- ter 10");
 
@@ -793,7 +797,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
                     if (fovCall)
                     {
-                        Log.e(TAG, "---- ter 15");
+//                        Log.e(TAG, "---- ter 15");
                         fov_polygon_opt.add(new LatLng(markers[0][0], markers[0][1]));
 //                        sweep_polygon_opt.add(new LatLng(markers[4][0], markers[4][1]));
 
@@ -809,13 +813,13 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                         if (fov_polygon_opt.getPoints().size() > 0) {
                             fov_polygon = googleMap.addPolygon(fov_polygon_opt);
                         }
-                        Log.e(TAG, "---- ter 16");
+//                        Log.e(TAG, "---- ter 16");
                     }
                     else
                     {
-                        Log.e(TAG, "---- ter 13");
+//                        Log.e(TAG, "---- ter 13");
                         AllMarkers.addAll(newMarkers);
-                        Log.e(TAG, "---- ter 14");
+//                        Log.e(TAG, "---- ter 14");
                     }
 
                 }

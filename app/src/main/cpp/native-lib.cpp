@@ -168,7 +168,7 @@ Java_com_example_android_1scanner_MainActivity_stringFromJNI(
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_android_1scanner_MainActivity_createScanner(JNIEnv* env, jobject p_this, jstring assets, jstring logs, jint log_mode, jint method, jfloat hva) {
 
-    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------111");
+//    __android_log_print(ANDROID_LOG_VERBOSE, "android_scanner", "---------111");
 
     jboolean isCopy;
     const char *convertedValue = (env)->GetStringUTFChars(assets, &isCopy);
@@ -285,42 +285,43 @@ extern "C" JNIEXPORT jobjectArray JNICALL
 {
 //    jobjectArray objImages;
 //    putIntoBitmapArray(env, object_poses, objImages);
-    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1541");
+//    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1541");
 
     if (fov_objects.size()==0) return NULL;
 
     jclass cls = env->FindClass("android/graphics/Bitmap");
     jobjectArray ret = env->NewObjectArray( fov_objects.size(), cls, NULL);
-    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1543");
+//    __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1543");
 
     for (int i=0; i<fov_objects.size(); i++){
         jobject bitmap;
 //        createBitmap(env, fov_objects.at(i).picture.cols, fov_objects.at(i).picture.rows, bitmap);
-        __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1544");
+//        __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1544");
 
         if (!fov_objects.at(i).picture.empty())
         {
-            __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1545");
+//            __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1545");
 
             createBitmap(env, fov_objects.at(i).picture.cols, fov_objects.at(i).picture.rows, bitmap);
+            cv::cvtColor(fov_objects.at(i).picture, fov_objects.at(i).picture, COLOR_RGB2BGR);
             matToBitmap(env, fov_objects.at(i).picture, bitmap, false);
 
-            __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1546");
+//            __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1546");
 
         }
         else
         {
-            __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1547");
+//            __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1547");
 
             createBitmap(env, 10, 10, bitmap);
             matToBitmap(env, cv::Mat::zeros(10, 10, CV_8UC3), bitmap, false);
-            __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1548");
+//            __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1548");
 
         }
-        __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1549");
+//        __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1549");
 
         env->SetObjectArrayElement(ret, i, bitmap);
-        __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1550");
+//        __android_log_print(ANDROID_LOG_VERBOSE, "outer", "1550");
 
     }
 
@@ -369,7 +370,7 @@ extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, jobject p_this, jdouble roll, jdouble pitch, jdouble azimuth, jdouble time, jobject outElev)
 {
     std::vector<Location> fov_poses, sweeped_area;
-    std::vector<Object> fov_objects;
+    std::vector<Object> fov_objects1;
     jobjectArray fov_poses_array = NULL;
 
     jclass clazz = env->GetObjectClass(outElev);
@@ -377,9 +378,9 @@ Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, j
     env->SetDoubleField(outElev, param1Field, sc->elev());
 
     //// fov_objects includes both fov points and swept area
-    if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_objects))
+    if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_objects1))
         {
-        fov_poses_array = putIntoArray(env, fov_objects);
+        fov_poses_array = putIntoArray(env, fov_objects1);
         return fov_poses_array;
     }
     else
@@ -434,8 +435,15 @@ Java_com_example_android_1scanner_AircraftActivity_getImages(JNIEnv* env, jobjec
 
     for (int i=0; i<objects.size(); i++){
         jobject bitmap;
+
+        if (!objects.at(i).picture.empty()){
         createBitmap(env, objects.at(i).picture.cols, objects.at(i).picture.rows, bitmap);
+        cv::cvtColor(objects.at(i).picture, objects.at(i).picture, COLOR_RGB2BGR);
         matToBitmap(env, objects.at(i).picture, bitmap, false);
+        } else {
+            createBitmap(env, 10, 10, bitmap);
+            matToBitmap(env, cv::Mat::zeros(10, 10, CV_8UC3), bitmap, false);
+        }
 
         env->SetObjectArrayElement(ret, i, bitmap);
     }
