@@ -61,7 +61,7 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
             setFocalLength(imgSt.image.rows);
         }
 //        __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md4");
-
+        old_time = imgSt.time;
         active = true;
         return;
     }
@@ -84,7 +84,8 @@ void MotionDetector::detect(ImageSet &imgSt, cv::Mat &output, std::vector<Object
     calcNormCoeffMat(fov, imgSt.lat, imgSt.lng, imgSt.alt, xNormalizationCoeff, yNormalizationCoeff, alpha);
 //    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md8");
 
-    visualize(flow, xNormalizationCoeff, yNormalizationCoeff, output, imgSt.image, objects, fov, alpha);
+    visualize(flow, xNormalizationCoeff, yNormalizationCoeff, output, imgSt, objects, fov, alpha);
+    old_time = imgSt.time;
 //    __android_log_print(ANDROID_LOG_VERBOSE, "md ", "md9");
 
 //    generateMovingRects(imgSt.image, output, objects);
@@ -110,7 +111,7 @@ void MotionDetector::visualize(const cv::Mat &flow,
                                const cv::Mat &yNormalizationCoeff,
 //                               cv::Mat &otpt,                           //mm//
                                cv::Mat &output,                           //mm//
-                               cv::Mat &image,
+                               ImageSet &image,
                                std::vector<Object> &objects,
                                const std::vector<Object> &fov,
                                double alpha)
@@ -122,8 +123,8 @@ void MotionDetector::visualize(const cv::Mat &flow,
 
     cv::Mat metricFlowX(old_frame.size(), CV_64FC1), metricFlowY(old_frame.size(), CV_64FC1);
 
-    metricFlowX = flow_parts_d[0].mul(xNormalizationCoeff);
-    metricFlowY = flow_parts_d[1].mul(yNormalizationCoeff);
+    metricFlowX = (flow_parts_d[0].mul(xNormalizationCoeff))/(image.time - old_time);
+    metricFlowY = (flow_parts_d[1].mul(yNormalizationCoeff))/(image.time - old_time);
 
 //    Mat output; //mm//
     cv::cartToPolar(metricFlowX, metricFlowY, output, angle, true);
@@ -131,7 +132,7 @@ void MotionDetector::visualize(const cv::Mat &flow,
     metricNormalize(output);
 
 //    generateMovingRects(image, output, objects, metricFlowX, metricFlowY, fov, alpha, otpt);    //mm//
-    generateMovingRects(image, output, objects, metricFlowX, metricFlowY, fov, alpha);    //mm//
+    generateMovingRects(image.image, output, objects, metricFlowX, metricFlowY, fov, alpha);    //mm//
 
 //    calcObjectsVelocities(objects);
 }

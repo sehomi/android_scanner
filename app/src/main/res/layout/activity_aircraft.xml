@@ -57,6 +57,7 @@
         android:layout_height="111dp"
         android:text="TextView"
         android:textColor="#FFFFFF"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -67,6 +68,7 @@
         android:layout_height="108dp"
         android:text="TextView"
         android:textColor="#FFFFFF"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@+id/map"
         app:layout_constraintTop_toBottomOf="@+id/camera_preview"
@@ -89,6 +91,7 @@
         android:layout_height="138dp"
         android:text="TextView"
         android:textColor="#FFFFFF"
+        android:visibility="invisible"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
@@ -96,6 +99,7 @@
         android:id="@+id/detectionMode"
         android:layout_width="164dp"
         android:layout_height="96dp"
+        android:background="#B3FFFFFF"
         android:checkedButton="@id/objDetMode"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -119,6 +123,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
+        android:background="#B3FFFFFF"
         android:text="TextView"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/motionImageView" />
@@ -129,6 +134,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
+        android:background="#B3FFFFFF"
         android:text="Elevation:"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -142,6 +148,7 @@
         android:layout_marginBottom="8dp"
         android:background="#FFFFFF"
         android:text="TextView"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/detectionMode" />
 

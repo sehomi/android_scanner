@@ -39,11 +39,12 @@
 class MotionDetector{
 
     cv::Mat old_frame;
-    float hva, fl = 0.0, minimumDetectionSpeed = 1.0, objectSizeUpLimit = 0.25, objectSizeLowLimit = 0.002;
+    float hva, fl = 0.0, minimumDetectionSpeed = 1.5, objectSizeUpLimit = 0.25, objectSizeLowLimit = 0.002;
     bool focalLengthSet = false, active = false;
     float objMaxSpeed = 3.0;
+    double old_time;
 
-    void visualize(const cv::Mat&, const cv::Mat&, const cv::Mat&, cv::Mat&, cv::Mat&, std::vector<Object>&, const std::vector<Object>&, double);
+    void visualize(const cv::Mat&, const cv::Mat&, const cv::Mat&, cv::Mat&, ImageSet&, std::vector<Object>&, const std::vector<Object>&, double);
     void setFocalLength(int);
     void calcNormCoeffMat(const std::vector<Object>&, double, double, double, cv::Mat&, cv::Mat&, double&);
 //    void generateMovingRects(cv::Mat&, cv::Mat&, std::vector<Object>&, const cv::Mat&, const cv::Mat&, const std::vector<Object>&, double, cv::Mat&);           //mm//
