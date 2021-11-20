@@ -166,7 +166,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     Polygon fov_polygon = null;
     Polygon sweep_polygon = null;
     GoogleMap googleMap = null;
-    List<Marker> AllMarkers = new ArrayList<Marker>();
+
+    class MarkerSet {
+        double time = 0.0;
+        Marker marker;
+    }
+//    List<Marker> AllMarkers = new ArrayList<Marker>();
+    List<MarkerSet> AllMarkers = new ArrayList<MarkerSet>();
+    float markerShowTime = 20.0f;
 
 //    boolean readMode = false;
 
@@ -268,6 +275,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, locationListener);
 
 //        Log.v(TAG, "---------6");
+        changeMarkers();
     }
 
     private class MyLocationListener implements LocationListener {
@@ -473,12 +481,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     PolygonOptions fov_polygon_opt = new PolygonOptions();
                                     PolygonOptions sweep_polygon_opt = new PolygonOptions();
 
-                                    List<Marker> newMarkers = new ArrayList<Marker>();
+//                                    List<Marker> newMarkers = new ArrayList<Marker>();      //%%%
+                                    List<MarkerSet> newMarkers = new ArrayList<MarkerSet>();      //%%%
                                     int objCount = -1;
                                     for(int i=0; i<fov.length; i++) {
                                         objCount++;
 
-                                        // TODO: A new marker must be assigned to moving objects (in which fov[i][3] == 4) in read-log mode
                                         if (fov[i][3] == 0) {
 
                                             if (fov[i][5] == 0) continue;
@@ -488,19 +496,43 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             locMarker.position(per);
                                             locMarker.anchor(0.5f,0.5f);
                                             locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.red_circle_icon));
+
 //                                            locMarker.title("Person");
-                                            Marker mm = googleMap.addMarker(locMarker);
+//                                            Marker mm = googleMap.addMarker(locMarker); %%%
+//                                            double now = 1e8;
+//                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                                                Instant ins = Instant.now();
+//                                                now = ins.getEpochSecond() + (ins.getNano()/1e9);
+//                                            }
+//                                            int idx = (int)fov[i][6];
+                                            float markerOpacity = 1.0f;
+//                                            if (idx != -1) {
+//                                                markerOpacity = java.lang.Math.max(0.0f, 1.0f - ((float)(now - AllMarkers.get(idx).time)/20.0f));}
+                                            locMarker.alpha(markerOpacity);
+
+                                            MarkerSet mm = new MarkerSet();
+                                            mm.marker = googleMap.addMarker(locMarker);
 //                                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "person", fov[i][0], fov[i][1], fov[i][4]));
-                                            mm.setTag(new InfoWindowData(objImages[i] , "person", fov[i][0], fov[i][1], fov[i][4]));
+//                                            mm.setTag(new InfoWindowData(objImages[i] , "person", fov[i][0], fov[i][1], fov[i][4])); %%%
+                                            mm.marker.setTag(new InfoWindowData(objImages[i] , "person", fov[i][0], fov[i][1], fov[i][4]));
+//                                            mm.marker
                                             if (fov[i][5] == 1)
                                             {
                                                 newMarkers.add(mm);
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    Instant ins = Instant.now();
+                                                    mm.time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                                                }
                                             }
                                             else if (fov[i][5] == 2)
                                             {
                                                 int idx = (int)fov[i][6];
-                                                AllMarkers.get(idx).remove();
+                                                AllMarkers.get(idx).marker.remove();            //%%%
                                                 AllMarkers.set(idx, mm);
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    Instant ins = Instant.now();
+                                                    AllMarkers.get(idx).time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                                                }
                                             }
 
 //                                            Log.v(TAG, "as person");
@@ -516,21 +548,43 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             locMarker.position(per);
                                             locMarker.anchor(0.5f,0.5f);
                                             locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.brown_rect_icon));
+
+//                                            double now = 1e8;
+//                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                                                Instant ins = Instant.now();
+//                                                now = ins.getEpochSecond() + (ins.getNano()/1e9);
+//                                            }
+//                                            int idx = (int)fov[i][6];
+                                            float markerOpacity = 1.0f;
+//                                            if (idx != -1) {
+//                                                markerOpacity = java.lang.Math.max(0.0f, 1.0f - ((float)(now - AllMarkers.get(idx).time)/20.0f));}
+                                            locMarker.alpha(markerOpacity);
+
 //                                            locMarker.title("Person");
-                                            Marker mm = googleMap.addMarker(locMarker);
-                                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "car", fov[i][0], fov[i][1], fov[i][4]));
+//                                            Marker mm = googleMap.addMarker(locMarker);   %%%
+                                            MarkerSet mm = new MarkerSet();
+                                            mm.marker = googleMap.addMarker(locMarker);
+//                                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "car", fov[i][0], fov[i][1], fov[i][4])); %%%
+                                            mm.marker.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "car", fov[i][0], fov[i][1], fov[i][4]));
 
                                             if (fov[i][5] == 1)
                                             {
                                                 newMarkers.add(mm);
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    Instant ins = Instant.now();
+                                                    mm.time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                                                }
                                             }
                                             else if (fov[i][5] == 2)
                                             {
                                                 int idx = (int)fov[i][6];
-                                                AllMarkers.get(idx).remove();
+                                                AllMarkers.get(idx).marker.remove();        //%%%
                                                 AllMarkers.set(idx, mm);
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    Instant ins = Instant.now();
+                                                    AllMarkers.get(idx).time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                                                }
                                             }
-
 //                                            Log.v(TAG, "as car");
                                         }
                                         else if(fov[i][3] == 2)
@@ -551,25 +605,52 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             LatLng mov = new LatLng(fov[i][0], fov[i][1]);
                                             MarkerOptions locMarker = new MarkerOptions();
                                             locMarker.position(mov);
-
+                                            locMarker.alpha(0.2f);
                                             locMarker.anchor(0.5f,0.5f);
                                             locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.yellow_arrow));
                                             locMarker.rotation((float) (fov[i][7]) + (float) yawInDeg);
-//                                            Log.v(TAG, "mainactivity direction: "+String.valueOf(fov[i][7]));
 //                                            Log.v(TAG, "mainactivity yawInDeg: "+String.valueOf(yawInDeg));
-                                            Marker mm = googleMap.addMarker(locMarker);
+//                                            Marker mm = googleMap.addMarker(locMarker);     //%%%
 
-                                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "moving", fov[i][0], fov[i][1], fov[i][4]));
+                                            Log.v(TAG, "1----1");
+//                                            double now = 1e8;
+//                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                                                Instant ins = Instant.now();
+//                                                now = ins.getEpochSecond() + (ins.getNano()/1e9);
+//                                            }
+                                            Log.v(TAG, "1----2");
+//                                            int idx = (int)fov[i][6];
+                                            float markerOpacity = 1.0f;
+//                                            if (idx != -1) {
+//                                                markerOpacity = java.lang.Math.max(0.0f, 1.0f - ((float)(now - AllMarkers.get(idx).time)/5.0f));
+//                                                Log.v(TAG, "1----3");
+//                                            }
+                                            locMarker.alpha(markerOpacity);
+                                            Log.v(TAG, "1----4");
+
+                                            MarkerSet mm = new MarkerSet();
+                                            mm.marker = googleMap.addMarker(locMarker);
+
+//                                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "moving", fov[i][0], fov[i][1], fov[i][4])); //%%%
+                                            mm.marker.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "moving", fov[i][0], fov[i][1], fov[i][4]));
 
                                             if (fov[i][5] == 1)
                                             {
                                                 newMarkers.add(mm);
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    Instant ins = Instant.now();
+                                                    mm.time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                                                }
                                             }
                                             else if (fov[i][5] == 2)
                                             {
                                                 int idx = (int)fov[i][6];
-                                                AllMarkers.get(idx).remove();
+                                                AllMarkers.get(idx).marker.remove();           //%%%
                                                 AllMarkers.set(idx, mm);
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    Instant ins = Instant.now();
+                                                    AllMarkers.get(idx).time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                                                }
                                             }
                                         }
                                     }
@@ -617,9 +698,45 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         };
 
         read_thread.start();
-
     }
 
+    public void changeMarkers() {
+        Thread markers_thread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    while (true) {
+                        sleep(500);
+                        if (AllMarkers.isEmpty())
+                            continue;
+
+                        double now = 1e8;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            Instant ins = Instant.now();
+                            now = ins.getEpochSecond() + (ins.getNano() / 1e9);
+                        }
+
+                        for (int counter = 0; counter < AllMarkers.size(); counter++) {
+                            float markerOpacity = Math.max(0.0f, 1.0f - ((float) (now - AllMarkers.get(counter).time) / markerShowTime));
+
+                            int finalCounter = counter;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    AllMarkers.get(finalCounter).marker.setAlpha(markerOpacity);
+                                }
+                            });
+                        }
+//                            AllMarkers.get(counter);
+                    }
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        markers_thread.start();
+    }
 
     @Override
     public void onMapReady(@NonNull GoogleMap ggleMap) {
