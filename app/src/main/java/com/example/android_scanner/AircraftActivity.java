@@ -88,7 +88,13 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     Polygon sweep_polygon = null;
     private GoogleMap googleMap = null;
 
-    List<Marker> AllMarkers = new ArrayList<Marker>();
+//    List<Marker> AllMarkers = new ArrayList<Marker>();
+    class MarkerSet {
+        double time = 0.0;
+        Marker marker;
+    }
+    List<MarkerSet> AllMarkers = new ArrayList<MarkerSet>();
+    float markerShowTime = 20.0f;
 
     private Bitmap srcBitmap;
     private Bitmap dstBitmap;
@@ -186,6 +192,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         }
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, locationListener);
 
+        changeMarkers();
     }
 
     @Override
@@ -350,7 +357,6 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
             }
         });
     }
-
 
     @Override
     public void onMapReady(@NonNull GoogleMap gMap) {
@@ -667,7 +673,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     PolygonOptions fov_polygon_opt = new PolygonOptions();
                     PolygonOptions sweep_polygon_opt = new PolygonOptions();
 
-                    List<Marker> newMarkers = new ArrayList<Marker>();
+                    List<MarkerSet> newMarkers = new ArrayList<MarkerSet>();
 //                    Log.e(TAG, "---- ter 1.75");
 
                     int i = -1;
@@ -688,26 +694,33 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
                             locMarker.anchor(0.5f,0.5f);
                             locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.red_circle_icon));
-//                                            locMarker.title("Person");
-//                            Log.e(TAG, "---- ter 5");
 
-                            Marker mm = googleMap.addMarker(locMarker);
+                            MarkerSet mm = new MarkerSet();
+                            mm.marker = googleMap.addMarker(locMarker);
 //                            Log.e(TAG, "---- ter 6");
 
 //                            mm.setTag(new InfoWindowData(BitmapFactory.decodeResource(getResources(), R.drawable.mountain) , "person", marker[0], marker[1], marker[4]));
-                            mm.setTag(new InfoWindowData(objImages[i] , "person", marker[0], marker[1], marker[4]));
+                            mm.marker.setTag(new InfoWindowData(objImages[i] , "person", marker[0], marker[1], marker[4]));
 //                            Log.e(TAG, "---- ter 7");
 
                             if (marker[5] == 1)
                             {
                                 newMarkers.add(mm);
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    Instant ins = Instant.now();
+                                    mm.time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                                }
                             }
                             else if (marker[5] == 2)
                             {
 //                                Log.e(TAG, "---- ter 8");
                                 int idx = (int)marker[6];
-                                AllMarkers.get(idx).remove();
+                                AllMarkers.get(idx).marker.remove();
                                 AllMarkers.set(idx, mm);
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    Instant ins = Instant.now();
+                                    mm.time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                                }
 //                                Log.e(TAG, "---- ter 9");
                             }
                         }
@@ -721,18 +734,27 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                             locMarker.anchor(0.5f,0.5f);
                             locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.brown_rect_icon));
 //                                            locMarker.title("Person");
-                            Marker mm = googleMap.addMarker(locMarker);
-                            mm.setTag(new InfoWindowData(objImages[i] , "car", marker[0], marker[1], marker[4]));
+                            MarkerSet mm = new MarkerSet();
+                            mm.marker = googleMap.addMarker(locMarker);
+                            mm.marker.setTag(new InfoWindowData(objImages[i] , "car", marker[0], marker[1], marker[4]));
 
                             if (marker[5] == 1)
                             {
                                 newMarkers.add(mm);
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    Instant ins = Instant.now();
+                                    mm.time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                                }
                             }
                             else if (marker[5] == 2)
                             {
                                 int idx = (int)marker[6];
-                                AllMarkers.get(idx).remove();
+                                AllMarkers.get(idx).marker.remove();
                                 AllMarkers.set(idx, mm);
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    Instant ins = Instant.now();
+                                    mm.time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                                }
                             }
                         }
                         else if (marker[3] == 2)
@@ -759,22 +781,31 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 //                                            locMarker.title("Person");
 //                            Log.e(TAG, "---- ter 5");
 //
-                            Marker mm = googleMap.addMarker(locMarker);
+                            MarkerSet mm = new MarkerSet();
+                            mm.marker = googleMap.addMarker(locMarker);
 //                            Log.e(TAG, "---- ter 6");
 //
-                            mm.setTag(new InfoWindowData(objImages[i] , "moving", marker[0], marker[1], marker[4]));
+                            mm.marker.setTag(new InfoWindowData(objImages[i] , "moving", marker[0], marker[1], marker[4]));
 //                            Log.e(TAG, "---- ter 7");
 //
                             if (marker[5] == 1)
                             {
                                 newMarkers.add(mm);
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    Instant ins = Instant.now();
+                                    mm.time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                                }
                             }
                             else if (marker[5] == 2)
                             {
 //                                Log.e(TAG, "---- ter 8");
                                 int idx = (int)marker[6];
-                                AllMarkers.get(idx).remove();
+                                AllMarkers.get(idx).marker.remove();
                                 AllMarkers.set(idx, mm);
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    Instant ins = Instant.now();
+                                    mm.time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                                }
 //                                Log.e(TAG, "---- ter 9");
                             }
 //                            Log.e(TAG, "---- ter 10");
@@ -825,6 +856,44 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                 }
             }
         });
+    }
+
+    public void changeMarkers() {
+        Thread markers_thread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    while (true) {
+                        sleep(500);
+                        if (AllMarkers.isEmpty())
+                            continue;
+
+                        double now = 1e8;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            Instant ins = Instant.now();
+                            now = ins.getEpochSecond() + (ins.getNano() / 1e9);
+                        }
+
+                        for (int counter = 0; counter < AllMarkers.size(); counter++) {
+                            float markerOpacity = Math.max(0.0f, 1.0f - ((float) (now - AllMarkers.get(counter).time) / markerShowTime));
+
+                            int finalCounter = counter;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    AllMarkers.get(finalCounter).marker.setAlpha(markerOpacity);
+                                }
+                            });
+                        }
+//                            AllMarkers.get(counter);
+                    }
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        markers_thread.start();
     }
 
     private void initPreviewer() {

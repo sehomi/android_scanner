@@ -609,24 +609,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             locMarker.anchor(0.5f,0.5f);
                                             locMarker.icon(BitmapDescriptorFactory.fromResource(R.drawable.yellow_arrow));
                                             locMarker.rotation((float) (fov[i][7]) + (float) yawInDeg);
-//                                            Log.v(TAG, "mainactivity yawInDeg: "+String.valueOf(yawInDeg));
-//                                            Marker mm = googleMap.addMarker(locMarker);     //%%%
-
-                                            Log.v(TAG, "1----1");
-//                                            double now = 1e8;
-//                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                                                Instant ins = Instant.now();
-//                                                now = ins.getEpochSecond() + (ins.getNano()/1e9);
-//                                            }
-                                            Log.v(TAG, "1----2");
-//                                            int idx = (int)fov[i][6];
-                                            float markerOpacity = 1.0f;
-//                                            if (idx != -1) {
-//                                                markerOpacity = java.lang.Math.max(0.0f, 1.0f - ((float)(now - AllMarkers.get(idx).time)/5.0f));
-//                                                Log.v(TAG, "1----3");
-//                                            }
-                                            locMarker.alpha(markerOpacity);
-                                            Log.v(TAG, "1----4");
+                                            locMarker.alpha(1.0f);
 
                                             MarkerSet mm = new MarkerSet();
                                             mm.marker = googleMap.addMarker(locMarker);
