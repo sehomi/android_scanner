@@ -7,6 +7,7 @@ package com.example.android_scanner;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -46,6 +47,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -174,6 +176,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //    List<Marker> AllMarkers = new ArrayList<Marker>();
     List<MarkerSet> AllMarkers = new ArrayList<MarkerSet>();
     float markerShowTime = 20.0f;
+
+    ViewGroup.LayoutParams previewLayoutParams = null;
 
 //    boolean readMode = false;
 
@@ -827,6 +831,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
 
+    }
+
+    public void onClick(View v) {
+
+        if (previewLayoutParams == null)
+        {
+            previewLayoutParams = binding.cameraPreview.getLayoutParams();
+            binding.cameraPreview.setLayoutParams(new ConstraintLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        }
+        else
+        {
+            binding.cameraPreview.setLayoutParams(previewLayoutParams);
+            previewLayoutParams = null;
+        }
     }
 }
 

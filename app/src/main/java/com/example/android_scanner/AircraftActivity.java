@@ -8,10 +8,12 @@ package com.example.android_scanner;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -26,7 +28,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.TextureView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
 import android.widget.Toast;
@@ -54,7 +58,10 @@ import dji.common.flightcontroller.Attitude;
 import dji.common.flightcontroller.FlightControllerState;
 import dji.common.flightcontroller.GPSSignalLevel;
 import dji.common.flightcontroller.LocationCoordinate3D;
+import dji.common.gimbal.EndpointDirection;
 import dji.common.gimbal.GimbalState;
+import dji.common.gimbal.Rotation;
+import dji.common.gimbal.RotationMode;
 import dji.common.model.LocationCoordinate2D;
 import dji.common.product.Model;
 import dji.sdk.airlink.AirLink;
@@ -130,6 +137,9 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     double motionDetectionDelay = 1.0;
 
     Bitmap[] objImages = null;
+
+    ViewGroup.LayoutParams previewLayoutParams = null;
+    boolean fullScreen = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -222,6 +232,14 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     @Override
     public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surfaceTexture) {
 
+        Bitmap bitmap = binding.cameraPreview.getBitmap();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                binding.fullScreenPreview.setImageBitmap(bitmap);
+            }
+        });
+
         if (!isProcessing) {
             Thread thread = new Thread() {
                 @Override
@@ -234,7 +252,6 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                         img_time = ins.getEpochSecond() + (ins.getNano()/1e9);
                     }
 
-                    Bitmap bitmap = binding.cameraPreview.getBitmap();
                     // TODO: set image time to it's exact message arrival
                     setImage(bitmap, img_time);
                     processBitmap(bitmap);
@@ -402,6 +419,32 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
         this.finish();
     }
 
+    public void onClick(View v) {
+
+//        if (previewLayoutParams == null)
+//        {
+//            previewLayoutParams = binding.cameraPreview.getLayoutParams();
+//            binding.cameraPreview.setLayoutParams(new ConstraintLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+//        }
+//        else
+//        {
+//            binding.cameraPreview.setLayoutParams(previewLayoutParams);
+//            previewLayoutParams = null;
+//        }
+
+        if(!fullScreen)
+        {
+            binding.fullScreenPreview.setVisibility(View.VISIBLE);
+            fullScreen = true;
+        }
+        else
+        {
+            binding.fullScreenPreview.setVisibility(View.INVISIBLE);
+            fullScreen = false;
+        }
+
+    }
+
     @Override
     protected void onDestroy() {
         Log.e(TAG, "onDestroy");
@@ -565,6 +608,20 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            if(gpitch > -40){
+                                binding.PitchWarning.setVisibility(View.VISIBLE);
+                                gimbal.rotate(new Rotation.Builder().pitch(-45)
+                                                .mode(RotationMode.ABSOLUTE_ANGLE)
+                                                .yaw(Rotation.NO_ROTATION)
+                                                .roll(Rotation.NO_ROTATION)
+                                                .time(1)
+                                                .build(),
+                                        null);
+                            }
+                            else{
+                                binding.PitchWarning.setVisibility(View.INVISIBLE);
+                            }
+
                             binding.textView3.setText("\ngimbal roll: "+String.valueOf(groll)+"\ngimbal pitch: "+String.valueOf(gpitch)+"\ngimbal yaw: "+String.valueOf(gyaw));
 
                             binding.textView11.setText(String.valueOf(elev.elev));
@@ -584,6 +641,19 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
             };
 
             gimbal.setStateCallback(gcallback);
+        }
+        else{
+            Log.e(TAG, "Gimbal is null.");
+        }
+
+        if (gimbal != null){
+            gimbal.rotate(new Rotation.Builder().pitch(-45)
+                    .mode(RotationMode.ABSOLUTE_ANGLE)
+                    .yaw(Rotation.NO_ROTATION)
+                    .roll(Rotation.NO_ROTATION)
+                    .time(1)
+                    .build(),
+                    null);
         }
         else{
             Log.e(TAG, "Gimbal is null.");
@@ -875,7 +945,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                         }
 
                         for (int counter = 0; counter < AllMarkers.size(); counter++) {
-                            float markerOpacity = Math.max(0.0f, 1.0f - ((float) (now - AllMarkers.get(counter).time) / markerShowTime));
+                            float markerOpacity = Math.max(0.2f, 1.0f - ((float) (now - AllMarkers.get(counter).time) / markerShowTime));
 
                             int finalCounter = counter;
                             runOnUiThread(new Runnable() {
