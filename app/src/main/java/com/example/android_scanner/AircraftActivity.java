@@ -155,8 +155,8 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        TinyDancer.create()
-                .show(this);
+//        TinyDancer.create()
+//                .show(this);
 
         // Get the SupportMapFragment and request notification when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -434,11 +434,13 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
         if(!fullScreen)
         {
+            binding.clearBtn.setVisibility(View.INVISIBLE);
             binding.fullScreenPreview.setVisibility(View.VISIBLE);
             fullScreen = true;
         }
         else
         {
+            binding.clearBtn.setVisibility(View.VISIBLE);
             binding.fullScreenPreview.setVisibility(View.INVISIBLE);
             fullScreen = false;
         }
@@ -926,6 +928,22 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                 }
             }
         });
+    }
+
+
+    public void onClear(View v) {
+
+        for (int counter = 0; counter < AllMarkers.size(); counter++) {
+
+            int finalCounter = counter;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    AllMarkers.get(finalCounter).marker.remove();
+                }
+            });
+        }
+
     }
 
     public void changeMarkers() {

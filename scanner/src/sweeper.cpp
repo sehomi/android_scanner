@@ -7,6 +7,15 @@
 using namespace std;
 using namespace SweeperGeometry;
 
+/** \brief updates the sweeped polygon. merges a new field of view polygon with the sweeped area polygon.
+*
+* \param [in]     fov_loc     The new field of view of the camera.
+*
+* \param [out]    output      The updated sweeped area. The result of the merge of new fov with last sweeped area.
+*
+* This function makes use of Boost library geometrical algorithms to merge polygons.
+*/
+
 void Sweeper::update(std::vector<Object> & fov_loc, std::vector<Object> & output) {
 
     polygon new_poly;
@@ -56,6 +65,14 @@ double Sweeper::dist(double x1, double y1, double x2, double y2)
            (y1 - y2)*(y1 - y2);
 }
 
+
+/** \brief Removes close vertices of sweeped polygon for memory efficiency.
+*
+* \param [in,out]     points     The polygon that needs to be refined.
+*
+* This function finds distance between polygon vertices and those which are closer than 0.00002 deg
+* in terms of lat & lon, will be removed.
+*/
 
 void Sweeper::refineLocations(polygon &points){
 
