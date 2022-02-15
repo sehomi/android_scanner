@@ -88,6 +88,7 @@
         android:text="Open Phone Camera"
         android:textColor="@color/colorWhite"
         android:textSize="20dp"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -166,6 +167,7 @@
         android:layout_marginBottom="16dp"
         android:checkedButton="@id/noneButton"
         android:orientation="horizontal"
+        android:visibility="visible"
         app:layout_constraintBottom_toTopOf="@+id/textView5"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -199,7 +201,23 @@
         android:textColor="#000000"
         android:textSize="18sp"
         android:textStyle="bold"
+        android:visibility="visible"
         app:layout_constraintBottom_toTopOf="@+id/radioGroup"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/imageView4"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="84dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="84dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/logo"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@+id/textView5"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -578,6 +578,7 @@ void Scanner::setReferenceLoc(double lat, double lng, bool isUserLoc)
         userLocation.zone = LatLonToUTMXY(lat, lng, 0, userLocation.x, userLocation.y);
     else {
         firstLocation.lat = lat;
+        firstLocation.lng = lng;
         firstLocation.zone = zone;
         firstLocation.zone = LatLonToUTMXY(lat, lng, 0, firstLocation.x, firstLocation.y);
     }
