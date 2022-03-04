@@ -135,6 +135,8 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
     double movementTime = 0.0;
     double img_time = 0.0;
     double motionDetectionDelay = 1.0;
+    double gps_init_time = 0;
+    double local_init_time = 0;
 
     Bitmap[] objImages = null;
 
@@ -200,7 +202,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, locationListener);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
 
         changeMarkers();
     }
@@ -250,11 +252,14 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         Instant ins = Instant.now() ;
                         img_time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                        img_time = img_time - local_init_time + gps_init_time;
                     }
 
                     // TODO: set image time to it's exact message arrival
-                    setImage(bitmap, img_time);
-                    processBitmap(bitmap);
+                    if (local_init_time!=0 && gps_init_time!=0) {
+                        setImage(bitmap, img_time);
+                        processBitmap(bitmap);
+                    }
 
                     isProcessing = false;
                 }
@@ -276,6 +281,8 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Instant ins = Instant.now() ;
+                local_init_time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                gps_init_time = loc.getTime()/1000.;
             }
             String longitude = "Longitude: " + loc.getLongitude();
 //            Log.v(TAG, longitude);
@@ -287,6 +294,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
             double lat = loc.getLatitude();
             double lng = loc.getLongitude();
             setUserLocation(lat, lng);
+
 
             runOnUiThread(new Runnable() {
                 @Override
@@ -475,6 +483,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         Instant ins = Instant.now() ;
                         curr_time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                        curr_time = curr_time - local_init_time + gps_init_time;
                     }
 
 //                    flightControllerState.getAttitude()
@@ -500,7 +509,6 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     double yaw = attitude.yaw;
 //                    Log.e(TAG, "rdf z: --- "+String.valueOf(yaw));
                     aircraftYaw = yaw;
-//                    double[][] fov = setOrientation(roll, pitch, yaw, curr_time);
 
                     LocationCoordinate3D location = flightControllerState.getAircraftLocation();
                     double lat = location.getLatitude();
@@ -517,12 +525,15 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                         }
                     });
 
-                    setLocation(lat, lon, alt, curr_time);
+                    if (local_init_time!=0 && gps_init_time!=0) {
+                        setLocation(lat, lon, alt, curr_time);
+                    }
 
                     GPSSignalLevel gpsLevel = flightControllerState.getGPSSignalLevel();
 
                     if (gpsLevel == GPSSignalLevel.LEVEL_3 || gpsLevel == GPSSignalLevel.LEVEL_4 || gpsLevel == GPSSignalLevel.LEVEL_5){
 
+                        double finalCurr_time = curr_time;
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -545,7 +556,8 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                                     }
                                 }
 
-                                binding.textView2.setText("Longitude: " + String.valueOf(lon) + "\nLatitude: " + String.valueOf(lat) + "\nAltitude: " + String.valueOf(alt));
+//                                binding.textView2.setText("Longitude: " + String.valueOf(lon) + "\nLatitude: " + String.valueOf(lat) + "\nAltitude: " + String.valueOf(alt));
+                                binding.textView2.setText("Time: " + String.valueOf(finalCurr_time));
                                 binding.latState.setText(String.format("%.4f",lat));
                                 binding.lngState.setText(String.format("%.4f",lon));
 //                                dist(home_lat, home_lon, lat, lon);
@@ -586,6 +598,7 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         Instant ins = Instant.now() ;
                         curr_time = ins.getEpochSecond() + (ins.getNano()/1e9);
+                        curr_time = curr_time - local_init_time + gps_init_time;
                     }
 
 //                        gimbalState.y
@@ -598,7 +611,13 @@ public class AircraftActivity extends AppCompatActivity implements OnMapReadyCal
                     double gyaw = aircraftYaw;
                     GroundLocation elev = new GroundLocation();
 
-                    double[][] fov = setOrientation(groll, gpitch, gyaw, curr_time, elev);
+                    double[][] fov = null;
+                    if (local_init_time!=0 && gps_init_time!=0) {
+                        fov = setOrientation(groll, gpitch, gyaw, curr_time, elev);
+                    }
+                    else{
+                        return;
+                    }
 
                     isRotating = abs(groll-groll_old)>groll_dif_lim || abs(gpitch-gpitch_old)>gpitch_dif_lim || abs(gyaw - gyaw_old)>gyaw_dif_lim;
                     groll_old = groll;

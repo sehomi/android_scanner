@@ -177,11 +177,11 @@ bool Scanner::scan(std::vector<Object> &objects, Mat &detections, Mat &movings_i
             Mat img;
             cvtColor(imgSt.image, img, COLOR_RGBA2BGR);
             cvtColor(detections, detections, COLOR_RGBA2BGR);
-            detector->detect(img, objects);
+//            detector->detect(img, objects);
         }
         else {
 //                __android_log_print(ANDROID_LOG_VERBOSE, "scan ", "nn4");
-                detector->detect(imgSt.image, objects);
+//                detector->detect(imgSt.image, objects);
             }
 
         detector->drawDetections(detections, objects);

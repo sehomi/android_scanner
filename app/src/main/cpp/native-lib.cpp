@@ -378,16 +378,18 @@ Java_com_example_android_1scanner_AircraftActivity_setOrientation(JNIEnv* env, j
     env->SetDoubleField(outElev, param1Field, sc->elev());
 
     //// fov_objects includes both fov points and swept area
-    if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_objects1))
-        {
-        fov_poses_array = putIntoArray(env, fov_objects1);
-        return fov_poses_array;
-    }
-    else
-    {
-        return  NULL;
-    }
+//    if (sc->logger->setOrientation(roll, pitch, azimuth, time) && sc->calcFov(fov_objects1))
+//        {
+//        fov_poses_array = putIntoArray(env, fov_objects1);
+//        return fov_poses_array;
+//    }
+//    else
+//    {
+//        return  NULL;
+//    }
 
+    sc->logger->setOrientation(roll, pitch, azimuth, time);
+    return NULL;
 }
 
 std::vector<Object> objects;

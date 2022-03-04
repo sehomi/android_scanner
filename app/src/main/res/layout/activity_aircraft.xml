@@ -69,7 +69,7 @@
         android:layout_height="108dp"
         android:text="TextView"
         android:textColor="#FFFFFF"
-        android:visibility="invisible"
+        android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@+id/map"
         app:layout_constraintTop_toBottomOf="@+id/camera_preview"

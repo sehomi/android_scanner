@@ -75,6 +75,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -160,6 +161,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     private imageSet imgSet = new imageSet();
+    private Marker user = null;
+    private Polyline polyline1 = null;
+    private List<LatLng> userPath = new ArrayList<LatLng>();
+    private String log_folder_dir = "";
 
     double orn_time;
     double loc_time;
@@ -200,8 +205,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        TinyDancer.create()
-                .show(this);
+//        TinyDancer.create()
+//                .show(this);
 
         // Get the SupportMapFragment and request notification when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -231,9 +236,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mCamera = getCameraInstance();
         float hva = mCamera.getParameters().getHorizontalViewAngle();
-//        Log.v(TAG, "---------41");
+
+        log_folder_dir = getIntent().getStringExtra("Log");
         createScanner(getIntent().getStringExtra("Assets"), getIntent().getStringExtra("Log"), getIntent().getIntExtra("Log Mode",2), getIntent().getIntExtra("Algorithm", 0), hva);
-//        Log.v(TAG, "---------42");
+
         Thread thread = new Thread() {
             @Override
             public void run() {
@@ -276,36 +282,96 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, locationListener);
-
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
 //        Log.v(TAG, "---------6");
         changeMarkers();
     }
 
+    public void writeFileOnInternalStorage(String file_dir, String text){
+        File dir = new File(file_dir);
+        try {
+            File logfile = new File(dir, "log_phone.txt");
+            FileWriter writer = new FileWriter(logfile, true);
+            writer.append(text);
+            writer.flush();
+            writer.close();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private double last_gps_time = 0;
     private class MyLocationListener implements LocationListener {
 
         @Override
         public void onLocationChanged(Location loc) {
 
-//            Log.v(TAG, "---------7");
+            double freq = 0;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Instant ins = Instant.now() ;
                 loc_time = ins.getEpochSecond() + (ins.getNano()/1e9);
+
+                if (last_gps_time != 0){
+                    freq = 1.0 / (loc_time - last_gps_time);
+                }
+
+                last_gps_time = loc_time;
             }
             String longitude = "Longitude: " + loc.getLongitude();
-//            Log.v(TAG, longitude);
             String latitude = "Latitude: " + loc.getLatitude();
-//            Log.v(TAG, latitude);
+            String altitude = "Altitude: " + loc.getAltitude();
+            String h_accuracy = "Horiz Acc: " + loc.getAccuracy();
+            String v_accuracy = "Vert Acc: ";
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                v_accuracy = v_accuracy + loc.getVerticalAccuracyMeters();
+            }
+            String frequency = "Freq: " + (float)freq;
+            String time_gps = "Time: " + loc.getTime()/1000.;
 
-            String s = longitude + "\n" + latitude ;
+            String s = longitude + "\n" + latitude + "\n" + altitude + "\n" + h_accuracy + "\n" + v_accuracy + "\n" + frequency + "\n" + time_gps;
+            String s1 = "";
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                s1 = loc.getTime()/1000. + "," + loc.getLatitude() + "," + loc.getLongitude() + "," + loc.getAltitude() + "," + loc.getAccuracy() + "," + loc.getVerticalAccuracyMeters() + "\n";
+            }
 
+            writeFileOnInternalStorage(log_folder_dir, s1);
+
+            float hacc = loc.getAccuracy();
+            float vacc = 0;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vacc = loc.getVerticalAccuracyMeters();
+            }
             double lat = loc.getLatitude();
             double lng = loc.getLongitude();
             double alt = loc.getAltitude();
             setLocation(lat, lng, alt, loc_time);
+
+            userPath.add(new LatLng(lat, lng));
+            polyline1.setPoints(userPath);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (googleMap != null) {
+                        if (user == null) {
+                            LatLng user_pos = new LatLng(lat, lng);
+                            user = googleMap.addMarker(new MarkerOptions()
+                                    .position(user_pos)
+                                    .anchor(0.5f,0.5f)
+                                    .title("User Position")
+                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.blue_circle_icon)));
+                            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(user_pos, 18));
+                        }
+                        else
+                        {
+                            LatLng user_pos = new LatLng(lat, lng);
+                            user.setPosition(user_pos);
+                        }
+                    }
+                }
+            });
+
             // TODO: Check if altitude in measured ASL or AGL
             binding.textView2.setText(s);
-//            Log.v(TAG, "---------8");
         }
 
         @Override
@@ -733,6 +799,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         ObjectInfoWindow oiw = new ObjectInfoWindow(this);
         googleMap.setInfoWindowAdapter(oiw);
+
+        polyline1 = googleMap.addPolyline(new PolylineOptions());
     }
 
     /**
